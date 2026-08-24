@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from sqlalchemy.engine import make_url
 
 
 def load_settings() -> dict[str, object]:
@@ -25,7 +26,16 @@ def ensure_instance_directory(app_instance_path: str):
 
 def database_uri() -> str:
     load_dotenv()
-    return _required("DATABASE_URI")
+    uri = _required("DATABASE_URI")
+    _ensure_database_directory(uri)
+    return uri
+
+
+def _ensure_database_directory(uri: str) -> None:
+    url = make_url(uri)
+    if url.get_backend_name() != "sqlite" or url.database in {None, "", ":memory:"}:
+        return
+    Path(url.database).expanduser().parent.mkdir(parents=True, exist_ok=True)
 
 
 def _required(name: str) -> str:
