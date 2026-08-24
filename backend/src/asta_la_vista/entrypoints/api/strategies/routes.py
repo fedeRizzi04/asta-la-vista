@@ -42,6 +42,14 @@ class StrategyResource(MethodView):
         bus().handle(commands.RenameStrategy(strategy_id, body["name"]))
 
 
+@blueprint.route("/strategies/<string:strategy_id>/duplicate")
+class StrategyDuplicateResource(MethodView):
+    @blueprint.arguments(StrategyCreateSchema)
+    @blueprint.response(201, StrategyIdSchema)
+    def post(self, body: dict, strategy_id: str) -> dict[str, str]:
+        return {"id": bus().handle(commands.DuplicateStrategy(strategy_id, body["name"]))}
+
+
 @blueprint.route("/strategies/<string:strategy_id>/tiers")
 class TierCollection(MethodView):
     @blueprint.arguments(TierCreateSchema)

@@ -60,6 +60,14 @@ def test_player_import_and_strategy_flow(client):
     assert strategy["entries"][0]["tier_id"] == tier_id
     assert strategy["entries"][0]["note"] == "Obiettivo principale"
 
+    response = client.post(f"/api/strategies/{strategy_id}/duplicate", json={"name": "Alternativa"})
+    assert response.status_code == 201
+    duplicate_id = response.get_json()["id"]
+    duplicate = client.get(f"/api/strategies/{duplicate_id}").get_json()
+    assert duplicate["name"] == "Alternativa"
+    assert duplicate["tiers"][0]["name"] == "Prima fascia"
+    assert duplicate["entries"][0]["note"] == "Obiettivo principale"
+
 
 def test_live_auction_purchase_amendment_and_cancellation_flow(client):
     client.post(
