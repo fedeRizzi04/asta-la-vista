@@ -16,17 +16,17 @@
 </section>
 
 <section class="feature-grid" aria-label="Sezioni principali">
-	<a class="feature-card" href={resolve('/listone')}>
+	<a class="feature-card" href={resolve('/players')}>
 		<span>01</span>
 		<h2>Listone</h2>
 		<p>Importa i calciatori e tieni aggiornati ruolo, squadra e disponibilità.</p>
 	</a>
-	<a class="feature-card" href={resolve('/strategie')}>
+	<a class="feature-card" href={resolve('/strategies')}>
 		<span>02</span>
 		<h2>Strategie</h2>
 		<p>Organizza i calciatori in fasce riutilizzabili, separate per ruolo.</p>
 	</a>
-	<a class="feature-card" href={resolve('/aste')}>
+	<a class="feature-card" href={resolve('/auctions')}>
 		<span>03</span>
 		<h2>Aste</h2>
 		<p>Crea un'asta e segui in tempo reale acquisti, crediti e slot rimasti.</p>

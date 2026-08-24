@@ -6,11 +6,11 @@
 
 	let { children } = $props();
 
-	const navigation: { href: '/' | '/listone' | '/strategie' | '/aste'; label: string }[] = [
+	const navigation: { href: '/' | '/players' | '/strategies' | '/auctions'; label: string }[] = [
 		{ href: '/', label: 'Home' },
-		{ href: '/listone', label: 'Listone' },
-		{ href: '/strategie', label: 'Strategie' },
-		{ href: '/aste', label: 'Aste' }
+		{ href: '/players', label: 'Listone' },
+		{ href: '/strategies', label: 'Strategie' },
+		{ href: '/auctions', label: 'Aste' }
 	];
 
 	function isCurrent(href: string): boolean {
