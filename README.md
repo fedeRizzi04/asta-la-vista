@@ -1,16 +1,14 @@
 # Asta la Vista
 
-Asta la Vista è una web app locale per preparare e seguire aste Classic del fantacalcio.
-Gestisce il listone, le strategie a fasce, i partecipanti, gli acquisti, i crediti residui e gli
-slot ancora disponibili.
+Asta la Vista è una web app pensata per assisterti durante l'asta del fantacalcio (per ora viene supportata solamente la modalità Classic). E' possibile caricare un listone in formato _.csv_ o _.xlsx_ contenente i giocatori (con relativi ruoli e squadre). A partire da questo listone sono presenti le seguenti funzionalità: 
 
-Il progetto è anche una prova pratica: l'applicazione viene realizzata interamente con un coding
-agent, partendo da requisiti discussi in anticipo e da un piano mantenuto durante lo sviluppo.
+- creazione di un'asta con partecipanti, in cui è possibile seguire in tempo reale lo stato dell'asta, visualizzando i giocatori acquistati da ogni partecipante insieme ai crediti rimanenti
+- creazione di strategie (o fasce), le quali sono visualizzabili durante lo svolgimento delle aste in modo tale da capire quali dei giocatori inseriti nelle fasce sono stati già acquistati e quali invece sono ancora disponibili
 
-## Stato del progetto
 
-Il progetto è in fase iniziale. Al momento è disponibile soltanto la base del backend Flask; le
-istruzioni verranno aggiornate insieme alle funzionalità.
+## Motivazione
+
+Il progetto nasce dal desiderio di provare a sviluppare interamente un'applicazione affidandosi ad un coding agent attraverso un lavoro di planning curato. Oltre a questo, durante le aste finalmente si potrà usare uno strumento gratuito e automatizzato, diverso dal solito foglio di carta o documento excel. 
 
 ## Requisiti
 
