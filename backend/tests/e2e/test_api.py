@@ -9,7 +9,6 @@ from asta_la_vista.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 @pytest.fixture
 def client(session_factory):
-    message_bus = bootstrap.bootstrap(SqlAlchemyUnitOfWork(session_factory))
     app = create_app(
         {
             "TESTING": True,
@@ -18,7 +17,7 @@ def client(session_factory):
             "OPENAPI_VERSION": "3.1.0",
             "OPENAPI_URL_PREFIX": "/api/docs",
         },
-        message_bus,
+        lambda: bootstrap.bootstrap(SqlAlchemyUnitOfWork(session_factory)),
     )
     return app.test_client()
 

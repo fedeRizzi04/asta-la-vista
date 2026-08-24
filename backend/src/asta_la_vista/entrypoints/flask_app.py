@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, current_app, g
 from flask_smorest import Api
 
 from asta_la_vista import bootstrap, config
@@ -7,13 +7,14 @@ from asta_la_vista.service_layer.unit_of_work import AbstractUnitOfWork
 
 
 def create_app(
-    test_config: dict[str, object] | None = None, message_bus: MessageBus | None = None
+    test_config: dict[str, object] | None = None,
+    message_bus_factory: bootstrap.MessageBusFactory | None = None,
 ) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(test_config if test_config is not None else config.load_settings())
     config.ensure_instance_directory(app.instance_path)
     api = Api(app)
-    app.extensions["bus"] = message_bus or bootstrap.bootstrap()
+    app.extensions["bus_factory"] = message_bus_factory or bootstrap.bootstrap_factory()
 
     from asta_la_vista.entrypoints.api.auctions import blueprint as auctions_blueprint
     from asta_la_vista.entrypoints.api.common import register_error_handlers
@@ -30,9 +31,9 @@ def create_app(
 
 
 def bus() -> MessageBus:
-    from flask import current_app
-
-    return current_app.extensions["bus"]
+    if "message_bus" not in g:
+        g.message_bus = current_app.extensions["bus_factory"]()
+    return g.message_bus
 
 
 def uow() -> AbstractUnitOfWork:
