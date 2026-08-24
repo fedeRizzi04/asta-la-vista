@@ -57,6 +57,7 @@ class RosterSlots:
 class Participant:
     name: str
     uuid: str
+    position: int
 
 
 @dataclass
@@ -255,7 +256,7 @@ class Auction:
             raise ValidationError("Participant name is required")
         if any(participant.name.casefold() == name.casefold() for participant in self.participants):
             raise ValidationError("Participant names must be unique")
-        participant = Participant(name, uuid or new_uuid())
+        participant = Participant(name, uuid or new_uuid(), len(self.participants))
         self.participants.append(participant)
         return participant.uuid
 

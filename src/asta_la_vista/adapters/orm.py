@@ -83,7 +83,9 @@ participants = sa.Table(
     sa.Column("uuid", sa.String(36), primary_key=True),
     sa.Column("auction_id", sa.ForeignKey("auction.uuid", ondelete="CASCADE"), nullable=False),
     sa.Column("name", sa.String(120), nullable=False),
+    sa.Column("position", sa.Integer, nullable=False),
     sa.UniqueConstraint("auction_id", "name"),
+    sa.UniqueConstraint("auction_id", "position"),
 )
 
 purchases = sa.Table(

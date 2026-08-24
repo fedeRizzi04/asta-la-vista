@@ -8,6 +8,7 @@ from asta_la_vista.domain import events
 
 
 class AbstractUnitOfWork(ABC):
+    session: Session
     auctions: repository.AbstractAuctionRepository
     players: repository.AbstractPlayerRepository
     strategies: repository.AbstractStrategyRepository
