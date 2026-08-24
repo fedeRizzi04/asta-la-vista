@@ -1,0 +1,39 @@
+[project]
+name = "asta-la-vista"
+version = "0.1.0"
+description = "Assistente locale per aste Classic del fantacalcio"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic",
+    "flask",
+    "flask-smorest",
+    "marshmallow",
+    "openpyxl",
+    "python-dotenv",
+    "sqlalchemy>=2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/asta_la_vista"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+

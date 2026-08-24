@@ -1,0 +1,36 @@
+# Project-only planning and reference files
+/PLAN.md
+/cosmic-python-backend-prompt.md
+/svelte-frontend-prompt.md
+
+# Private player lists
+/*.csv
+/*.xls
+/*.xlsx
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+
+# Local configuration and data
+.env
+instance/
+*.sqlite
+*.sqlite3
+
+# SvelteKit and Node
+node_modules/
+.svelte-kit/
+build/
+dist/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+

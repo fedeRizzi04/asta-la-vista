@@ -1,0 +1,1 @@
+"""Asta la Vista backend."""
