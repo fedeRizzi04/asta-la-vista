@@ -26,8 +26,6 @@ class StartAuction(Command):
 class RecordPurchase(Command):
     auction_id: str
     player_id: str
-    player_name: str
-    role: str
     participant_id: str
     price: int
 
@@ -73,7 +71,6 @@ class AddTier(Command):
 class AssignPlayerToTier(Command):
     strategy_id: str
     player_id: str
-    role: str
     tier_id: str
 
 
@@ -81,7 +78,6 @@ class AssignPlayerToTier(Command):
 class SetStrategyPlayerNote(Command):
     strategy_id: str
     player_id: str
-    role: str
     note: str
 
 

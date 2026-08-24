@@ -23,6 +23,11 @@ def ensure_instance_directory(app_instance_path: str):
     Path(app_instance_path).mkdir(parents=True, exist_ok=True)
 
 
+def database_uri() -> str:
+    load_dotenv()
+    return _required("DATABASE_URI")
+
+
 def _required(name: str) -> str:
     value = os.getenv(name)
     if value is None:
