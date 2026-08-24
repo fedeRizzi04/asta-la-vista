@@ -2,7 +2,6 @@
 name = "asta-la-vista"
 version = "0.1.0"
 description = "Assistente locale per aste Classic del fantacalcio"
-readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "alembic",
@@ -36,4 +35,3 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-
