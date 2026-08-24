@@ -6,6 +6,20 @@ class Command:
 
 
 @dataclass(frozen=True)
+class PlayerRow:
+    external_id: str
+    name: str
+    team: str
+    role: str
+
+
+@dataclass(frozen=True)
+class ImportPlayers(Command):
+    players: tuple[PlayerRow, ...]
+    allow_live_auction: bool = False
+
+
+@dataclass(frozen=True)
 class CreateAuction(Command):
     name: str
     initial_credits: int

@@ -14,6 +14,9 @@ class AbstractAuctionRepository(ABC):
     @abstractmethod
     def get(self, uuid: str) -> model.Auction | None: ...
 
+    @abstractmethod
+    def has_live(self) -> bool: ...
+
 
 class AbstractPlayerRepository(ABC):
     @abstractmethod
@@ -46,6 +49,12 @@ class AuctionRepository:
 
     def get(self, uuid: str) -> model.Auction | None:
         return self.session.get(model.Auction, uuid)
+
+    def has_live(self) -> bool:
+        statement = select(model.Auction.uuid).where(
+            model.Auction.status == model.AuctionStatus.LIVE
+        )
+        return self.session.scalar(statement) is not None
 
 
 class PlayerRepository:
@@ -92,6 +101,9 @@ class TrackingAuctionRepository:
 
     def get(self, uuid: str) -> model.Auction | None:
         return self._track(self._repository.get(uuid))
+
+    def has_live(self) -> bool:
+        return self._repository.has_live()
 
     def _track(self, auction: model.Auction | None) -> model.Auction | None:
         if auction is not None:
