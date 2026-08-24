@@ -15,8 +15,6 @@ Il progetto nasce dal desiderio di provare a sviluppare interamente un'applicazi
 - Python 3.12 o successivo
 - [uv](https://docs.astral.sh/uv/)
 
-Docker non è necessario.
-
 ## Installazione
 
 Clonare il repository, entrare nella cartella del progetto e creare la configurazione locale:
@@ -52,6 +50,4 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-Il frontend non avrà una suite di test automatizzata; verranno comunque verificati typecheck,
-lint e build di produzione.
 
