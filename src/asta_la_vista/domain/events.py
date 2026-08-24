@@ -38,3 +38,15 @@ class AuctionCompleted(Event):
 @dataclass(frozen=True)
 class AuctionReopened(Event):
     auction_id: str
+
+
+@dataclass(frozen=True)
+class PlayerRoleChanged(Event):
+    player_id: str
+    previous_role: str
+    current_role: str
+
+
+@dataclass(frozen=True)
+class PlayerDeactivated(Event):
+    player_id: str
