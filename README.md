@@ -14,32 +14,57 @@ Il progetto nasce dal desiderio di provare a sviluppare interamente un'applicazi
 
 - Python 3.12 o successivo
 - [uv](https://docs.astral.sh/uv/)
+- Node.js 24 o successivo
 
 ## Installazione
 
-Clonare il repository, entrare nella cartella del progetto e creare la configurazione locale:
+Clonare il repository ed entrare nella cartella del progetto. Installare il backend e creare la
+configurazione locale:
 
 ```bash
+cd backend
 cp .env.example .env
 uv sync
+uv run alembic upgrade head
 ```
 
-Il database SQLite verrà salvato nella cartella locale `instance`, esclusa da Git.
+Installare poi il frontend:
+
+```bash
+cd ../frontend
+npm install
+```
+
+Il database SQLite verrà salvato nella cartella locale `backend/instance`, esclusa da Git.
 
 ## Avvio del backend
 
 ```bash
+cd backend
 uv run flask --app asta_la_vista.entrypoints.flask_app:create_app run --host 127.0.0.1
 ```
 
 Il backend risponde su `http://127.0.0.1:5000`. L'endpoint di controllo è disponibile su
 `http://127.0.0.1:5000/api/health`.
 
+## Avvio del frontend
+
+In un secondo terminale:
+
+```bash
+cd frontend
+npm run dev
+```
+
+L'interfaccia è disponibile su `http://127.0.0.1:5173`. Durante lo sviluppo, le richieste a
+`/api` vengono inoltrate automaticamente al backend Flask.
+
 ## Verifiche
 
 Eseguire i test backend:
 
 ```bash
+cd backend
 uv run pytest
 ```
 
@@ -50,4 +75,12 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
+Per controllare il frontend:
+
+```bash
+cd frontend
+npm run check
+npm run lint
+npm run build
+```
 
