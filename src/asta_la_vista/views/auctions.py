@@ -19,7 +19,18 @@ def auction_list(uow: AbstractUnitOfWork) -> list[dict]:
                 ORDER BY a.name COLLATE NOCASE
             """)
         ).mappings()
-        return [dict(row) for row in rows]
+        return [
+            {
+                "id": row["uuid"],
+                "name": row["name"],
+                "status": row["status"],
+                "initial_credits": row["initial_credits"],
+                "strategy_id": row["strategy_id"],
+                "participant_count": row["participant_count"],
+                "purchase_count": row["purchase_count"],
+            }
+            for row in rows
+        ]
 
 
 def auction_detail(uow: AbstractUnitOfWork, auction_id: str) -> dict:

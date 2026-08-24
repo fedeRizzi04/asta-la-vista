@@ -3,7 +3,7 @@ import pytest
 from asta_la_vista import bootstrap
 from asta_la_vista.domain import commands
 from asta_la_vista.domain.model import Player, Role, Strategy
-from asta_la_vista.exceptions import ValidationError
+from asta_la_vista.exceptions import ConfirmationRequiredError
 from asta_la_vista.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -50,7 +50,7 @@ def test_import_during_live_auction_requires_explicit_confirmation(session_facto
     bus.handle(commands.StartAuction(auction_id))
     import_command = commands.ImportPlayers((commands.PlayerRow("1", "Player", "Team", "P"),))
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ConfirmationRequiredError):
         bus.handle(import_command)
 
     summary = bus.handle(commands.ImportPlayers(import_command.players, allow_live_auction=True))

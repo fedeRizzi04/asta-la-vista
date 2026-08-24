@@ -36,7 +36,7 @@ def test_strategy_detail_contains_player_team_status_tiers_and_notes(session_fac
     detail = strategies.strategy_detail(uow, "strategy-1")
 
     assert detail["tiers"] == [
-        {"uuid": "tier-1", "role": "A", "name": "Top", "position": 0, "color": "#ef4444"}
+        {"id": "tier-1", "role": "A", "name": "Top", "position": 0, "color": "#ef4444"}
     ]
     assert detail["entries"] == [
         {

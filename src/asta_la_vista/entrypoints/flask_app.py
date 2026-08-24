@@ -12,12 +12,20 @@ def create_app(
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(test_config if test_config is not None else config.load_settings())
     config.ensure_instance_directory(app.instance_path)
-    Api(app)
+    api = Api(app)
     app.extensions["bus"] = message_bus or bootstrap.bootstrap()
 
+    from asta_la_vista.entrypoints.api.auctions import blueprint as auctions_blueprint
+    from asta_la_vista.entrypoints.api.common import register_error_handlers
+    from asta_la_vista.entrypoints.api.players import blueprint as players_blueprint
+    from asta_la_vista.entrypoints.api.strategies import blueprint as strategies_blueprint
     from asta_la_vista.entrypoints.api.system import blueprint as system_blueprint
 
-    app.register_blueprint(system_blueprint)
+    api.register_blueprint(system_blueprint)
+    api.register_blueprint(players_blueprint)
+    api.register_blueprint(strategies_blueprint)
+    api.register_blueprint(auctions_blueprint)
+    register_error_handlers(app)
     return app
 
 

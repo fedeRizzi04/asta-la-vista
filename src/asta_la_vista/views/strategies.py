@@ -17,7 +17,15 @@ def strategy_list(uow: AbstractUnitOfWork) -> list[dict]:
                 ORDER BY s.name COLLATE NOCASE
             """)
         ).mappings()
-        return [dict(row) for row in rows]
+        return [
+            {
+                "id": row["uuid"],
+                "name": row["name"],
+                "tier_count": row["tier_count"],
+                "assigned_player_count": row["assigned_player_count"],
+            }
+            for row in rows
+        ]
 
 
 def strategy_detail(uow: AbstractUnitOfWork, strategy_id: str) -> dict:
@@ -55,7 +63,16 @@ def strategy_detail(uow: AbstractUnitOfWork, strategy_id: str) -> dict:
         return {
             "id": strategy["uuid"],
             "name": strategy["name"],
-            "tiers": [dict(row) for row in tiers],
+            "tiers": [
+                {
+                    "id": row["uuid"],
+                    "role": row["role"],
+                    "name": row["name"],
+                    "position": row["position"],
+                    "color": row["color"],
+                }
+                for row in tiers
+            ],
             "entries": [
                 {
                     **dict(row),

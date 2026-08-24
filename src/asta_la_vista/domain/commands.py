@@ -74,6 +74,12 @@ class CreateStrategy(Command):
 
 
 @dataclass(frozen=True)
+class RenameStrategy(Command):
+    strategy_id: str
+    name: str
+
+
+@dataclass(frozen=True)
 class AddTier(Command):
     strategy_id: str
     role: str
@@ -82,10 +88,37 @@ class AddTier(Command):
 
 
 @dataclass(frozen=True)
+class UpdateTier(Command):
+    strategy_id: str
+    tier_id: str
+    name: str
+    color: str | None = None
+
+
+@dataclass(frozen=True)
+class RemoveTier(Command):
+    strategy_id: str
+    tier_id: str
+
+
+@dataclass(frozen=True)
+class ReorderTiers(Command):
+    strategy_id: str
+    role: str
+    tier_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class AssignPlayerToTier(Command):
     strategy_id: str
     player_id: str
     tier_id: str
+
+
+@dataclass(frozen=True)
+class UnassignPlayerFromTier(Command):
+    strategy_id: str
+    player_id: str
 
 
 @dataclass(frozen=True)

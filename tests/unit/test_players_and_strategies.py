@@ -80,3 +80,16 @@ def test_strategy_copy_can_be_changed_without_affecting_the_original():
     assert strategy.entries[0].tier_id == tier_id
     assert strategy.entries[0].note == "Primary target"
     assert duplicate.entries[0].tier_id is None
+
+
+def test_tier_can_be_updated_removed_and_leave_players_unassigned():
+    strategy = Strategy("Main strategy")
+    first = strategy.add_tier(Role.FORWARD, "Top", "#ef4444")
+    second = strategy.add_tier(Role.FORWARD, "Good", "#f59e0b")
+    strategy.assign_player("player-1", Role.FORWARD, first)
+
+    strategy.update_tier(first, "Elite", "#dc2626")
+    strategy.remove_tier(first)
+
+    assert [(tier.uuid, tier.position) for tier in strategy.tiers] == [(second, 0)]
+    assert strategy.entries[0].tier_id is None

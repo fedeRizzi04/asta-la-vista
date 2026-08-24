@@ -128,6 +128,12 @@ class Strategy:
         self.entries: list[StrategyEntry] = []
         self.events: deque[events.Event] = deque()
 
+    def rename(self, name: str):
+        name = name.strip()
+        if not name:
+            raise ValidationError("Strategy name is required")
+        self.name = name
+
     def add_tier(
         self,
         role: Role,
@@ -157,6 +163,21 @@ class Strategy:
         for tier in role_tiers:
             tier.position = positions[tier.uuid]
 
+    def update_tier(self, tier_id: str, name: str, color: str | None = None):
+        tier = self._tier(tier_id)
+        name = name.strip()
+        if not name:
+            raise ValidationError("Tier name is required")
+        if any(
+            item.uuid != tier_id
+            and item.role == tier.role
+            and item.name.casefold() == name.casefold()
+            for item in self.tiers
+        ):
+            raise ValidationError("Tier names must be unique within a role")
+        tier.name = name
+        tier.color = color
+
     def remove_tier(self, tier_id: str):
         tier = self._tier(tier_id)
         self.tiers.remove(tier)
@@ -179,6 +200,11 @@ class Strategy:
             return
         entry.role = role
         entry.tier_id = tier_id
+
+    def unassign_player(self, player_id: str):
+        entry = self._entry(player_id)
+        if entry is not None:
+            entry.tier_id = None
 
     def set_player_note(self, player_id: str, role: Role, note: str):
         entry = self._entry(player_id)

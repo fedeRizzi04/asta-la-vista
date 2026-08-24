@@ -1,5 +1,5 @@
 from asta_la_vista.domain import commands, events, model
-from asta_la_vista.exceptions import NotFoundError, ValidationError
+from asta_la_vista.exceptions import ConfirmationRequiredError, NotFoundError, ValidationError
 from asta_la_vista.service_layer.unit_of_work import AbstractUnitOfWork
 
 
@@ -11,7 +11,7 @@ def import_players(cmd: commands.ImportPlayers, uow: AbstractUnitOfWork) -> dict
         raise ValidationError("The player list contains duplicate ids")
     with uow:
         if uow.auctions.has_live() and not cmd.allow_live_auction:
-            raise ValidationError("A live auction requires explicit import confirmation")
+            raise ConfirmationRequiredError("A live auction requires explicit import confirmation")
         existing = {player.external_id: player for player in uow.players.list_all()}
         added = updated = deactivated = role_changes = 0
         for row in cmd.players:
@@ -130,12 +130,40 @@ def create_strategy(cmd: commands.CreateStrategy, uow: AbstractUnitOfWork) -> st
     return strategy_id
 
 
+def rename_strategy(cmd: commands.RenameStrategy, uow: AbstractUnitOfWork):
+    with uow:
+        strategy = _strategy(uow, cmd.strategy_id)
+        strategy.rename(cmd.name)
+        uow.commit()
+
+
 def add_tier(cmd: commands.AddTier, uow: AbstractUnitOfWork) -> str:
     with uow:
         strategy = _strategy(uow, cmd.strategy_id)
         tier_id = strategy.add_tier(model.Role(cmd.role), cmd.name, cmd.color)
         uow.commit()
     return tier_id
+
+
+def update_tier(cmd: commands.UpdateTier, uow: AbstractUnitOfWork):
+    with uow:
+        strategy = _strategy(uow, cmd.strategy_id)
+        strategy.update_tier(cmd.tier_id, cmd.name, cmd.color)
+        uow.commit()
+
+
+def remove_tier(cmd: commands.RemoveTier, uow: AbstractUnitOfWork):
+    with uow:
+        strategy = _strategy(uow, cmd.strategy_id)
+        strategy.remove_tier(cmd.tier_id)
+        uow.commit()
+
+
+def reorder_tiers(cmd: commands.ReorderTiers, uow: AbstractUnitOfWork):
+    with uow:
+        strategy = _strategy(uow, cmd.strategy_id)
+        strategy.reorder_tiers(model.Role(cmd.role), list(cmd.tier_ids))
+        uow.commit()
 
 
 def assign_player_to_tier(cmd: commands.AssignPlayerToTier, uow: AbstractUnitOfWork):
@@ -145,6 +173,13 @@ def assign_player_to_tier(cmd: commands.AssignPlayerToTier, uow: AbstractUnitOfW
         if player is None:
             raise NotFoundError("Player not found")
         strategy.assign_player(player.external_id, player.role, cmd.tier_id)
+        uow.commit()
+
+
+def unassign_player_from_tier(cmd: commands.UnassignPlayerFromTier, uow: AbstractUnitOfWork):
+    with uow:
+        strategy = _strategy(uow, cmd.strategy_id)
+        strategy.unassign_player(cmd.player_id)
         uow.commit()
 
 
@@ -192,8 +227,13 @@ COMMAND_HANDLERS = {
     commands.CompleteAuction: complete_auction,
     commands.ReopenAuction: reopen_auction,
     commands.CreateStrategy: create_strategy,
+    commands.RenameStrategy: rename_strategy,
     commands.AddTier: add_tier,
+    commands.UpdateTier: update_tier,
+    commands.RemoveTier: remove_tier,
+    commands.ReorderTiers: reorder_tiers,
     commands.AssignPlayerToTier: assign_player_to_tier,
+    commands.UnassignPlayerFromTier: unassign_player_from_tier,
     commands.SetStrategyPlayerNote: set_strategy_player_note,
     commands.DuplicateStrategy: duplicate_strategy,
 }

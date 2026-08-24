@@ -8,3 +8,7 @@ class ValidationError(ApplicationError):
 
 class NotFoundError(ApplicationError):
     """Raised when a requested resource does not exist."""
+
+
+class ConfirmationRequiredError(ApplicationError):
+    """Raised when a destructive or disruptive action needs explicit confirmation."""
