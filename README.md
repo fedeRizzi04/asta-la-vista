@@ -1,14 +1,34 @@
 # Asta la Vista
 
-Asta la Vista è una web app pensata per assisterti durante l'asta del fantacalcio (per ora viene supportata solamente la modalità Classic). E' possibile caricare un listone in formato _.csv_ o _.xlsx_ contenente i giocatori (con relativi ruoli e squadre). A partire da questo listone sono presenti le seguenti funzionalità: 
+[![Backend](https://github.com/fedeRizzi04/asta-la-vista/actions/workflows/backend.yml/badge.svg)](https://github.com/fedeRizzi04/asta-la-vista/actions/workflows/backend.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-204c39)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-204c39?logo=python&logoColor=white)](backend/pyproject.toml)
+[![Node 24+](https://img.shields.io/badge/node-24%2B-204c39?logo=node.js&logoColor=white)](frontend/package.json)
+[![Svelte 5](https://img.shields.io/badge/svelte-5-204c39?logo=svelte&logoColor=white)](frontend/package.json)
 
-- creazione di un'asta con partecipanti, in cui è possibile seguire in tempo reale lo stato dell'asta, visualizzando i giocatori acquistati da ogni partecipante insieme ai crediti rimanenti
-- creazione di strategie (o fasce), le quali sono visualizzabili durante lo svolgimento delle aste in modo tale da capire quali dei giocatori inseriti nelle fasce sono stati già acquistati e quali invece sono ancora disponibili
+Asta la Vista è una web app pensata per assisterti durante l'asta del fantacalcio (per ora viene supportata solamente la modalità Classic). È possibile caricare un listone in formato _.csv_ o _.xlsx_ contenente i giocatori (con relativi ruoli e squadre) e da lì gestire l'intera asta senza più bisogno di fogli Excel o carta e penna.
 
+## Cosa puoi fare
+
+- **Listone** — importa il file ufficiale di fantacalcio.it e tieni sotto controllo ruolo, squadra, quotazione e disponibilità di ogni calciatore.
+- **Strategie** — crea fasce globali personalizzate (colore, ordine, percentuale massima di spesa) e assegna i calciatori di ogni ruolo, per sapere sempre a colpo d'occhio chi prendere e a che prezzo.
+- **Aste live** — segui in tempo reale crediti residui, slot liberi e rosa di ogni partecipante mentre registri gli acquisti, con le fasce sempre visibili per capire chi è già stato preso. Inoltre è presente una visuale a 360 gradi su ogni ruolo, utile per capire i giocatori già presi e quelli ancora possibili da chiamare.
+- **Resoconto finale** — scarica un riepilogo HTML dell'asta al termine, apribile con qualsiasi browser, senza bisogno di server o connessione.
+
+<p align="center">
+  <img src="assets/screenshots/strategies.jpg" alt="Gestione delle fasce" width="49%" />
+  <img src="assets/screenshots/live-auction.jpg" alt="Asta in corso" width="49%" />
+</p>
+
+C'è anche un tema scuro, utile per aste che si inoltrano troppo tardi (ne sappiamo qualcosa):
+
+<p align="center">
+  <img src="assets/screenshots/dark-theme.jpg" alt="Listone in tema scuro" width="70%" />
+</p>
 
 ## Motivazione
 
-Il progetto nasce dal desiderio di provare a sviluppare interamente un'applicazione affidandosi ad un coding agent attraverso un lavoro di planning curato. Oltre a questo, durante le aste finalmente si potrà usare uno strumento gratuito e automatizzato, diverso dal solito foglio di carta o documento excel (talvolta anche quest'ultimo risulta a pagamento). 
+Il progetto nasce dal desiderio di provare a sviluppare interamente un'applicazione affidandosi ad un coding agent attraverso un lavoro di planning curato. Oltre a questo, durante le aste finalmente si potrà usare uno strumento gratuito e automatizzato, diverso dal solito foglio di carta o documento excel (talvolta anche quest'ultimo risulta a pagamento).
 
 ## Avviare l'applicazione
 
@@ -96,7 +116,7 @@ L'interfaccia è disponibile su `http://127.0.0.1:5173`. Durante lo sviluppo, le
 
 ## Flusso dell'applicazione
 
-1. Aprire la sezione Listone e importare il file CSV o XLSX con i calciatori. La colonna facoltativa `Qt.A` del file ufficiale di [fantacalcio.it](https://www.fantacalcio.it/quotazioni-fantacalcio) (che eventualmente deve essere scaricato) viene utilizzata come quotazione corrente.
+1. Aprire la sezione Listone e importare il file CSV o XLSX con i calciatori. Per non avere problemi è preferibile utilizzare il file di [fantacalcio.it](https://www.fantacalcio.it/quotazioni-fantacalcio). 
 2. Creare una o più strategie, definendo fasce globali con ordine e colori personalizzati e assegnando i calciatori alle fasce per ciascun ruolo. Per ogni calciatore si possono indicare una nota e una percentuale massima di spesa facoltative; durante l'asta la percentuale viene convertita in crediti usando il budget iniziale dell'asta.
 3. Creare l'asta indicando crediti, slot, partecipanti ed eventualmente una strategia.
 4. Avviare l'asta e registrare ogni acquisto. La schermata aggiorna crediti residui, puntata
