@@ -198,7 +198,6 @@
 	select,
 	textarea {
 		width: 100%;
-		padding: 0.65rem 0.7rem;
 		border: 1px solid var(--border-strong);
 		border-radius: 0.4rem;
 		background: var(--input-bg);
@@ -209,9 +208,11 @@
 	input,
 	select {
 		height: 2.5rem;
+		padding: 0 0.7rem;
 	}
 
 	textarea {
+		padding: 0.65rem 0.7rem;
 		resize: vertical;
 		line-height: 1.45;
 	}
