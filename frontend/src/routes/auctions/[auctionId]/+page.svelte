@@ -306,6 +306,12 @@
 					<div class="roster">
 						{#if participant.purchases.length === 0}<p>Nessun acquisto.</p>{/if}
 						{#each participant.purchases as purchase (purchase.id)}
+							{@const strategyEntry = strategy?.entries.find(
+								(entry) => entry.player_id === purchase.player_id
+							)}
+							{@const purchaseTier = strategy?.tiers.find(
+								(tier) => tier.id === strategyEntry?.tier_id
+							)}
 							<div class="purchase-row">
 								{#if editingPurchaseId === purchase.id}
 									<select bind:value={editedParticipantId} aria-label="Vincitore"
@@ -324,7 +330,15 @@
 								{:else}
 									<span class="role-badge">{purchase.role}</span><span class="purchase-name"
 										><strong>{purchase.player_name}</strong><small>{purchase.team}</small></span
-									><strong>{purchase.price}</strong>
+									><strong class="purchase-price">{purchase.price}</strong>
+									{#if purchaseTier}
+										<span
+											class="purchase-tier"
+											style:--tier-color={purchaseTier.color ?? 'var(--tier-default)'}
+										>
+											<span></span>{purchaseTier.name}
+										</span>
+									{/if}
 									{#if auction.status === 'live'}<button
 											class="text-button"
 											onclick={() => beginEdit(purchase, participant)}>Modifica</button
@@ -643,6 +657,30 @@
 	}
 	.purchase-name small {
 		color: var(--subdued);
+	}
+	.purchase-price {
+		font-variant-numeric: tabular-nums;
+	}
+	.purchase-tier {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		max-width: 8rem;
+		padding: 0.2rem 0.4rem;
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		background: var(--input-bg);
+		font-size: 0.66rem;
+		font-weight: 700;
+		line-height: 1.2;
+	}
+	.purchase-tier > span {
+		width: 0.55rem;
+		height: 0.55rem;
+		flex: 0 0 auto;
+		border: 1px solid rgb(0 0 0 / 12%);
+		border-radius: 50%;
+		background: var(--tier-color);
 	}
 	.text-button {
 		min-height: auto;
