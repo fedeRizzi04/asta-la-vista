@@ -350,14 +350,19 @@
 					</div>
 					<div class="roster">
 						{#if participant.purchases.length === 0}<p>Nessun acquisto.</p>{/if}
-						{#each participant.purchases as purchase (purchase.id)}
+						{#each participant.purchases as purchase, purchaseIndex (purchase.id)}
 							{@const strategyEntry = strategy?.entries.find(
 								(entry) => entry.player_id === purchase.player_id
 							)}
 							{@const purchaseTier = strategy?.tiers.find(
 								(tier) => tier.id === strategyEntry?.tier_id
 							)}
-							<div class="purchase-row" class:editing={editingPurchaseId === purchase.id}>
+							<div
+								class="purchase-row"
+								class:editing={editingPurchaseId === purchase.id}
+								class:role-start={purchaseIndex > 0 &&
+									participant.purchases[purchaseIndex - 1].role !== purchase.role}
+							>
 								{#if editingPurchaseId === purchase.id}
 									<select bind:value={editedParticipantId} aria-label="Vincitore"
 										>{#each auction.participants as option (option.id)}<option value={option.id}
@@ -607,15 +612,6 @@
 		background: var(--muted-bg);
 		font-size: 0.76rem;
 	}
-	.team-card .slots {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 0.7rem;
-	}
-	.team-card .slots span {
-		padding-inline: 0.35rem;
-		text-align: center;
-	}
 	.call-panel form {
 		display: grid;
 		grid-template-columns: minmax(260px, 1.4fr) minmax(210px, 1fr) 110px auto;
@@ -762,6 +758,11 @@
 		min-height: 2.25rem;
 		border-top: 1px solid var(--border);
 		font-size: 0.78rem;
+	}
+	.purchase-row.role-start {
+		margin-top: 0.65rem;
+		padding-top: 0.35rem;
+		border-top-color: var(--border-strong);
 	}
 	.purchase-row.editing {
 		grid-template-columns: minmax(100px, 1fr) 4rem auto auto;
@@ -915,10 +916,9 @@
 	}
 	.catalog-role-tabs {
 		flex-wrap: wrap;
-		gap: 0.7rem;
+		gap: 0.35rem;
 	}
 	.catalog-role-tabs button {
-		min-width: 7.5rem;
 		min-height: 2.2rem;
 		border-color: var(--border-strong);
 		background: var(--input-bg);
@@ -1068,13 +1068,6 @@
 		}
 		.catalog-toolbar select {
 			flex: 1;
-		}
-		.catalog-role-tabs {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-		.catalog-role-tabs button {
-			min-width: 0;
 		}
 	}
 </style>
