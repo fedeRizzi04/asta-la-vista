@@ -18,6 +18,7 @@
 		updateStrategyEntry,
 		updateTier,
 		type Strategy,
+		type StrategyEntry,
 		type Tier
 	} from '$lib/strategies';
 
@@ -59,6 +60,15 @@
 					player.team.toLowerCase().includes(playerSearch.trim().toLowerCase()))
 		)
 	);
+
+	function entriesForTier(tierId: string): StrategyEntry[] {
+		return (strategy?.entries ?? [])
+			.filter((entry) => entry.role === selectedRole && entry.tier_id === tierId)
+			.sort(
+				(first, second) =>
+					(second.maximum_price_percentage ?? -1) - (first.maximum_price_percentage ?? -1)
+			);
+	}
 
 	onMount(loadData);
 
@@ -309,7 +319,7 @@
 					<div class="tier-column" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
 						<h3><TierBadge name={tier.name} color={tier.color} /></h3>
 						<div>
-							{#each (strategy?.entries ?? []).filter((entry) => entry.role === selectedRole && entry.tier_id === tier.id) as entry (entry.player_id)}
+							{#each entriesForTier(tier.id) as entry (entry.player_id)}
 								<TierPlayerCard
 									name={entry.name}
 									team={entry.team}
