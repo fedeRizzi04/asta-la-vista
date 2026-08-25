@@ -7,6 +7,7 @@ export type Player = {
 	name: string;
 	team: string;
 	role: Role;
+	quotation: number | null;
 	active: boolean;
 };
 

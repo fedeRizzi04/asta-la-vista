@@ -30,6 +30,14 @@ def test_initial_migration_upgrades_and_downgrades_sqlite(tmp_path, monkeypatch)
         "position",
         "color",
     }
+    assert {column["name"] for column in sa.inspect(engine).get_columns("player")} == {
+        "external_id",
+        "name",
+        "team",
+        "role",
+        "quotation",
+        "active",
+    }
     assert {column["name"] for column in sa.inspect(engine).get_columns("strategy_entry")} == {
         "uuid",
         "strategy_id",

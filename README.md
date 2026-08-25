@@ -73,11 +73,13 @@ L'interfaccia è disponibile su `http://127.0.0.1:5173`. Durante lo sviluppo, le
 
 ## Flusso dell'applicazione
 
-1. Aprire la sezione Listone e importare il file CSV o XLSX con i calciatori. Se viene scelto il file fornito ufficialmente da [fantacalcio.it](https://www.fantacalcio.it/quotazioni-fantacalcio) non ci sarà alcun tipo di problema. 
+1. Aprire la sezione Listone e importare il file CSV o XLSX con i calciatori. La colonna facoltativa `Qt.A` del file ufficiale di [fantacalcio.it](https://www.fantacalcio.it/quotazioni-fantacalcio) viene utilizzata come quotazione corrente.
 2. Creare una o più strategie, definendo fasce globali con ordine e colori personalizzati e assegnando i calciatori alle fasce per ciascun ruolo. Per ogni calciatore si possono indicare una nota e un prezzo massimo facoltativi.
 3. Creare l'asta indicando crediti, slot, partecipanti ed eventualmente una strategia.
 4. Avviare l'asta e registrare ogni acquisto. La schermata aggiorna crediti residui, puntata
-   massima, slot e rosa di ogni partecipante.
+   massima, slot e rosa di ogni partecipante. Il pannello calciatori permette di filtrare per
+   ruolo, ordinare per fascia o quotazione e selezionare direttamente il prossimo calciatore da
+   chiamare.
 5. Al termine dell'asta scaricare il resoconto in formato HTML, apribile direttamente su Linux e
    macOS con qualsiasi browser.
 

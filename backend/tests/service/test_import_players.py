@@ -24,8 +24,8 @@ def test_import_adds_updates_and_deactivates_players(session_factory):
     summary = bus.handle(
         commands.ImportPlayers(
             (
-                commands.PlayerRow("1", "New name", "New team", "C"),
-                commands.PlayerRow("3", "New player", "Team", "A"),
+                commands.PlayerRow("1", "New name", "New team", "C", 12),
+                commands.PlayerRow("3", "New player", "Team", "A", 8),
             )
         )
     )
@@ -33,8 +33,10 @@ def test_import_adds_updates_and_deactivates_players(session_factory):
     assert summary == {"added": 1, "updated": 1, "deactivated": 1, "role_changes": 1}
     with uow:
         assert uow.players.get("1").role == Role.MIDFIELDER
+        assert uow.players.get("1").quotation == 12
         assert uow.players.get("2").active is False
         assert uow.players.get("3").team == "Team"
+        assert uow.players.get("3").quotation == 8
         entry = uow.strategies.get(strategy_id).entries[0]
         assert (entry.role, entry.tier_id, entry.note) == (
             Role.MIDFIELDER,

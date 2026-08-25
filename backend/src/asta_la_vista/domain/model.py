@@ -72,23 +72,35 @@ class Purchase:
 
 
 class Player:
-    def __init__(self, external_id: str, name: str, team: str, role: Role, active: bool = True):
+    def __init__(
+        self,
+        external_id: str,
+        name: str,
+        team: str,
+        role: Role,
+        quotation: int | None = None,
+        active: bool = True,
+    ):
         if not external_id.strip() or not name.strip() or not team.strip():
             raise ValidationError("Player id, name and team are required")
+        self._validate_quotation(quotation)
         self.external_id = external_id.strip()
         self.name = name.strip()
         self.team = team.strip()
         self.role = role
+        self.quotation = quotation
         self.active = active
         self.events: deque[events.Event] = deque()
 
-    def update(self, name: str, team: str, role: Role):
+    def update(self, name: str, team: str, role: Role, quotation: int | None = None):
         if not name.strip() or not team.strip():
             raise ValidationError("Player name and team are required")
+        self._validate_quotation(quotation)
         previous_role = self.role
         self.name = name.strip()
         self.team = team.strip()
         self.role = role
+        self.quotation = quotation
         self.active = True
         if role != previous_role:
             self.events.append(events.PlayerRoleChanged(self.external_id, previous_role, role))
@@ -97,6 +109,13 @@ class Player:
         if self.active:
             self.active = False
             self.events.append(events.PlayerDeactivated(self.external_id))
+
+    @staticmethod
+    def _validate_quotation(quotation: int | None):
+        if quotation is not None and (
+            isinstance(quotation, bool) or not isinstance(quotation, int) or quotation < 0
+        ):
+            raise ValidationError("Player quotation must be a non-negative integer")
 
 
 @dataclass

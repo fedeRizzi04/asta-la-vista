@@ -8,6 +8,7 @@ from asta_la_vista.domain.commands import PlayerRow
 from asta_la_vista.exceptions import ValidationError
 
 REQUIRED_COLUMNS = ("Id", "R", "Nome", "Squadra")
+QUOTATION_COLUMN = "Qt.A"
 
 
 def parse_player_file(content: bytes, filename: str) -> tuple[PlayerRow, ...]:
@@ -58,6 +59,7 @@ def _find_headers(rows: Iterable[Iterable[object]]) -> tuple[list[str], Iterable
 
 def _rows_to_players(headers: list[str], rows: Iterable[Iterable[object]]) -> tuple[PlayerRow, ...]:
     positions = {column: headers.index(column) for column in REQUIRED_COLUMNS}
+    quotation_position = headers.index(QUOTATION_COLUMN) if QUOTATION_COLUMN in headers else None
     players: list[PlayerRow] = []
     for row in rows:
         values = list(row)
@@ -72,7 +74,26 @@ def _rows_to_players(headers: list[str], rows: Iterable[Iterable[object]]) -> tu
             raise ValidationError("A player row is incomplete") from exc
         if not all((external_id, role, name, team)) or external_id == "None":
             raise ValidationError("A player row contains empty required values")
-        players.append(PlayerRow(external_id, name, team, role))
+        quotation = (
+            _parse_quotation(values[quotation_position])
+            if quotation_position is not None and quotation_position < len(values)
+            else None
+        )
+        players.append(PlayerRow(external_id, name, team, role, quotation))
     if not players:
         raise ValidationError("The player list is empty")
     return tuple(players)
+
+
+def _parse_quotation(value: object) -> int | None:
+    if value is None or not str(value).strip():
+        return None
+    if isinstance(value, bool):
+        raise ValidationError("Player quotation must be a non-negative integer")
+    try:
+        quotation = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError("Player quotation must be a non-negative integer") from exc
+    if (isinstance(value, float) and value != quotation) or quotation < 0:
+        raise ValidationError("Player quotation must be a non-negative integer")
+    return quotation

@@ -24,6 +24,7 @@
 		A: 'Attaccanti'
 	};
 	const roles = Object.keys(roleLabels) as Role[];
+	type CatalogSort = 'tier' | 'quotation';
 
 	let auction = $state<Auction>();
 	let players = $state<Player[]>([]);
@@ -35,6 +36,8 @@
 	let editingPurchaseId = $state('');
 	let editedParticipantId = $state('');
 	let editedPrice = $state(1);
+	let catalogRole = $state<Role>('P');
+	let catalogSort = $state<CatalogSort>('tier');
 	let loading = $state(true);
 	let saving = $state(false);
 	let error = $state('');
@@ -61,6 +64,22 @@
 	let selectedTier = $derived(
 		strategy?.tiers.find((tier) => tier.id === selectedStrategyEntry?.tier_id)
 	);
+	let catalogPlayers = $derived.by(() => {
+		return players
+			.filter(
+				(player) => player.role === catalogRole && (player.active || purchasedIds.has(player.id))
+			)
+			.sort((first, second) => {
+				if (catalogSort === 'tier' && strategy) {
+					const firstPosition = tierPosition(first.id);
+					const secondPosition = tierPosition(second.id);
+					if (firstPosition < secondPosition) return -1;
+					if (firstPosition > secondPosition) return 1;
+				}
+				const quotationDifference = (second.quotation ?? -1) - (first.quotation ?? -1);
+				return quotationDifference || first.name.localeCompare(second.name, 'it');
+			});
+	});
 
 	onMount(loadAuction);
 
@@ -68,9 +87,13 @@
 		loading = true;
 		error = '';
 		try {
-			[auction, players] = await Promise.all([getAuction(currentAuctionId()), getPlayers()]);
+			[auction, players] = await Promise.all([
+				getAuction(currentAuctionId()),
+				getPlayers({ includeInactive: true })
+			]);
 			selectedParticipantId ||= auction.participants[0]?.id ?? '';
 			strategy = auction.strategy_id ? await getStrategy(auction.strategy_id) : undefined;
+			if (!strategy) catalogSort = 'quotation';
 		} catch (caught) {
 			error = errorMessage(caught);
 		} finally {
@@ -107,6 +130,21 @@
 	function selectPlayer(player: Player): void {
 		selectedPlayerId = player.id;
 		playerSearch = player.name;
+	}
+
+	function callPlayerFromCatalog(player: Player): void {
+		if (auction?.status !== 'live' || purchasedIds.has(player.id)) return;
+		selectPlayer(player);
+		document.querySelector('.call-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	function tierForPlayer(playerId: string) {
+		const tierId = strategy?.entries.find((entry) => entry.player_id === playerId)?.tier_id;
+		return strategy?.tiers.find((tier) => tier.id === tierId);
+	}
+
+	function tierPosition(playerId: string): number {
+		return tierForPlayer(playerId)?.position ?? Number.POSITIVE_INFINITY;
 	}
 
 	function beginEdit(purchase: Purchase, participant: Participant): void {
@@ -224,7 +262,10 @@
 					<h2>Registra l'acquisto</h2>
 				</div>
 				{#if selectedPlayer}<span class="selected-player"
-						><strong>{selectedPlayer.name}</strong> · {selectedPlayer.team} · {selectedPlayer.role}</span
+						><strong>{selectedPlayer.name}</strong> · {selectedPlayer.team} · {selectedPlayer.role}{typeof selectedPlayer.quotation ===
+						'number'
+							? ` · Q. ${selectedPlayer.quotation}`
+							: ''}</span
 					>{/if}
 			</div>
 			<form onsubmit={submitPurchase}>
@@ -274,7 +315,11 @@
 					{#each matchingPlayers as player (player.id)}<button
 							type="button"
 							onclick={() => selectPlayer(player)}
-							><strong>{player.name}</strong><span>{player.team} · {player.role}</span></button
+							><strong>{player.name}</strong><span
+								>{player.team} · {player.role}{typeof player.quotation === 'number'
+									? ` · Q. ${player.quotation}`
+									: ''}</span
+							></button
 						>{/each}
 				</div>
 			{/if}
@@ -386,6 +431,74 @@
 					</div>
 				{/each}
 			</div>
+		</section>
+	{/if}
+
+	{#if auction.status !== 'draft'}
+		<section class="catalog-section">
+			<details open>
+				<summary>
+					<span>
+						<span class="eyebrow">Supporto alla chiamata</span>
+						<strong>Calciatori</strong>
+					</span>
+					<small>{catalogPlayers.length} nel ruolo</small>
+				</summary>
+				<div class="catalog-content">
+					<div class="catalog-toolbar">
+						<div class="catalog-role-tabs" aria-label="Ruolo calciatori">
+							{#each roles as role (role)}
+								<button
+									type="button"
+									class:active={catalogRole === role}
+									onclick={() => (catalogRole = role)}
+								>
+									{roleLabels[role]}
+								</button>
+							{/each}
+						</div>
+						<label>
+							<span>Ordina per</span>
+							<select bind:value={catalogSort}>
+								{#if strategy}<option value="tier">Fascia</option>{/if}
+								<option value="quotation">Quotazione</option>
+							</select>
+						</label>
+					</div>
+
+					<div class="catalog-grid">
+						{#each catalogPlayers as player (player.id)}
+							{@const playerTier = tierForPlayer(player.id)}
+							<button
+								type="button"
+								class="catalog-player"
+								class:purchased={purchasedIds.has(player.id)}
+								disabled={auction.status !== 'live' || purchasedIds.has(player.id)}
+								onclick={() => callPlayerFromCatalog(player)}
+							>
+								<span class="catalog-player-heading">
+									<strong>{player.name}</strong>
+									<span class="catalog-quotation">Q. {player.quotation ?? '—'}</span>
+								</span>
+								<span class="catalog-player-details">
+									<span>{player.team}</span>
+									{#if playerTier}
+										<span
+											class="catalog-tier"
+											style:--tier-color={playerTier.color ?? 'var(--tier-default)'}
+											><i></i>{playerTier.name}</span
+										>
+									{:else if strategy}
+										<span class="catalog-no-tier">Senza fascia</span>
+									{/if}
+								</span>
+								{#if purchasedIds.has(player.id)}<span class="purchased-label">Acquistato</span
+									>{/if}
+							</button>
+						{/each}
+					</div>
+				</div>
+			</details>
 		</section>
 	{/if}
 {/if}
@@ -748,6 +861,156 @@
 		background: var(--muted-bg);
 		text-decoration: line-through;
 	}
+	.catalog-section {
+		margin-top: 3rem;
+	}
+	.catalog-section details {
+		border: 1px solid var(--border);
+		border-radius: 0.7rem;
+		background: var(--surface);
+	}
+	.catalog-section summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 1rem 1.2rem;
+		cursor: pointer;
+	}
+	.catalog-section summary > span {
+		display: grid;
+		gap: 0.2rem;
+	}
+	.catalog-section summary .eyebrow {
+		margin: 0;
+		font-size: 0.65rem;
+	}
+	.catalog-section summary strong {
+		font-size: 1.1rem;
+	}
+	.catalog-section summary small {
+		color: var(--subdued);
+	}
+	.catalog-content {
+		padding: 1rem 1.2rem 1.2rem;
+		border-top: 1px solid var(--border);
+	}
+	.catalog-toolbar,
+	.catalog-role-tabs {
+		display: flex;
+		align-items: center;
+	}
+	.catalog-toolbar {
+		justify-content: space-between;
+		gap: 1rem;
+	}
+	.catalog-role-tabs {
+		flex-wrap: wrap;
+		gap: 0.35rem;
+	}
+	.catalog-role-tabs button {
+		min-height: 2.2rem;
+		border-color: var(--border-strong);
+		background: var(--input-bg);
+		color: var(--text);
+	}
+	.catalog-role-tabs button.active {
+		border-color: var(--primary);
+		background: var(--primary);
+		color: var(--on-primary);
+	}
+	.catalog-toolbar label {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+	.catalog-toolbar label span {
+		margin: 0;
+	}
+	.catalog-toolbar select {
+		width: auto;
+		min-width: 9rem;
+	}
+	.catalog-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+		gap: 0.5rem;
+		margin-top: 1rem;
+	}
+	.catalog-player {
+		display: grid;
+		gap: 0.35rem;
+		min-width: 0;
+		height: auto;
+		padding: 0.7rem;
+		border-color: var(--border);
+		background: var(--input-bg);
+		color: var(--text);
+		text-align: left;
+	}
+	.catalog-player:disabled {
+		cursor: default;
+		opacity: 1;
+	}
+	.catalog-player:not(:disabled):hover {
+		border-color: var(--primary-text);
+	}
+	.catalog-player-heading,
+	.catalog-player-details {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.6rem;
+		min-width: 0;
+	}
+	.catalog-player-heading > strong {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.catalog-quotation {
+		flex: 0 0 auto;
+		font-variant-numeric: tabular-nums;
+	}
+	.catalog-player-details {
+		color: var(--subdued);
+		font-size: 0.68rem;
+	}
+	.catalog-tier {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.catalog-tier i {
+		width: 0.55rem;
+		height: 0.55rem;
+		flex: 0 0 auto;
+		border-radius: 50%;
+		background: var(--tier-color);
+	}
+	.catalog-player.purchased {
+		background: var(--muted-bg);
+		color: var(--disabled-text);
+	}
+	.catalog-player.purchased .catalog-tier i {
+		filter: grayscale(1);
+		opacity: 0.5;
+	}
+	.purchased-label {
+		justify-self: end;
+		padding: 0.1rem 0.25rem;
+		border-radius: 0.2rem;
+		background: var(--muted-bg);
+		font-size: 0.58rem;
+		text-transform: uppercase;
+	}
 	@media (max-width: 950px) {
 		.call-panel form,
 		.strategy-roles {
@@ -785,6 +1048,16 @@
 		}
 		.purchase-tier-spacer {
 			display: none;
+		}
+		.catalog-toolbar {
+			align-items: stretch;
+			flex-direction: column;
+		}
+		.catalog-toolbar label {
+			justify-content: space-between;
+		}
+		.catalog-toolbar select {
+			flex: 1;
 		}
 	}
 </style>

@@ -21,17 +21,20 @@ def import_players(cmd: commands.ImportPlayers, uow: AbstractUnitOfWork) -> dict
                 raise ValidationError(f"Unsupported Classic role: {row.role}") from exc
             player = existing.get(row.external_id)
             if player is None:
-                uow.players.add(model.Player(row.external_id, row.name, row.team, role))
+                uow.players.add(
+                    model.Player(row.external_id, row.name, row.team, role, row.quotation)
+                )
                 added += 1
                 continue
-            changed = (player.name, player.team, player.role, player.active) != (
+            changed = (player.name, player.team, player.role, player.quotation, player.active) != (
                 row.name.strip(),
                 row.team.strip(),
                 role,
+                row.quotation,
                 True,
             )
             previous_role = player.role
-            player.update(row.name, row.team, role)
+            player.update(row.name, row.team, role, row.quotation)
             updated += changed
             if previous_role != role:
                 role_changes += 1

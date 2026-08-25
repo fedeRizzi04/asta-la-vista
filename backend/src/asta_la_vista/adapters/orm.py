@@ -28,7 +28,9 @@ players = sa.Table(
     sa.Column("name", sa.String(120), nullable=False),
     sa.Column("team", sa.String(80), nullable=False),
     sa.Column("role", role_type, nullable=False),
+    sa.Column("quotation", sa.Integer),
     sa.Column("active", sa.Boolean, nullable=False),
+    sa.CheckConstraint("quotation IS NULL OR quotation >= 0"),
 )
 
 strategies = sa.Table(

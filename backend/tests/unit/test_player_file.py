@@ -23,8 +23,8 @@ def test_parses_the_official_excel_columns_from_the_tutti_sheet():
     players = parse_player_file(content.getvalue(), "players.xlsx")
 
     assert players == (
-        PlayerRow("5841", "Svilar", "Roma", "P"),
-        PlayerRow("2764", "Martinez L.", "Inter", "A"),
+        PlayerRow("5841", "Svilar", "Roma", "P", 18),
+        PlayerRow("2764", "Martinez L.", "Inter", "A", 35),
     )
 
 
@@ -37,6 +37,11 @@ def test_parses_comma_or_semicolon_separated_csv():
     players = parse_player_file(content.getvalue().encode(), "players.csv")
 
     assert players == (PlayerRow("5841", "Svilar", "Roma", "P"),)
+
+
+def test_rejects_an_invalid_optional_quotation():
+    with pytest.raises(ValidationError):
+        parse_player_file(b"Id,R,Nome,Squadra,Qt.A\n5841,P,Svilar,Roma,invalid", "players.csv")
 
 
 def test_rejects_files_without_the_required_columns():

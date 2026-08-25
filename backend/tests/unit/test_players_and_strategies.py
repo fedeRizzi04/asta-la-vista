@@ -24,6 +24,16 @@ def test_player_can_be_marked_inactive_without_being_deleted():
     assert list(player.events) == [events.PlayerDeactivated("5841")]
 
 
+def test_player_has_an_optional_non_negative_quotation():
+    player = Player("5841", "Player", "Team", Role.GOALKEEPER, quotation=18)
+
+    player.update("Player", "Team", Role.GOALKEEPER, quotation=None)
+
+    assert player.quotation is None
+    with pytest.raises(ValidationError):
+        player.update("Player", "Team", Role.GOALKEEPER, quotation=-1)
+
+
 def test_strategy_has_global_ordered_tiers():
     strategy = Strategy("Main strategy")
     first = strategy.add_tier("Top", "#ef4444", uuid="first")

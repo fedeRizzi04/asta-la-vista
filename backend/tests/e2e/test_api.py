@@ -27,7 +27,9 @@ def test_player_import_and_strategy_flow(client):
         "/api/players/import",
         data={
             "file": (
-                io.BytesIO(b"Id,R,Nome,Squadra\n5841,P,Svilar,Roma\n2764,A,Martinez L.,Inter"),
+                io.BytesIO(
+                    b"Id,R,Nome,Squadra,Qt.A\n5841,P,Svilar,Roma,18\n2764,A,Martinez L.,Inter,35"
+                ),
                 "players.csv",
             )
         },
@@ -40,7 +42,14 @@ def test_player_import_and_strategy_flow(client):
         "role_changes": 0,
     }
     assert client.get("/api/players?role=A").get_json() == [
-        {"id": "2764", "name": "Martinez L.", "team": "Inter", "role": "A", "active": True}
+        {
+            "id": "2764",
+            "name": "Martinez L.",
+            "team": "Inter",
+            "role": "A",
+            "quotation": 35,
+            "active": True,
+        }
     ]
 
     strategy_id = client.post("/api/strategies", json={"name": "Principale"}).get_json()["id"]

@@ -25,7 +25,7 @@ def player_list(
     with uow:
         rows = uow.session.execute(
             text(f"""
-                SELECT external_id, name, team, role, active
+                SELECT external_id, name, team, role, quotation, active
                 FROM player
                 {where}
                 ORDER BY CASE role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
@@ -39,6 +39,7 @@ def player_list(
                 "name": row["name"],
                 "team": row["team"],
                 "role": row["role"],
+                "quotation": row["quotation"],
                 "active": bool(row["active"]),
             }
             for row in rows

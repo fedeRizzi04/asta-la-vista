@@ -6,13 +6,20 @@ from asta_la_vista.views import auctions, players, strategies
 def test_player_views_filter_by_role_search_and_activity(session_factory):
     uow = SqlAlchemyUnitOfWork(session_factory)
     with uow:
-        uow.players.add(Player("1", "Svilar", "Roma", Role.GOALKEEPER))
+        uow.players.add(Player("1", "Svilar", "Roma", Role.GOALKEEPER, quotation=18))
         uow.players.add(Player("2", "Sommer", "Inter", Role.GOALKEEPER, active=False))
         uow.players.add(Player("3", "Martinez", "Inter", Role.FORWARD))
         uow.commit()
 
     assert players.player_list(uow, role=Role.GOALKEEPER) == [
-        {"id": "1", "name": "Svilar", "team": "Roma", "role": "P", "active": True}
+        {
+            "id": "1",
+            "name": "Svilar",
+            "team": "Roma",
+            "role": "P",
+            "quotation": 18,
+            "active": True,
+        }
     ]
     assert [player["id"] for player in players.player_list(uow, search="inter", active=None)] == [
         "2",

@@ -101,7 +101,7 @@
 	<div>
 		<p class="eyebrow">Catalogo calciatori</p>
 		<h1>Listone</h1>
-		<p>Importa il file ufficiale e consulta ruolo, squadra e disponibilità dei calciatori.</p>
+		<p>Importa il file ufficiale e consulta ruolo, squadra, quotazione e disponibilità.</p>
 	</div>
 
 	<form class="import-form" onsubmit={submitImport}>
@@ -188,6 +188,7 @@
 						<th scope="col">Ruolo</th>
 						<th scope="col">Calciatore</th>
 						<th scope="col">Squadra</th>
+						<th scope="col">Quotazione</th>
 						<th scope="col">Stato</th>
 					</tr>
 				</thead>
@@ -197,6 +198,7 @@
 							<td><span class="role" data-role={player.role}>{player.role}</span></td>
 							<td class="player-name">{player.name}</td>
 							<td>{player.team}</td>
+							<td class="quotation">{player.quotation ?? '—'}</td>
 							<td>{player.active ? 'Disponibile' : 'Inattivo'}</td>
 						</tr>
 					{/each}
@@ -415,6 +417,11 @@
 	}
 
 	.player-name {
+		font-weight: 700;
+	}
+
+	.quotation {
+		font-variant-numeric: tabular-nums;
 		font-weight: 700;
 	}
 

@@ -11,6 +11,7 @@ class PlayerRow:
     name: str
     team: str
     role: str
+    quotation: int | None = None
 
 
 @dataclass(frozen=True)
