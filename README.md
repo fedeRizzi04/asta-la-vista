@@ -59,6 +59,16 @@ npm run dev
 L'interfaccia è disponibile su `http://127.0.0.1:5173`. Durante lo sviluppo, le richieste a
 `/api` vengono inoltrate automaticamente al backend Flask.
 
+## Flusso dell'applicazione
+
+1. Aprire la sezione Listone e importare il file CSV o XLSX con i calciatori.
+2. Creare una o più strategie, definendo liberamente fasce, ordine e colori per ciascun ruolo.
+3. Creare l'asta indicando crediti, slot, partecipanti ed eventualmente una strategia.
+4. Avviare l'asta e registrare ogni acquisto. La schermata aggiorna crediti residui, puntata
+   massima, slot e rosa di ogni partecipante.
+5. Al termine dell'asta scaricare il resoconto in formato HTML, apribile direttamente su Linux e
+   macOS con qualsiasi browser.
+
 ## Verifiche
 
 Eseguire i test backend:
@@ -83,4 +93,3 @@ npm run check
 npm run lint
 npm run build
 ```
-

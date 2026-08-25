@@ -147,6 +147,10 @@
 		return auctionId;
 	}
 
+	function downloadReport(): void {
+		window.location.assign(`/api/auctions/${currentAuctionId()}/report`);
+	}
+
 	function errorMessage(caught: unknown): string {
 		return caught instanceof Error ? caught.message : 'Si è verificato un errore inatteso.';
 	}
@@ -179,10 +183,10 @@
 					onclick={() => changeStatus('complete')}
 					disabled={saving}>Termina asta</button
 				>{/if}
-			{#if auction.status === 'completed'}<button
-					onclick={() => changeStatus('reopen')}
-					disabled={saving}>Riapri asta</button
-				>{/if}
+			{#if auction.status === 'completed'}
+				<button onclick={() => changeStatus('reopen')} disabled={saving}>Riapri asta</button>
+				<button class="secondary" onclick={downloadReport}>Scarica report</button>
+			{/if}
 		</div>
 	{/if}
 </header>

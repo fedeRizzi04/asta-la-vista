@@ -115,6 +115,13 @@ def test_live_auction_purchase_amendment_and_cancellation_flow(client):
     assert auction["purchased_player_ids"] == []
     assert auction["participants"][1]["credits_remaining"] == 100
 
+    assert client.post(f"/api/auctions/{auction_id}/complete").status_code == 204
+    report = client.get(f"/api/auctions/{auction_id}/report")
+    assert report.status_code == 200
+    assert report.mimetype == "text/html"
+    assert "attachment" in report.headers["Content-Disposition"]
+    assert "Asta amici" in report.get_data(as_text=True)
+
 
 def test_live_import_requires_confirmation(client):
     first_file = {"file": (io.BytesIO(b"Id,R,Nome,Squadra\n5841,P,Svilar,Roma"), "players.csv")}

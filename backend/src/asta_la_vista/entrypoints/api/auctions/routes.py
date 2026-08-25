@@ -1,7 +1,10 @@
+from flask import make_response, render_template
 from flask.views import MethodView
+from werkzeug.utils import secure_filename
 
 from asta_la_vista.domain import commands
 from asta_la_vista.entrypoints.flask_app import bus, uow
+from asta_la_vista.exceptions import ValidationError
 from asta_la_vista.views import auctions
 
 from . import blueprint
@@ -44,6 +47,19 @@ class AuctionResource(MethodView):
     @blueprint.response(200, AuctionDetailSchema)
     def get(self, auction_id: str) -> dict:
         return auctions.auction_detail(uow(), auction_id)
+
+
+@blueprint.route("/auctions/<string:auction_id>/report")
+class AuctionReport(MethodView):
+    def get(self, auction_id: str):
+        auction = auctions.auction_detail(uow(), auction_id)
+        if auction["status"] != "completed":
+            raise ValidationError("Auction must be completed before exporting a report")
+        response = make_response(render_template("auction_report.html", auction=auction))
+        filename = secure_filename(auction["name"]) or "auction"
+        response.headers["Content-Disposition"] = f'attachment; filename="{filename}.html"'
+        response.mimetype = "text/html"
+        return response
 
 
 @blueprint.route("/auctions/<string:auction_id>/start")
