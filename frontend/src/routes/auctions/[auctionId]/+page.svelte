@@ -906,9 +906,10 @@
 	}
 	.catalog-role-tabs {
 		flex-wrap: wrap;
-		gap: 0.35rem;
+		gap: 0.7rem;
 	}
 	.catalog-role-tabs button {
+		min-width: 7.5rem;
 		min-height: 2.2rem;
 		border-color: var(--border-strong);
 		background: var(--input-bg);
@@ -1058,6 +1059,13 @@
 		}
 		.catalog-toolbar select {
 			flex: 1;
+		}
+		.catalog-role-tabs {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.catalog-role-tabs button {
+			min-width: 0;
 		}
 	}
 </style>
