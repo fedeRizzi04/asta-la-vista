@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { ApiError } from '$lib/api';
+	import Message from '$lib/components/Message.svelte';
+	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import {
 		getPlayerCounts,
 		getPlayers,
@@ -122,14 +124,14 @@
 </section>
 
 {#if error}
-	<div class="message error" role="alert">{error}</div>
+	<Message>{error}</Message>
 {/if}
 
 {#if importSummary}
-	<div class="message success" role="status">
+	<Message kind="success">
 		Importazione completata: {importSummary.added} nuovi, {importSummary.updated} aggiornati,
 		{importSummary.deactivated} disattivati e {importSummary.role_changes} cambi di ruolo.
-	</div>
+	</Message>
 {/if}
 
 <section class="counts" aria-label="Calciatori attivi per ruolo">
@@ -173,10 +175,11 @@
 </form>
 
 <section class="table-section" aria-live="polite" aria-busy={loading}>
-	<div class="table-heading">
-		<h2>Calciatori</h2>
-		<span>{loading ? 'Caricamento…' : `${players.length} risultati`}</span>
-	</div>
+	<SectionHeading title="Calciatori">
+		{#snippet trailing()}
+			<span class="count-label">{loading ? 'Caricamento…' : `${players.length} risultati`}</span>
+		{/snippet}
+	</SectionHeading>
 
 	{#if !loading && players.length === 0}
 		<div class="empty-state">Nessun calciatore corrisponde ai filtri selezionati.</div>
@@ -266,26 +269,6 @@
 		opacity: 0.5;
 	}
 
-	.message {
-		margin-top: 1.5rem;
-		padding: 0.85rem 1rem;
-		border: 1px solid;
-		border-radius: 0.5rem;
-		font-size: 0.9rem;
-	}
-
-	.error {
-		border-color: var(--error-border);
-		background: var(--error-bg);
-		color: var(--error-text);
-	}
-
-	.success {
-		border-color: var(--success-border);
-		background: var(--success-bg);
-		color: var(--success-text);
-	}
-
 	.counts {
 		display: grid;
 		grid-template-columns: repeat(5, 1fr);
@@ -356,24 +339,6 @@
 
 	.table-section {
 		margin-top: 2.5rem;
-	}
-
-	.table-heading {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 1rem;
-		margin-bottom: 0.8rem;
-	}
-
-	.table-heading h2 {
-		margin: 0;
-		font-size: 1.15rem;
-	}
-
-	.table-heading span {
-		color: var(--subdued);
-		font-size: 0.8rem;
 	}
 
 	.table-scroll {

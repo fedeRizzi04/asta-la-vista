@@ -276,6 +276,18 @@ main {
 	color: var(--muted);
 }
 
+.count-label {
+	color: var(--subdued);
+	font-size: 0.8rem;
+}
+
+.panel {
+	padding: 1.25rem;
+	border: 1px solid var(--border);
+	border-radius: 0.7rem;
+	background: var(--surface);
+}
+
 @media (max-width: 720px) {
 	.app-header {
 		align-items: flex-start;

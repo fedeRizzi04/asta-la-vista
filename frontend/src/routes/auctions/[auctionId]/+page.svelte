@@ -2,6 +2,8 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
+	import Message from '$lib/components/Message.svelte';
+	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import {
 		amendPurchase,
 		cancelPurchase,
@@ -235,7 +237,7 @@
 	{/if}
 </header>
 
-{#if error}<div class="message" role="alert">{error}</div>{/if}
+{#if error}<Message>{error}</Message>{/if}
 {#if loading}<div class="empty-state">Caricamento dell'asta…</div>{/if}
 
 {#if auction && !loading}
@@ -256,18 +258,16 @@
 		</section>
 	{:else if auction.status === 'live'}
 		<section class="call-panel panel">
-			<div class="section-heading">
-				<div>
-					<p class="eyebrow">Calciatore chiamato</p>
-					<h2>Registra l'acquisto</h2>
-				</div>
-				{#if selectedPlayer}<span class="selected-player"
-						><strong>{selectedPlayer.name}</strong> · {selectedPlayer.team} · {selectedPlayer.role}{typeof selectedPlayer.quotation ===
-						'number'
-							? ` · Q. ${selectedPlayer.quotation}`
-							: ''}</span
-					>{/if}
-			</div>
+			<SectionHeading eyebrow="Calciatore chiamato" title="Registra l'acquisto">
+				{#snippet trailing()}
+					{#if selectedPlayer}<span class="selected-player"
+							><strong>{selectedPlayer.name}</strong> · {selectedPlayer.team} · {selectedPlayer.role}{typeof selectedPlayer.quotation ===
+							'number'
+								? ` · Q. ${selectedPlayer.quotation}`
+								: ''}</span
+						>{/if}
+				{/snippet}
+			</SectionHeading>
 			<form onsubmit={submitPurchase}>
 				<label class="player-search"
 					><span>Calciatore</span><input
@@ -327,12 +327,7 @@
 	{/if}
 
 	<section class="teams-section">
-		<div class="section-heading">
-			<div>
-				<p class="eyebrow">Situazione squadre</p>
-				<h2>Crediti, slot e rose</h2>
-			</div>
-		</div>
+		<SectionHeading eyebrow="Situazione squadre" title="Crediti, slot e rose" />
 		<div class="team-grid">
 			{#each auction.participants as participant (participant.id)}
 				<article class="team-card">
@@ -414,12 +409,7 @@
 
 	{#if strategy}
 		<section class="strategy-section">
-			<div class="section-heading">
-				<div>
-					<p class="eyebrow">Strategia</p>
-					<h2>{strategy.name}</h2>
-				</div>
-			</div>
+			<SectionHeading eyebrow="Strategia" title={strategy.name} />
 			<div class="strategy-roles">
 				{#each roles as role (role)}
 					<div class="strategy-role">
@@ -524,7 +514,6 @@
 	}
 	.auction-heading,
 	.status-actions,
-	.section-heading,
 	.team-card header,
 	.slots,
 	.slot-summary {
@@ -532,7 +521,6 @@
 		align-items: center;
 	}
 	.auction-heading,
-	.section-heading,
 	.team-card header {
 		justify-content: space-between;
 	}
@@ -559,7 +547,6 @@
 		background: var(--completed-bg);
 		color: var(--completed-text);
 	}
-	.panel,
 	.team-card {
 		border: 1px solid var(--border);
 		border-radius: 0.7rem;
@@ -567,16 +554,6 @@
 	}
 	.panel {
 		margin-top: 2rem;
-		padding: 1.25rem;
-	}
-	.message {
-		margin-top: 1.5rem;
-		padding: 0.85rem 1rem;
-		border: 1px solid var(--error-border);
-		border-radius: 0.5rem;
-		background: var(--error-bg);
-		color: var(--error-text);
-		font-size: 0.9rem;
 	}
 	button {
 		min-height: 2.5rem;
@@ -599,8 +576,7 @@
 		cursor: not-allowed;
 		opacity: 0.45;
 	}
-	.draft-summary h2,
-	.section-heading h2 {
+	.draft-summary h2 {
 		margin: 0;
 	}
 	.draft-summary p {
@@ -710,9 +686,6 @@
 	.teams-section,
 	.strategy-section {
 		margin-top: 3rem;
-	}
-	.section-heading .eyebrow {
-		margin-bottom: 0.5rem;
 	}
 	.team-grid {
 		display: grid;
@@ -1054,8 +1027,7 @@
 		}
 	}
 	@media (max-width: 620px) {
-		.auction-heading,
-		.section-heading {
+		.auction-heading {
 			align-items: stretch;
 			flex-direction: column;
 		}

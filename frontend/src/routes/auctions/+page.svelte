@@ -2,6 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
+	import Message from '$lib/components/Message.svelte';
+	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import {
 		createAuction,
 		getAuctions,
@@ -88,15 +90,15 @@
 </section>
 
 {#if error}
-	<div class="message" role="alert">{error}</div>
+	<Message>{error}</Message>
 {/if}
 
 <div class="page-grid">
 	<section class="panel">
-		<div class="section-heading">
-			<h2>Nuova asta</h2>
-			<p>Tutti i partecipanti avranno gli stessi crediti e slot.</p>
-		</div>
+		<SectionHeading
+			title="Nuova asta"
+			subtitle="Tutti i partecipanti avranno gli stessi crediti e slot."
+		/>
 
 		<form class="auction-form" onsubmit={submitAuction}>
 			<label class="wide">
@@ -151,10 +153,11 @@
 	</section>
 
 	<section class="auction-section">
-		<div class="list-heading">
-			<h2>Aste salvate</h2>
-			<span>{loading ? 'Caricamento…' : `${auctions.length} aste`}</span>
-		</div>
+		<SectionHeading title="Aste salvate">
+			{#snippet trailing()}
+				<span class="count-label">{loading ? 'Caricamento…' : `${auctions.length} aste`}</span>
+			{/snippet}
+		</SectionHeading>
 
 		{#if !loading && auctions.length === 0}
 			<div class="empty-state">Non ci sono ancora aste salvate.</div>
@@ -176,46 +179,12 @@
 </div>
 
 <style>
-	.message {
-		margin-top: 1.5rem;
-		padding: 0.85rem 1rem;
-		border: 1px solid var(--error-border);
-		border-radius: 0.5rem;
-		background: var(--error-bg);
-		color: var(--error-text);
-		font-size: 0.9rem;
-	}
-
 	.page-grid {
 		display: grid;
 		grid-template-columns: minmax(360px, 0.8fr) minmax(420px, 1.2fr);
 		align-items: start;
 		gap: 2rem;
 		margin-top: 3rem;
-	}
-
-	.panel {
-		padding: 1.25rem;
-		border: 1px solid var(--border);
-		border-radius: 0.7rem;
-		background: var(--surface);
-	}
-
-	.section-heading h2,
-	.section-heading p,
-	.list-heading h2 {
-		margin: 0;
-	}
-
-	.section-heading h2,
-	.list-heading h2 {
-		font-size: 1.15rem;
-	}
-
-	.section-heading p {
-		margin-top: 0.35rem;
-		color: var(--subdued);
-		font-size: 0.8rem;
 	}
 
 	.auction-form {
@@ -275,21 +244,11 @@
 		opacity: 0.5;
 	}
 
-	.list-heading,
 	.auction-title {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
-	}
-
-	.list-heading {
-		margin-bottom: 0.8rem;
-	}
-
-	.list-heading > span {
-		color: var(--subdued);
-		font-size: 0.8rem;
 	}
 
 	.auction-list {

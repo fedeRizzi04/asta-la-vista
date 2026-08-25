@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
+	import Message from '$lib/components/Message.svelte';
+	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import {
 		createStrategy,
 		duplicateStrategy,
@@ -90,14 +92,15 @@
 </section>
 
 {#if error}
-	<div class="message" role="alert">{error}</div>
+	<Message>{error}</Message>
 {/if}
 
 <section class="strategy-section" aria-live="polite" aria-busy={loading}>
-	<div class="section-heading">
-		<h2>Le tue strategie</h2>
-		<span>{loading ? 'Caricamento…' : `${strategies.length} strategie`}</span>
-	</div>
+	<SectionHeading title="Le tue strategie">
+		{#snippet trailing()}
+			<span class="count-label">{loading ? 'Caricamento…' : `${strategies.length} strategie`}</span>
+		{/snippet}
+	</SectionHeading>
 
 	{#if !loading && strategies.length === 0}
 		<div class="empty-state">Non ci sono ancora strategie. Creane una per iniziare.</div>
@@ -201,36 +204,8 @@
 		color: var(--text);
 	}
 
-	.message {
-		margin-top: 1.5rem;
-		padding: 0.85rem 1rem;
-		border: 1px solid var(--error-border);
-		border-radius: 0.5rem;
-		background: var(--error-bg);
-		color: var(--error-text);
-		font-size: 0.9rem;
-	}
-
 	.strategy-section {
 		margin-top: 3rem;
-	}
-
-	.section-heading {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 1rem;
-		margin-bottom: 0.8rem;
-	}
-
-	.section-heading h2 {
-		margin: 0;
-		font-size: 1.15rem;
-	}
-
-	.section-heading span {
-		color: var(--subdued);
-		font-size: 0.8rem;
 	}
 
 	.strategy-list {

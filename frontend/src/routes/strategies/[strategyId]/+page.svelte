@@ -2,6 +2,8 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
+	import Message from '$lib/components/Message.svelte';
+	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import { getPlayers, type Player, type Role } from '$lib/players';
 	import {
 		addTier,
@@ -202,7 +204,7 @@
 </section>
 
 {#if error}
-	<div class="message" role="alert">{error}</div>
+	<Message>{error}</Message>
 {/if}
 
 {#if loading}
@@ -225,17 +227,22 @@
 	</div>
 
 	<section class="panel">
-		<div class="section-heading">
-			<div>
-				<h2>Fasce globali</h2>
-				<p>La stessa sequenza viene utilizzata per tutti i ruoli.</p>
-			</div>
-			<form class="tier-form" onsubmit={submitTier}>
-				<input bind:value={newTierName} placeholder="Nome fascia" aria-label="Nome nuova fascia" />
-				<input bind:value={newTierColor} type="color" aria-label="Colore nuova fascia" />
-				<button type="submit" disabled={!newTierName.trim() || saving}>Aggiungi</button>
-			</form>
-		</div>
+		<SectionHeading
+			title="Fasce globali"
+			subtitle="La stessa sequenza viene utilizzata per tutti i ruoli."
+		>
+			{#snippet trailing()}
+				<form class="tier-form" onsubmit={submitTier}>
+					<input
+						bind:value={newTierName}
+						placeholder="Nome fascia"
+						aria-label="Nome nuova fascia"
+					/>
+					<input bind:value={newTierColor} type="color" aria-label="Colore nuova fascia" />
+					<button type="submit" disabled={!newTierName.trim() || saving}>Aggiungi</button>
+				</form>
+			{/snippet}
+		</SectionHeading>
 
 		{#if orderedTiers.length === 0}
 			<div class="compact-empty">Non hai ancora creato nessuna fascia.</div>
@@ -286,12 +293,10 @@
 	</section>
 
 	<section class="panel role-tier-panel">
-		<div class="section-heading">
-			<div>
-				<h2>Fasce per {roleLabels[selectedRole].toLowerCase()}</h2>
-				<p>Vista raggruppata dei calciatori già assegnati.</p>
-			</div>
-		</div>
+		<SectionHeading
+			title={`Fasce per ${roleLabels[selectedRole].toLowerCase()}`}
+			subtitle="Vista raggruppata dei calciatori già assegnati."
+		/>
 		{#if orderedTiers.length === 0}
 			<div class="compact-empty">Crea almeno una fascia per organizzare i calciatori.</div>
 		{:else}
@@ -321,19 +326,20 @@
 	</section>
 
 	<section class="panel players-panel">
-		<div class="section-heading">
-			<div>
-				<h2>Calciatori</h2>
-				<p>Assegna una fascia, un prezzo massimo e una nota facoltativa.</p>
-			</div>
-			<input
-				class="search"
-				bind:value={playerSearch}
-				type="search"
-				placeholder="Cerca nome o squadra"
-				aria-label="Cerca calciatori"
-			/>
-		</div>
+		<SectionHeading
+			title="Calciatori"
+			subtitle="Assegna una fascia, un prezzo massimo e una nota facoltativa."
+		>
+			{#snippet trailing()}
+				<input
+					class="search"
+					bind:value={playerSearch}
+					type="search"
+					placeholder="Cerca nome o squadra"
+					aria-label="Cerca calciatori"
+				/>
+			{/snippet}
+		</SectionHeading>
 
 		{#if visiblePlayers.length === 0}
 			<div class="compact-empty">Nessun calciatore disponibile per questo ruolo.</div>
@@ -421,14 +427,10 @@
 		width: min(100%, 390px);
 	}
 
-	label,
-	.section-heading p {
-		font-size: 0.78rem;
-	}
-
 	label {
 		display: block;
 		margin-bottom: 0.4rem;
+		font-size: 0.78rem;
 		font-weight: 700;
 	}
 
@@ -500,16 +502,6 @@
 		padding: 0;
 	}
 
-	.message {
-		margin-top: 1.5rem;
-		padding: 0.85rem 1rem;
-		border: 1px solid var(--error-border);
-		border-radius: 0.5rem;
-		background: var(--error-bg);
-		color: var(--error-text);
-		font-size: 0.9rem;
-	}
-
 	.role-tabs {
 		display: flex;
 		gap: 0.4rem;
@@ -532,31 +524,6 @@
 
 	.panel {
 		margin-top: 1.5rem;
-		padding: 1.25rem;
-		border: 1px solid var(--border);
-		border-radius: 0.7rem;
-		background: var(--surface);
-	}
-
-	.section-heading {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 2rem;
-	}
-
-	.section-heading h2,
-	.section-heading p {
-		margin: 0;
-	}
-
-	.section-heading h2 {
-		font-size: 1.1rem;
-	}
-
-	.section-heading p {
-		margin-top: 0.3rem;
-		color: var(--subdued);
 	}
 
 	.tier-form input:not([type='color']) {
@@ -725,8 +692,7 @@
 	}
 
 	@media (max-width: 900px) {
-		.detail-heading,
-		.section-heading {
+		.detail-heading {
 			align-items: stretch;
 			flex-direction: column;
 		}
