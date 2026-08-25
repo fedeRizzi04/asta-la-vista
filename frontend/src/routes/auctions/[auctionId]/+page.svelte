@@ -350,55 +350,61 @@
 					</div>
 					<div class="roster">
 						{#if participant.purchases.length === 0}<p>Nessun acquisto.</p>{/if}
-						{#each participant.purchases as purchase, purchaseIndex (purchase.id)}
-							{@const strategyEntry = strategy?.entries.find(
-								(entry) => entry.player_id === purchase.player_id
+						{#each roles as role (role)}
+							{@const rolePurchases = participant.purchases.filter(
+								(purchase) => purchase.role === role
 							)}
-							{@const purchaseTier = strategy?.tiers.find(
-								(tier) => tier.id === strategyEntry?.tier_id
-							)}
-							<div
-								class="purchase-row"
-								class:editing={editingPurchaseId === purchase.id}
-								class:role-start={purchaseIndex > 0 &&
-									participant.purchases[purchaseIndex - 1].role !== purchase.role}
-							>
-								{#if editingPurchaseId === purchase.id}
-									<select bind:value={editedParticipantId} aria-label="Vincitore"
-										>{#each auction.participants as option (option.id)}<option value={option.id}
-												>{option.name}</option
-											>{/each}</select
-									>
-									<input bind:value={editedPrice} type="number" min="1" aria-label="Prezzo" />
-									<button
-										class="text-button"
-										onclick={() => savePurchase(purchase.id)}
-										disabled={saving}>Salva</button
-									><button class="text-button" onclick={() => (editingPurchaseId = '')}
-										>Annulla</button
-									>
-								{:else}
-									<span class="role-badge">{purchase.role}</span><span class="purchase-name"
-										><strong>{purchase.player_name}</strong><small>{purchase.team}</small></span
-									><strong class="purchase-price">{purchase.price}</strong>
-									{#if purchaseTier}
-										<span
-											class="purchase-tier"
-											style:--tier-color={purchaseTier.color ?? 'var(--tier-default)'}
-										>
-											<i aria-hidden="true"></i><span>{purchaseTier.name}</span>
-										</span>
-									{:else}
-										<span class="purchase-tier-spacer" aria-hidden="true"></span>
-									{/if}
-									{#if auction.status === 'live'}<button
-											class="text-button"
-											onclick={() => beginEdit(purchase, participant)}>Modifica</button
-										><button class="text-button danger" onclick={() => deletePurchase(purchase)}
-											>Elimina</button
-										>{/if}
-								{/if}
-							</div>
+							{#if rolePurchases.length > 0}
+								<div class="purchase-group" data-role={role} aria-label={roleLabels[role]}>
+									{#each rolePurchases as purchase (purchase.id)}
+										{@const strategyEntry = strategy?.entries.find(
+											(entry) => entry.player_id === purchase.player_id
+										)}
+										{@const purchaseTier = strategy?.tiers.find(
+											(tier) => tier.id === strategyEntry?.tier_id
+										)}
+										<div class="purchase-row" class:editing={editingPurchaseId === purchase.id}>
+											{#if editingPurchaseId === purchase.id}
+												<select bind:value={editedParticipantId} aria-label="Vincitore"
+													>{#each auction.participants as option (option.id)}<option
+															value={option.id}>{option.name}</option
+														>{/each}</select
+												>
+												<input bind:value={editedPrice} type="number" min="1" aria-label="Prezzo" />
+												<button
+													class="text-button"
+													onclick={() => savePurchase(purchase.id)}
+													disabled={saving}>Salva</button
+												><button class="text-button" onclick={() => (editingPurchaseId = '')}
+													>Annulla</button
+												>
+											{:else}
+												<span class="role-badge">{purchase.role}</span><span class="purchase-name"
+													><strong>{purchase.player_name}</strong><small>{purchase.team}</small
+													></span
+												><strong class="purchase-price">{purchase.price}</strong>
+												{#if purchaseTier}
+													<span
+														class="purchase-tier"
+														style:--tier-color={purchaseTier.color ?? 'var(--tier-default)'}
+													>
+														<i aria-hidden="true"></i><span>{purchaseTier.name}</span>
+													</span>
+												{:else}
+													<span class="purchase-tier-spacer" aria-hidden="true"></span>
+												{/if}
+												{#if auction.status === 'live'}<button
+														class="text-button"
+														onclick={() => beginEdit(purchase, participant)}>Modifica</button
+													><button
+														class="text-button danger"
+														onclick={() => deletePurchase(purchase)}>Elimina</button
+													>{/if}
+											{/if}
+										</div>
+									{/each}
+								</div>
+							{/if}
 						{/each}
 					</div>
 				</article>
@@ -744,11 +750,30 @@
 		color: var(--disabled-text);
 	}
 	.roster {
+		display: grid;
+		gap: 0.9rem;
 		margin-top: 0.8rem;
 	}
 	.roster > p {
 		color: var(--subdued);
 		font-size: 0.8rem;
+	}
+	.purchase-group {
+		padding: 0.25rem 0.45rem;
+		border: 1px solid var(--border-strong);
+		border-radius: 0.55rem;
+	}
+	.purchase-group[data-role='P'] {
+		background: var(--goalkeeper-bg);
+	}
+	.purchase-group[data-role='D'] {
+		background: var(--defender-bg);
+	}
+	.purchase-group[data-role='C'] {
+		background: var(--midfielder-bg);
+	}
+	.purchase-group[data-role='A'] {
+		background: var(--forward-bg);
 	}
 	.purchase-row {
 		display: grid;
@@ -759,10 +784,8 @@
 		border-top: 1px solid var(--border);
 		font-size: 0.78rem;
 	}
-	.purchase-row.role-start {
-		margin-top: 0.65rem;
-		padding-top: 0.35rem;
-		border-top-color: var(--border-strong);
+	.purchase-group .purchase-row:first-child {
+		border-top: 0;
 	}
 	.purchase-row.editing {
 		grid-template-columns: minmax(100px, 1fr) 4rem auto auto;
