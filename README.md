@@ -37,6 +37,18 @@ npm install
 
 Il database SQLite verrà salvato nella cartella locale `backend/instance`, esclusa da Git.
 
+## Avvio rapido
+
+Dopo la prima installazione è possibile preparare e avviare l'intera applicazione con un solo
+comando, eseguito dalla cartella principale del progetto:
+
+```bash
+./bin/start
+```
+
+Lo script applica le migrazioni, installa le dipendenze mancanti e avvia backend e frontend. Per
+fermare entrambi i processi premere `Ctrl+C`.
+
 ## Avvio del backend
 
 ```bash

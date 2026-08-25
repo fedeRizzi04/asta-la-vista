@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+backend_dir="$project_root/backend"
+frontend_dir="$project_root/frontend"
+backend_pid=""
+frontend_pid=""
+
+show_help() {
+  echo "Uso: ./bin/start"
+  echo
+  echo "Prepara il progetto e avvia backend e frontend in locale."
+}
+
+require_command() {
+  local command_name="$1"
+  local install_hint="$2"
+
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    echo "Comando '$command_name' non trovato. $install_hint" >&2
+    exit 1
+  fi
+}
+
+stop_application() {
+  trap - EXIT INT TERM
+
+  if [[ -n "$frontend_pid" ]] && kill -0 "$frontend_pid" 2>/dev/null; then
+    kill "$frontend_pid" 2>/dev/null || true
+  fi
+  if [[ -n "$backend_pid" ]] && kill -0 "$backend_pid" 2>/dev/null; then
+    kill "$backend_pid" 2>/dev/null || true
+  fi
+
+  [[ -z "$frontend_pid" ]] || wait "$frontend_pid" 2>/dev/null || true
+  [[ -z "$backend_pid" ]] || wait "$backend_pid" 2>/dev/null || true
+}
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  show_help
+  exit 0
+fi
+
+if [[ $# -gt 0 ]]; then
+  show_help >&2
+  exit 2
+fi
+
+require_command uv "Segui le istruzioni su https://docs.astral.sh/uv/."
+require_command npm "Installa Node.js 24 o successivo."
+
+if [[ ! -f "$backend_dir/.env" ]]; then
+  cp "$backend_dir/.env.example" "$backend_dir/.env"
+  echo "Creata la configurazione backend da .env.example."
+fi
+
+echo "Preparazione del backend..."
+(
+  cd "$backend_dir"
+  uv sync --locked
+  uv run alembic upgrade head
+)
+
+if [[ ! -d "$frontend_dir/node_modules" ]]; then
+  echo "Installazione delle dipendenze frontend..."
+  (
+    cd "$frontend_dir"
+    npm install
+  )
+fi
+
+trap stop_application EXIT INT TERM
+
+echo "Avvio del backend su http://127.0.0.1:5000..."
+(
+  cd "$backend_dir"
+  uv run flask --app asta_la_vista.entrypoints.flask_app:create_app run --host 127.0.0.1
+) &
+backend_pid=$!
+
+echo "Avvio del frontend su http://127.0.0.1:5173..."
+(
+  cd "$frontend_dir"
+  npm run dev -- --host 127.0.0.1
+) &
+frontend_pid=$!
+
+echo "Applicazione avviata. Premi Ctrl+C per fermarla."
+
+set +e
+wait -n "$backend_pid" "$frontend_pid"
+exit_code=$?
+set -e
+
+if [[ $exit_code -ne 0 ]]; then
+  echo "Uno dei processi si è interrotto con un errore." >&2
+fi
+
+exit "$exit_code"
