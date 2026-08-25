@@ -58,6 +58,8 @@ strategy_entries = sa.Table(
     sa.Column("role", role_type, nullable=False),
     sa.Column("tier_id", sa.ForeignKey("tier.uuid", ondelete="SET NULL")),
     sa.Column("note", sa.Text, nullable=False),
+    sa.Column("maximum_price", sa.Integer),
+    sa.CheckConstraint("maximum_price IS NULL OR maximum_price >= 1"),
     sa.UniqueConstraint("strategy_id", "player_id"),
 )
 

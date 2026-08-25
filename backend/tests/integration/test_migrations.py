@@ -30,6 +30,15 @@ def test_initial_migration_upgrades_and_downgrades_sqlite(tmp_path, monkeypatch)
         "position",
         "color",
     }
+    assert {column["name"] for column in sa.inspect(engine).get_columns("strategy_entry")} == {
+        "uuid",
+        "strategy_id",
+        "player_id",
+        "role",
+        "tier_id",
+        "note",
+        "maximum_price",
+    }
 
     command.downgrade(alembic_config, "base")
     assert sa.inspect(engine).get_table_names() == ["alembic_version"]
@@ -94,4 +103,7 @@ def test_global_tier_migration_merges_matching_role_tiers(tmp_path, monkeypatch)
         {"player_id": "p1", "tier_id": "top-p"},
         {"player_id": "p2", "tier_id": "top-p"},
     ]
+    assert "maximum_price" in {
+        column["name"] for column in sa.inspect(engine).get_columns("strategy_entry")
+    }
     engine.dispose()

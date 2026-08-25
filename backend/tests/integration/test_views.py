@@ -45,6 +45,7 @@ def test_strategy_detail_contains_player_team_status_tiers_and_notes(session_fac
             "active": True,
             "tier_id": "tier-1",
             "note": "Primary target",
+            "maximum_price": None,
         }
     ]
 

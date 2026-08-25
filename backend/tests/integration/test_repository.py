@@ -34,13 +34,13 @@ def test_auction_round_trip_keeps_rosters_and_purchase_role(session_factory):
         assert list(saved.events) == []
 
 
-def test_strategy_round_trip_keeps_tiers_assignments_and_notes(session_factory):
+def test_strategy_round_trip_keeps_tiers_assignments_notes_and_maximum_price(session_factory):
     with session_factory() as session:
         player = Player("2764", "Martinez L.", "Inter", Role.FORWARD)
         strategy = Strategy("Main strategy", uuid="strategy-1")
         tier_id = strategy.add_tier("Top", "#ef4444", uuid="tier-1")
         strategy.assign_player(player.external_id, player.role, tier_id)
-        strategy.set_player_note(player.external_id, player.role, "Primary target")
+        strategy.update_player(player.external_id, player.role, tier_id, "Primary target", 80)
         session.add(player)
         repository.StrategyRepository(session).add(strategy)
         session.commit()
@@ -52,6 +52,7 @@ def test_strategy_round_trip_keeps_tiers_assignments_and_notes(session_factory):
         assert [(tier.name, tier.position) for tier in saved.tiers] == [("Top", 0)]
         assert saved.entries[0].player_id == "2764"
         assert saved.entries[0].note == "Primary target"
+        assert saved.entries[0].maximum_price == 80
         assert list(saved.events) == []
 
 

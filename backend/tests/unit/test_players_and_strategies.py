@@ -1,5 +1,8 @@
+import pytest
+
 from asta_la_vista.domain import events
 from asta_la_vista.domain.model import Player, Role, Strategy
+from asta_la_vista.exceptions import ValidationError
 
 
 def test_player_update_reactivates_and_reports_a_role_change():
@@ -60,11 +63,38 @@ def test_role_change_moves_player_to_unassigned_and_keeps_note():
     )
 
 
+def test_strategy_player_can_have_an_optional_maximum_price():
+    strategy = Strategy("Main strategy")
+    tier_id = strategy.add_tier("Top")
+
+    strategy.update_player("player-1", Role.FORWARD, tier_id, "Primary target", 80)
+
+    entry = strategy.entries[0]
+    assert (entry.tier_id, entry.note, entry.maximum_price) == (tier_id, "Primary target", 80)
+
+
+@pytest.mark.parametrize("maximum_price", [0, -1, 1.5, True])
+def test_strategy_rejects_invalid_maximum_prices(maximum_price):
+    strategy = Strategy("Main strategy")
+    tier_id = strategy.add_tier("Top")
+
+    with pytest.raises(ValidationError):
+        strategy.update_player("player-1", Role.FORWARD, tier_id, "", maximum_price)
+
+
+def test_maximum_price_requires_a_tier():
+    strategy = Strategy("Main strategy")
+
+    with pytest.raises(ValidationError):
+        strategy.update_player("player-1", Role.FORWARD, None, "", 80)
+
+
 def test_strategy_copy_can_be_changed_without_affecting_the_original():
     strategy = Strategy("Main strategy")
     tier_id = strategy.add_tier("Top", "#ef4444")
     strategy.assign_player("player-1", Role.FORWARD, tier_id)
     strategy.set_player_note("player-1", Role.FORWARD, "Primary target")
+    strategy.update_player("player-1", Role.FORWARD, tier_id, "Primary target", 80)
 
     duplicate = strategy.duplicate("Alternative strategy")
     duplicate.remove_tier(duplicate.tiers[0].uuid)
@@ -73,6 +103,7 @@ def test_strategy_copy_can_be_changed_without_affecting_the_original():
     assert strategy.tiers[0].name == "Top"
     assert strategy.entries[0].tier_id == tier_id
     assert strategy.entries[0].note == "Primary target"
+    assert strategy.entries[0].maximum_price == 80
     assert duplicate.entries[0].tier_id is None
 
 

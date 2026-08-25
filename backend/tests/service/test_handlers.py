@@ -64,11 +64,11 @@ def test_strategy_flow_uses_the_player_current_role(session_factory):
 
     strategy_id = bus.handle(commands.CreateStrategy("Main strategy"))
     tier_id = bus.handle(commands.AddTier(strategy_id, "Top", "#ef4444"))
-    bus.handle(commands.AssignPlayerToTier(strategy_id, "2764", tier_id))
-    bus.handle(commands.SetStrategyPlayerNote(strategy_id, "2764", "Primary target"))
+    bus.handle(commands.UpdateStrategyPlayer(strategy_id, "2764", tier_id, "Primary target", 80))
 
     with uow:
         strategy = uow.strategies.get(strategy_id)
         assert strategy.entries[0].role == Role.FORWARD
         assert strategy.entries[0].tier_id == tier_id
         assert strategy.entries[0].note == "Primary target"
+        assert strategy.entries[0].maximum_price == 80

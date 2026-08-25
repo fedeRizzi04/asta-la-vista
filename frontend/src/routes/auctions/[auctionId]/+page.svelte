@@ -55,6 +55,12 @@
 			.slice(0, 20)
 	);
 	let selectedPlayer = $derived(players.find((player) => player.id === selectedPlayerId));
+	let selectedStrategyEntry = $derived(
+		strategy?.entries.find((entry) => entry.player_id === selectedPlayerId)
+	);
+	let selectedTier = $derived(
+		strategy?.tiers.find((tier) => tier.id === selectedStrategyEntry?.tier_id)
+	);
 
 	onMount(loadAuction);
 
@@ -243,6 +249,24 @@
 					>Registra</button
 				>
 			</form>
+			{#if selectedPlayer && strategy}
+				<div class="called-player-strategy">
+					<div>
+						<span class="strategy-label">Fascia</span>
+						<strong class="called-tier" style:--tier-color={selectedTier?.color ?? '#d8ded9'}
+							><span></span>{selectedTier?.name ?? 'Senza fascia'}</strong
+						>
+					</div>
+					<div>
+						<span class="strategy-label">Prezzo massimo</span>
+						<strong>{selectedStrategyEntry?.maximum_price ?? 'Non indicato'}</strong>
+					</div>
+					<div class="called-note">
+						<span class="strategy-label">Note</span>
+						<strong>{selectedStrategyEntry?.note || 'Nessuna nota'}</strong>
+					</div>
+				</div>
+			{/if}
 			{#if playerSearch && !selectedPlayerId}
 				<div class="search-results">
 					{#each matchingPlayers as player (player.id)}<button
@@ -333,7 +357,9 @@
 									{#each strategy.entries.filter((entry) => entry.role === role && entry.tier_id === tier.id) as entry (entry.player_id)}<span
 											class:purchased={purchasedIds.has(entry.player_id)}
 											><strong>{entry.name}</strong><small
-												>{entry.team}{entry.note ? ` · ${entry.note}` : ''}</small
+												>{entry.team}{entry.maximum_price !== null
+													? ` · max ${entry.maximum_price}`
+													: ''}{entry.note ? ` · ${entry.note}` : ''}</small
 											></span
 										>{/each}
 								</div>
@@ -480,6 +506,43 @@
 		background: #edf3ef;
 		color: #315641;
 		font-size: 0.82rem;
+	}
+	.called-player-strategy {
+		display: grid;
+		grid-template-columns: minmax(140px, 0.6fr) minmax(140px, 0.5fr) minmax(220px, 1.5fr);
+		gap: 0.7rem;
+		margin-top: 0.8rem;
+		padding: 0.8rem;
+		border: 1px solid #d9ddd7;
+		border-radius: 0.45rem;
+		background: #fff;
+	}
+	.called-player-strategy > div {
+		display: grid;
+		align-content: start;
+		gap: 0.25rem;
+	}
+	.strategy-label {
+		color: #707971;
+		font-size: 0.68rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+	.called-player-strategy strong {
+		font-size: 0.82rem;
+	}
+	.called-tier {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.called-tier span {
+		width: 0.7rem;
+		height: 0.7rem;
+		border: 1px solid rgb(0 0 0 / 12%);
+		border-radius: 50%;
+		background: var(--tier-color);
 	}
 	.search-results {
 		display: grid;
@@ -651,6 +714,7 @@
 			flex-wrap: wrap;
 		}
 		.call-panel form,
+		.called-player-strategy,
 		.strategy-roles,
 		.search-results {
 			grid-template-columns: 1fr;

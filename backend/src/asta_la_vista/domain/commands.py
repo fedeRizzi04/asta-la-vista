@@ -107,23 +107,12 @@ class ReorderTiers(Command):
 
 
 @dataclass(frozen=True)
-class AssignPlayerToTier(Command):
+class UpdateStrategyPlayer(Command):
     strategy_id: str
     player_id: str
-    tier_id: str
-
-
-@dataclass(frozen=True)
-class UnassignPlayerFromTier(Command):
-    strategy_id: str
-    player_id: str
-
-
-@dataclass(frozen=True)
-class SetStrategyPlayerNote(Command):
-    strategy_id: str
-    player_id: str
+    tier_id: str | None
     note: str
+    maximum_price: int | None
 
 
 @dataclass(frozen=True)

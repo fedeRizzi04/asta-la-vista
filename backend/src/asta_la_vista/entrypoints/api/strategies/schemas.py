@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, validate
 
 
 class StrategyIdSchema(Schema):
@@ -42,8 +42,14 @@ class TierSchema(Schema):
 
 
 class StrategyEntryUpdateSchema(Schema):
-    tier_id = fields.String(allow_none=True)
-    note = fields.String(allow_none=True)
+    tier_id = fields.String(allow_none=True, required=True)
+    note = fields.String(required=True)
+    maximum_price = fields.Integer(
+        allow_none=True,
+        required=True,
+        strict=True,
+        validate=validate.Range(min=1),
+    )
 
 
 class StrategyEntrySchema(Schema):
@@ -54,6 +60,7 @@ class StrategyEntrySchema(Schema):
     active = fields.Boolean(required=True)
     tier_id = fields.String(allow_none=True)
     note = fields.String(required=True)
+    maximum_price = fields.Integer(allow_none=True)
 
 
 class StrategyDetailSchema(Schema):

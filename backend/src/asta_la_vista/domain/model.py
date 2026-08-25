@@ -113,6 +113,7 @@ class StrategyEntry:
     role: Role
     tier_id: str | None
     note: str
+    maximum_price: int | None
     uuid: str
 
 
@@ -183,7 +184,7 @@ class Strategy:
         self._tier(tier_id)
         entry = self._entry(player_id)
         if entry is None:
-            self.entries.append(StrategyEntry(player_id, role, tier_id, "", new_uuid()))
+            self.entries.append(StrategyEntry(player_id, role, tier_id, "", None, new_uuid()))
             return
         entry.role = role
         entry.tier_id = tier_id
@@ -192,22 +193,56 @@ class Strategy:
         entry = self._entry(player_id)
         if entry is not None:
             entry.tier_id = None
+            entry.maximum_price = None
 
     def set_player_note(self, player_id: str, role: Role, note: str):
         entry = self._entry(player_id)
         if entry is None:
-            self.entries.append(StrategyEntry(player_id, role, None, note.strip(), new_uuid()))
+            self.entries.append(
+                StrategyEntry(player_id, role, None, note.strip(), None, new_uuid())
+            )
             return
         if entry.role != role:
             entry.tier_id = None
+            entry.maximum_price = None
         entry.role = role
         entry.note = note.strip()
+
+    def update_player(
+        self,
+        player_id: str,
+        role: Role,
+        tier_id: str | None,
+        note: str,
+        maximum_price: int | None,
+    ):
+        if tier_id is not None:
+            self._tier(tier_id)
+        if maximum_price is not None:
+            if isinstance(maximum_price, bool) or not isinstance(maximum_price, int):
+                raise ValidationError("Maximum price must be an integer")
+            if maximum_price < 1:
+                raise ValidationError("Maximum price must be at least 1")
+            if tier_id is None:
+                raise ValidationError("Maximum price requires a tier")
+
+        entry = self._entry(player_id)
+        if entry is None:
+            self.entries.append(
+                StrategyEntry(player_id, role, tier_id, note.strip(), maximum_price, new_uuid())
+            )
+            return
+        entry.role = role
+        entry.tier_id = tier_id
+        entry.note = note.strip()
+        entry.maximum_price = maximum_price
 
     def change_player_role(self, player_id: str, role: Role):
         entry = self._entry(player_id)
         if entry is not None and entry.role != role:
             entry.role = role
             entry.tier_id = None
+            entry.maximum_price = None
 
     def duplicate(self, name: str) -> "Strategy":
         duplicate = Strategy(name)
@@ -221,6 +256,7 @@ class Strategy:
                     role=entry.role,
                     tier_id=tier_ids.get(entry.tier_id) if entry.tier_id else None,
                     note=entry.note,
+                    maximum_price=entry.maximum_price,
                     uuid=new_uuid(),
                 )
             )

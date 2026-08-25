@@ -15,7 +15,7 @@
 		type Tier
 	} from '$lib/strategies';
 
-	type EntryDraft = { tierId: string; note: string };
+	type EntryDraft = { tierId: string; note: string; maximumPrice: number | undefined };
 
 	const roleLabels: Record<Role, string> = {
 		P: 'Portieri',
@@ -75,7 +75,14 @@
 		entryDrafts = Object.fromEntries(
 			players.map((player) => {
 				const entry = entries.get(player.id);
-				return [player.id, { tierId: entry?.tier_id ?? '', note: entry?.note ?? '' }];
+				return [
+					player.id,
+					{
+						tierId: entry?.tier_id ?? '',
+						note: entry?.note ?? '',
+						maximumPrice: entry?.maximum_price ?? undefined
+					}
+				];
 			})
 		);
 	}
@@ -133,7 +140,14 @@
 		const draft = entryDrafts[player.id];
 		savedPlayerId = '';
 		await runMutation(async () => {
-			await updateStrategyEntry(strategy!.id, player.id, draft.tierId || null, draft.note);
+			await updateStrategyEntry(
+				strategy!.id,
+				player.id,
+				draft.tierId || null,
+				draft.note,
+				draft.tierId ? (draft.maximumPrice ?? null) : null
+			);
+			await refreshStrategy();
 			savedPlayerId = player.id;
 		});
 	}
@@ -289,7 +303,12 @@
 							{#each (strategy?.entries ?? []).filter((entry) => entry.role === selectedRole && entry.tier_id === tier.id) as entry (entry.player_id)}
 								<article class:inactive={!entry.active}>
 									<strong>{entry.name}</strong>
-									<small>{entry.team}{entry.note ? ` · ${entry.note}` : ''}</small>
+									<small
+										>{entry.team}{entry.maximum_price !== null
+											? ` · max ${entry.maximum_price}`
+											: ''}</small
+									>
+									{#if entry.note}<small class="player-note">{entry.note}</small>{/if}
 								</article>
 							{:else}
 								<p class="empty-tier">Nessun calciatore</p>
@@ -305,7 +324,7 @@
 		<div class="section-heading">
 			<div>
 				<h2>Calciatori</h2>
-				<p>Assegna una fascia e aggiungi una nota facoltativa.</p>
+				<p>Assegna una fascia, un prezzo massimo e una nota facoltativa.</p>
 			</div>
 			<input
 				class="search"
@@ -334,6 +353,11 @@
 							></span>
 							<select
 								bind:value={entryDrafts[player.id].tierId}
+								onchange={() => {
+									if (!entryDrafts[player.id].tierId) {
+										entryDrafts[player.id].maximumPrice = undefined;
+									}
+								}}
 								aria-label={`Fascia di ${player.name}`}
 							>
 								<option value="">Senza fascia</option>
@@ -346,6 +370,15 @@
 							bind:value={entryDrafts[player.id].note}
 							placeholder="Nota"
 							aria-label={`Nota per ${player.name}`}
+						/>
+						<input
+							bind:value={entryDrafts[player.id].maximumPrice}
+							type="number"
+							min="1"
+							step="1"
+							placeholder="Prezzo max"
+							aria-label={`Prezzo massimo per ${player.name}`}
+							disabled={!entryDrafts[player.id].tierId}
 						/>
 						<button
 							type="button"
@@ -627,6 +660,10 @@
 		font-size: 0.7rem;
 	}
 
+	.tier-column .player-note {
+		color: #4c574f;
+	}
+
 	.tier-column .empty-tier {
 		margin: 0;
 		padding: 0.45rem;
@@ -644,7 +681,9 @@
 
 	.player-row {
 		display: grid;
-		grid-template-columns: minmax(180px, 1fr) minmax(150px, 0.7fr) minmax(180px, 1fr) auto;
+		grid-template-columns:
+			minmax(180px, 1fr) minmax(150px, 0.7fr) minmax(160px, 0.9fr) minmax(110px, 0.45fr)
+			auto;
 		align-items: center;
 		gap: 0.65rem;
 		padding: 0.65rem;

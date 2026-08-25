@@ -23,6 +23,7 @@ export type StrategyEntry = {
 	active: boolean;
 	tier_id: string | null;
 	note: string;
+	maximum_price: number | null;
 };
 
 export type Strategy = {
@@ -103,11 +104,12 @@ export function updateStrategyEntry(
 	strategyId: string,
 	playerId: string,
 	tierId: string | null,
-	note: string
+	note: string,
+	maximumPrice: number | null
 ): Promise<void> {
 	return apiRequest<void>(`/api/strategies/${strategyId}/players/${playerId}`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ tier_id: tierId, note })
+		body: JSON.stringify({ tier_id: tierId, note, maximum_price: maximumPrice })
 	});
 }

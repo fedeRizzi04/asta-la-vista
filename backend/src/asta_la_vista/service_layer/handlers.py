@@ -166,30 +166,19 @@ def reorder_tiers(cmd: commands.ReorderTiers, uow: AbstractUnitOfWork):
         uow.commit()
 
 
-def assign_player_to_tier(cmd: commands.AssignPlayerToTier, uow: AbstractUnitOfWork):
+def update_strategy_player(cmd: commands.UpdateStrategyPlayer, uow: AbstractUnitOfWork):
     with uow:
         strategy = _strategy(uow, cmd.strategy_id)
         player = uow.players.get(cmd.player_id)
         if player is None:
             raise NotFoundError("Player not found")
-        strategy.assign_player(player.external_id, player.role, cmd.tier_id)
-        uow.commit()
-
-
-def unassign_player_from_tier(cmd: commands.UnassignPlayerFromTier, uow: AbstractUnitOfWork):
-    with uow:
-        strategy = _strategy(uow, cmd.strategy_id)
-        strategy.unassign_player(cmd.player_id)
-        uow.commit()
-
-
-def set_strategy_player_note(cmd: commands.SetStrategyPlayerNote, uow: AbstractUnitOfWork):
-    with uow:
-        strategy = _strategy(uow, cmd.strategy_id)
-        player = uow.players.get(cmd.player_id)
-        if player is None:
-            raise NotFoundError("Player not found")
-        strategy.set_player_note(player.external_id, player.role, cmd.note)
+        strategy.update_player(
+            player.external_id,
+            player.role,
+            cmd.tier_id,
+            cmd.note,
+            cmd.maximum_price,
+        )
         uow.commit()
 
 
@@ -232,9 +221,7 @@ COMMAND_HANDLERS = {
     commands.UpdateTier: update_tier,
     commands.RemoveTier: remove_tier,
     commands.ReorderTiers: reorder_tiers,
-    commands.AssignPlayerToTier: assign_player_to_tier,
-    commands.UnassignPlayerFromTier: unassign_player_from_tier,
-    commands.SetStrategyPlayerNote: set_strategy_player_note,
+    commands.UpdateStrategyPlayer: update_strategy_player,
     commands.DuplicateStrategy: duplicate_strategy,
 }
 EVENT_HANDLERS: dict[type[events.Event], list] = {}

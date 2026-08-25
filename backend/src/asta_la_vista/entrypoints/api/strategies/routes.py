@@ -84,12 +84,12 @@ class StrategyPlayerResource(MethodView):
     @blueprint.arguments(StrategyEntryUpdateSchema)
     @blueprint.response(204)
     def put(self, body: dict, strategy_id: str, player_id: str):
-        if "tier_id" in body:
-            command = (
-                commands.AssignPlayerToTier(strategy_id, player_id, body["tier_id"])
-                if body["tier_id"] is not None
-                else commands.UnassignPlayerFromTier(strategy_id, player_id)
+        bus().handle(
+            commands.UpdateStrategyPlayer(
+                strategy_id,
+                player_id,
+                body["tier_id"],
+                body["note"],
+                body["maximum_price"],
             )
-            bus().handle(command)
-        if body.get("note") is not None:
-            bus().handle(commands.SetStrategyPlayerNote(strategy_id, player_id, body["note"]))
+        )
