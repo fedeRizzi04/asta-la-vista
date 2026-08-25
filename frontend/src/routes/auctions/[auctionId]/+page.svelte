@@ -45,20 +45,20 @@
 	let saving = $state(false);
 
 	let purchasedIds = $derived(new Set(auction?.purchased_player_ids ?? []));
-	let matchingPlayers = $derived(
-		players
-			.filter((player) => {
-				const query = playerSearch.trim().toLowerCase();
-				return (
+	let matchingPlayers = $derived.by(() => {
+		const query = playerSearch.trim().toLowerCase();
+		return players
+			.filter(
+				(player) =>
 					player.active &&
 					!purchasedIds.has(player.id) &&
 					(!query ||
 						player.name.toLowerCase().includes(query) ||
 						player.team.toLowerCase().includes(query))
-				);
-			})
-			.slice(0, 20)
-	);
+			)
+			.sort((first, second) => matchRank(first, query) - matchRank(second, query))
+			.slice(0, 20);
+	});
 	let selectedPlayer = $derived(players.find((player) => player.id === selectedPlayerId));
 	let selectedStrategyEntry = $derived(
 		strategy?.entries.find((entry) => entry.player_id === selectedPlayerId)
@@ -135,6 +135,26 @@
 	function selectPlayer(player: Player): void {
 		selectedPlayerId = player.id;
 		playerSearch = player.name;
+	}
+
+	/** Ranks how closely a player matches the search query: name prefix first, then name/team substring. */
+	function matchRank(player: Player, query: string): number {
+		if (!query) return 0;
+		const name = player.name.toLowerCase();
+		if (name.startsWith(query)) return 0;
+		if (name.includes(query)) return 1;
+		return 2;
+	}
+
+	function selectTopMatch(): void {
+		const [topMatch] = matchingPlayers;
+		if (topMatch) selectPlayer(topMatch);
+	}
+
+	function handleSearchKeydown(event: KeyboardEvent): void {
+		if (event.key !== 'Enter' || selectedPlayerId) return;
+		event.preventDefault();
+		selectTopMatch();
 	}
 
 	function callPlayerFromCatalog(player: Player): void {
@@ -278,6 +298,7 @@
 						type="search"
 						placeholder="Cerca per nome o squadra"
 						oninput={() => (selectedPlayerId = '')}
+						onkeydown={handleSearchKeydown}
 					/></label
 				>
 				<label
