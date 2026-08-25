@@ -312,7 +312,7 @@
 							{@const purchaseTier = strategy?.tiers.find(
 								(tier) => tier.id === strategyEntry?.tier_id
 							)}
-							<div class="purchase-row">
+							<div class="purchase-row" class:editing={editingPurchaseId === purchase.id}>
 								{#if editingPurchaseId === purchase.id}
 									<select bind:value={editedParticipantId} aria-label="Vincitore"
 										>{#each auction.participants as option (option.id)}<option value={option.id}
@@ -336,8 +336,10 @@
 											class="purchase-tier"
 											style:--tier-color={purchaseTier.color ?? 'var(--tier-default)'}
 										>
-											<span></span>{purchaseTier.name}
+											<i aria-hidden="true"></i><span>{purchaseTier.name}</span>
 										</span>
+									{:else}
+										<span class="purchase-tier-spacer" aria-hidden="true"></span>
 									{/if}
 									{#if auction.status === 'live'}<button
 											class="text-button"
@@ -631,12 +633,16 @@
 		font-size: 0.8rem;
 	}
 	.purchase-row {
-		display: flex;
+		display: grid;
+		grid-template-columns: 1.5rem minmax(70px, 1fr) 2.5rem minmax(0, 6.5rem) auto auto;
 		align-items: center;
 		gap: 0.45rem;
 		min-height: 2.25rem;
 		border-top: 1px solid var(--border);
 		font-size: 0.78rem;
+	}
+	.purchase-row.editing {
+		grid-template-columns: minmax(100px, 1fr) 4rem auto auto;
 	}
 	.purchase-row input,
 	.purchase-row select {
@@ -659,6 +665,8 @@
 		color: var(--subdued);
 	}
 	.purchase-price {
+		justify-self: end;
+		text-align: right;
 		font-variant-numeric: tabular-nums;
 	}
 	.purchase-tier {
@@ -674,13 +682,18 @@
 		font-weight: 700;
 		line-height: 1.2;
 	}
-	.purchase-tier > span {
+	.purchase-tier > i {
 		width: 0.55rem;
 		height: 0.55rem;
 		flex: 0 0 auto;
 		border: 1px solid rgb(0 0 0 / 12%);
 		border-radius: 50%;
 		background: var(--tier-color);
+	}
+	.purchase-tier > span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.text-button {
 		min-height: auto;
@@ -763,7 +776,15 @@
 			grid-template-columns: 1fr;
 		}
 		.purchase-row {
-			flex-wrap: wrap;
+			grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem auto auto;
+		}
+		.purchase-tier {
+			grid-row: 2;
+			grid-column: 2 / 4;
+			justify-self: start;
+		}
+		.purchase-tier-spacer {
+			display: none;
 		}
 	}
 </style>
