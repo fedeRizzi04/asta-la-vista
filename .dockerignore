@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env
+backend/.env
+backend/.venv
+backend/instance
+backend/.pytest_cache
+backend/.ruff_cache
+frontend/node_modules
+frontend/.svelte-kit
+frontend/build
+__pycache__
+*.py[cod]
+*.sqlite
+*.sqlite3

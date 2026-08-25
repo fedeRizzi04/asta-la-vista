@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -eu
+
+alembic upgrade head
+exec gunicorn \
+  --bind "${APP_HOST}:${APP_PORT}" \
+  --workers 1 \
+  --no-control-socket \
+  --access-logfile - \
+  "asta_la_vista.entrypoints.flask_app:create_app()"

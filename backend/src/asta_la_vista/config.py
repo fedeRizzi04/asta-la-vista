@@ -11,6 +11,7 @@ def load_settings() -> dict[str, object]:
         "DATABASE_URI": _required("DATABASE_URI"),
         "APP_HOST": _required("APP_HOST"),
         "APP_PORT": int(_required("APP_PORT")),
+        "FRONTEND_DIST": os.getenv("FRONTEND_DIST"),
         "API_TITLE": _required("API_TITLE"),
         "API_VERSION": _required("API_VERSION"),
         "OPENAPI_VERSION": _required("OPENAPI_VERSION"),

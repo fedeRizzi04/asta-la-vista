@@ -10,16 +10,42 @@ Asta la Vista è una web app pensata per assisterti durante l'asta del fantacalc
 
 Il progetto nasce dal desiderio di provare a sviluppare interamente un'applicazione affidandosi ad un coding agent attraverso un lavoro di planning curato. Oltre a questo, durante le aste finalmente si potrà usare uno strumento gratuito e automatizzato, diverso dal solito foglio di carta o documento excel. 
 
-## Requisiti
+## Avviare l'applicazione
+
+Il progetto può essere avviato con Docker oppure direttamente sulla propria macchina tramite Python e Node.js.
+
+### Con Docker
+
+È sufficiente avere Docker con il plugin Compose. Dalla cartella principale del progetto eseguire:
+
+```bash
+docker compose up --build
+```
+
+Al primo avvio Docker costruisce l'immagine, prepara il database e applica le migrazioni. Quando
+l'applicazione è pronta, aprire `http://localhost:5000`. Gli avvii successivi possono essere eseguiti
+con il solo `docker compose up`; dopo aver aggiornato il progetto è necessario aggiungere nuovamente
+`--build` per ricostruire l'immagine.
+
+Per utilizzare una porta diversa, per esempio la `8080`:
+
+```bash
+HOST_PORT=8080 docker compose up
+```
+
+Il database SQLite è conservato nel volume Docker `app-data`, quindi aste e strategie rimangono
+disponibili anche dopo `docker compose down` o dopo la ricostruzione dell'immagine. Il comando
+`docker compose down -v` elimina anche il volume e tutti i dati salvati.
+
+### In locale
+
+Per l'avvio locale servono:
 
 - Python 3.12 o successivo
 - [uv](https://docs.astral.sh/uv/)
 - Node.js 24 o successivo
 
-## Installazione
-
-Clonare il repository ed entrare nella cartella del progetto. Installare il backend e creare la
-configurazione locale:
+Dopo aver clonato il repository, installa il backend e crea la configurazione locale:
 
 ```bash
 cd backend
@@ -28,7 +54,7 @@ uv sync
 uv run alembic upgrade head
 ```
 
-Installare poi il frontend:
+Installa poi il frontend:
 
 ```bash
 cd ../frontend
@@ -37,19 +63,16 @@ npm install
 
 Il database SQLite verrà salvato nella cartella locale `backend/instance`, esclusa da Git.
 
-## Avvio rapido
-
-Dopo la prima installazione è possibile preparare e avviare l'intera applicazione con un solo
-comando, eseguito dalla cartella principale del progetto:
+Dopo la prima installazione è possibile preparare e avviare l'intera applicazione dalla cartella
+principale con:
 
 ```bash
 ./bin/start
 ```
 
-Lo script applica le migrazioni, installa le dipendenze mancanti e avvia backend e frontend. Per
-fermare entrambi i processi premere `Ctrl+C`.
+Lo script applica le migrazioni, installa le dipendenze mancanti e avvia backend e frontend.
 
-## Avvio del backend
+#### Avvio manuale del backend
 
 ```bash
 cd backend
@@ -59,7 +82,7 @@ uv run flask --app asta_la_vista.entrypoints.flask_app:create_app run --host 127
 Il backend risponde su `http://127.0.0.1:5000`. L'endpoint di controllo è disponibile su
 `http://127.0.0.1:5000/api/health`.
 
-## Avvio del frontend
+#### Avvio manuale del frontend
 
 In un secondo terminale:
 
