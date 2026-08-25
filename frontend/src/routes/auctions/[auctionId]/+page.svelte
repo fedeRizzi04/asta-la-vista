@@ -607,6 +607,15 @@
 		background: var(--muted-bg);
 		font-size: 0.76rem;
 	}
+	.team-card .slots {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 0.7rem;
+	}
+	.team-card .slots span {
+		padding-inline: 0.35rem;
+		text-align: center;
+	}
 	.call-panel form {
 		display: grid;
 		grid-template-columns: minmax(260px, 1.4fr) minmax(210px, 1fr) 110px auto;
