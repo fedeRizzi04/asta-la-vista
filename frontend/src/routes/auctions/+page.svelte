@@ -2,8 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
-	import Message from '$lib/components/Message.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		createAuction,
 		getAuctions,
@@ -30,17 +30,15 @@
 	let strategyId = $state('');
 	let loading = $state(true);
 	let saving = $state(false);
-	let error = $state('');
 
 	onMount(loadPage);
 
 	async function loadPage(): Promise<void> {
 		loading = true;
-		error = '';
 		try {
 			[auctions, strategies] = await Promise.all([getAuctions(), getStrategies()]);
 		} catch (caught) {
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			loading = false;
 		}
@@ -54,7 +52,6 @@
 			.filter(Boolean);
 		if (!name.trim() || participants.length === 0) return;
 		saving = true;
-		error = '';
 		try {
 			const result = await createAuction({
 				name: name.trim(),
@@ -68,14 +65,10 @@
 			});
 			await goto(resolve('/auctions/[auctionId]', { auctionId: result.id }));
 		} catch (caught) {
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			saving = false;
 		}
-	}
-
-	function errorMessage(caught: unknown): string {
-		return caught instanceof Error ? caught.message : 'Si è verificato un errore inatteso.';
 	}
 </script>
 
@@ -88,10 +81,6 @@
 	<h1>Aste</h1>
 	<p>Crea una nuova asta Classic oppure riprendi rapidamente quella in corso.</p>
 </section>
-
-{#if error}
-	<Message>{error}</Message>
-{/if}
 
 <div class="page-grid">
 	<section class="panel">

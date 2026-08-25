@@ -2,9 +2,10 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import Message from '$lib/components/Message.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import { confirmDialog } from '$lib/dialog.svelte';
 	import { getPlayers, type Player, type Role } from '$lib/players';
+	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		addTier,
 		getStrategy,
@@ -38,7 +39,6 @@
 	let loading = $state(true);
 	let saving = $state(false);
 	let savedPlayerId = $state('');
-	let error = $state('');
 
 	let orderedTiers = $derived(
 		[...(strategy?.tiers ?? [])].sort((first, second) => first.position - second.position)
@@ -57,7 +57,6 @@
 
 	async function loadData(): Promise<void> {
 		loading = true;
-		error = '';
 		try {
 			[strategy, players] = await Promise.all([
 				getStrategy(currentStrategyId()),
@@ -66,7 +65,7 @@
 			strategyName = strategy.name;
 			buildEntryDrafts();
 		} catch (caught) {
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			loading = false;
 		}
@@ -117,7 +116,14 @@
 	}
 
 	async function deleteTier(tier: Tier): Promise<void> {
-		if (!strategy || !window.confirm(`Eliminare la fascia “${tier.name}”?`)) return;
+		if (!strategy) return;
+		const confirmed = await confirmDialog({
+			title: 'Elimina fascia',
+			message: `Eliminare la fascia “${tier.name}”?`,
+			confirmLabel: 'Elimina',
+			danger: true
+		});
+		if (!confirmed) return;
 		await runMutation(async () => {
 			await removeTier(strategy!.id, tier.id);
 			await refreshStrategy();
@@ -168,18 +174,13 @@
 
 	async function runMutation(mutation: () => Promise<void>): Promise<void> {
 		saving = true;
-		error = '';
 		try {
 			await mutation();
 		} catch (caught) {
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			saving = false;
 		}
-	}
-
-	function errorMessage(caught: unknown): string {
-		return caught instanceof Error ? caught.message : 'Si è verificato un errore inatteso.';
 	}
 </script>
 
@@ -202,10 +203,6 @@
 		</div>
 	</form>
 </section>
-
-{#if error}
-	<Message>{error}</Message>
-{/if}
 
 {#if loading}
 	<div class="empty-state">Caricamento della strategia…</div>

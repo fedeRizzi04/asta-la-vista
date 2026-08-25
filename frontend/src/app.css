@@ -36,6 +36,10 @@
 	--forward-bg: #efdddd;
 	--forward-text: #773434;
 	--tier-default: #d8ded9;
+	--danger: #9c3b3b;
+	--danger-hover: #7f2f2f;
+	--on-danger: #ffffff;
+	--overlay: rgb(10 14 11 / 55%);
 	font-family:
 		Inter,
 		ui-sans-serif,
@@ -88,6 +92,10 @@
 	--forward-bg: #452929;
 	--forward-text: #eeb0b0;
 	--tier-default: #69766e;
+	--danger: #c65f5f;
+	--danger-hover: #b34d4d;
+	--on-danger: #170d0d;
+	--overlay: rgb(4 6 5 / 65%);
 }
 
 * {

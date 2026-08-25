@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
-	import Message from '$lib/components/Message.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import { promptDialog } from '$lib/dialog.svelte';
+	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		createStrategy,
 		duplicateStrategy,
@@ -14,17 +15,15 @@
 	let newStrategyName = $state('');
 	let loading = $state(true);
 	let saving = $state(false);
-	let error = $state('');
 
 	onMount(loadStrategies);
 
 	async function loadStrategies(): Promise<void> {
 		loading = true;
-		error = '';
 		try {
 			strategies = await getStrategies();
 		} catch (caught) {
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			loading = false;
 		}
@@ -35,35 +34,34 @@
 		const name = newStrategyName.trim();
 		if (!name) return;
 		saving = true;
-		error = '';
 		try {
 			await createStrategy(name);
 			newStrategyName = '';
 			await loadStrategies();
 		} catch (caught) {
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			saving = false;
 		}
 	}
 
 	async function duplicate(strategy: StrategySummary): Promise<void> {
-		const name = window.prompt('Nome della nuova strategia', `${strategy.name} - copia`)?.trim();
+		const name = await promptDialog({
+			title: 'Duplica strategia',
+			message: 'Nome della nuova strategia',
+			defaultValue: `${strategy.name} - copia`,
+			confirmLabel: 'Duplica'
+		});
 		if (!name) return;
 		saving = true;
-		error = '';
 		try {
 			await duplicateStrategy(strategy.id, name);
 			await loadStrategies();
 		} catch (caught) {
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			saving = false;
 		}
-	}
-
-	function errorMessage(caught: unknown): string {
-		return caught instanceof Error ? caught.message : 'Si è verificato un errore inatteso.';
 	}
 </script>
 
@@ -90,10 +88,6 @@
 		</div>
 	</form>
 </section>
-
-{#if error}
-	<Message>{error}</Message>
-{/if}
 
 <section class="strategy-section" aria-live="polite" aria-busy={loading}>
 	<SectionHeading title="Le tue strategie">

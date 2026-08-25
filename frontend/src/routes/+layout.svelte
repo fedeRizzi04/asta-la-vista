@@ -3,6 +3,8 @@
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
+	import DialogHost from '$lib/components/DialogHost.svelte';
+	import ToastStack from '$lib/components/ToastStack.svelte';
 	import '../app.css';
 
 	let { children } = $props();
@@ -66,3 +68,6 @@
 <main>
 	{@render children()}
 </main>
+
+<ToastStack />
+<DialogHost />

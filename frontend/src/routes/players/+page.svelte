@@ -3,6 +3,8 @@
 	import { ApiError } from '$lib/api';
 	import Message from '$lib/components/Message.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import { confirmDialog } from '$lib/dialog.svelte';
+	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		getPlayerCounts,
 		getPlayers,
@@ -30,7 +32,6 @@
 	let fileInput: HTMLInputElement;
 	let loading = $state(true);
 	let importing = $state(false);
-	let error = $state('');
 	let importSummary = $state<ImportSummary>();
 	let total = $derived(Object.values(counts).reduce((sum, count) => sum + count, 0));
 
@@ -38,7 +39,6 @@
 
 	async function loadCatalog(): Promise<void> {
 		loading = true;
-		error = '';
 		try {
 			[players, counts] = await Promise.all([
 				getPlayers({
@@ -49,7 +49,7 @@
 				getPlayerCounts()
 			]);
 		} catch (caught) {
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			loading = false;
 		}
@@ -69,7 +69,6 @@
 	async function runImport(confirmLive: boolean): Promise<void> {
 		if (!selectedFile) return;
 		importing = true;
-		error = '';
 		try {
 			importSummary = await importPlayers(selectedFile, confirmLive);
 			selectedFile = undefined;
@@ -79,19 +78,15 @@
 			if (
 				caught instanceof ApiError &&
 				caught.code === 'confirmation_required' &&
-				window.confirm(`${caught.message}\n\nVuoi continuare comunque?`)
+				(await confirmDialog({ message: caught.message, confirmLabel: 'Continua comunque' }))
 			) {
 				await runImport(true);
 				return;
 			}
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			importing = false;
 		}
-	}
-
-	function errorMessage(caught: unknown): string {
-		return caught instanceof Error ? caught.message : 'Si è verificato un errore inatteso.';
 	}
 </script>
 
@@ -122,10 +117,6 @@
 		</div>
 	</form>
 </section>
-
-{#if error}
-	<Message>{error}</Message>
-{/if}
 
 {#if importSummary}
 	<Message kind="success">

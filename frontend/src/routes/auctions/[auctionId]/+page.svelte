@@ -2,8 +2,9 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import Message from '$lib/components/Message.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import { confirmDialog } from '$lib/dialog.svelte';
+	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		amendPurchase,
 		cancelPurchase,
@@ -42,7 +43,6 @@
 	let catalogSort = $state<CatalogSort>('tier');
 	let loading = $state(true);
 	let saving = $state(false);
-	let error = $state('');
 
 	let purchasedIds = $derived(new Set(auction?.purchased_player_ids ?? []));
 	let matchingPlayers = $derived(
@@ -87,7 +87,6 @@
 
 	async function loadAuction(): Promise<void> {
 		loading = true;
-		error = '';
 		try {
 			[auction, players] = await Promise.all([
 				getAuction(currentAuctionId()),
@@ -97,7 +96,7 @@
 			strategy = auction.strategy_id ? await getStrategy(auction.strategy_id) : undefined;
 			if (!strategy) catalogSort = 'quotation';
 		} catch (caught) {
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			loading = false;
 		}
@@ -106,7 +105,11 @@
 	async function changeStatus(action: 'start' | 'complete' | 'reopen'): Promise<void> {
 		if (
 			action === 'complete' &&
-			!window.confirm('Terminare questa asta? Potrai riaprirla in seguito.')
+			!(await confirmDialog({
+				title: 'Termina asta',
+				message: 'Terminare questa asta? Potrai riaprirla in seguito.',
+				confirmLabel: 'Termina asta'
+			}))
 		)
 			return;
 		await runMutation(async () => {
@@ -164,7 +167,13 @@
 	}
 
 	async function deletePurchase(purchase: Purchase): Promise<void> {
-		if (!window.confirm(`Annullare l'acquisto di ${purchase.player_name}?`)) return;
+		const confirmed = await confirmDialog({
+			title: 'Annulla acquisto',
+			message: `Annullare l'acquisto di ${purchase.player_name}?`,
+			confirmLabel: 'Annulla acquisto',
+			danger: true
+		});
+		if (!confirmed) return;
 		await runMutation(async () => {
 			await cancelPurchase(currentAuctionId(), purchase.id);
 			await refreshAuction();
@@ -177,11 +186,10 @@
 
 	async function runMutation(mutation: () => Promise<void>): Promise<void> {
 		saving = true;
-		error = '';
 		try {
 			await mutation();
 		} catch (caught) {
-			error = errorMessage(caught);
+			pushErrorToast(caught);
 		} finally {
 			saving = false;
 		}
@@ -195,10 +203,6 @@
 
 	function downloadReport(): void {
 		window.location.assign(`/api/auctions/${currentAuctionId()}/report`);
-	}
-
-	function errorMessage(caught: unknown): string {
-		return caught instanceof Error ? caught.message : 'Si è verificato un errore inatteso.';
 	}
 </script>
 
@@ -237,7 +241,6 @@
 	{/if}
 </header>
 
-{#if error}<Message>{error}</Message>{/if}
 {#if loading}<div class="empty-state">Caricamento dell'asta…</div>{/if}
 
 {#if auction && !loading}
