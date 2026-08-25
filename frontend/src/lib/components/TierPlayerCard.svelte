@@ -5,6 +5,7 @@
 		maximumPrice = null,
 		note = '',
 		inactive = false,
+		purchased = false,
 		compact = false
 	}: {
 		name: string;
@@ -12,11 +13,12 @@
 		maximumPrice?: number | null;
 		note?: string;
 		inactive?: boolean;
+		purchased?: boolean;
 		compact?: boolean;
 	} = $props();
 </script>
 
-<article class:inactive class:compact>
+<article class:inactive class:purchased class:compact>
 	<strong>{name}</strong>
 	<small
 		>{team}{maximumPrice !== null ? ` · max ${maximumPrice}` : ''}{note ? ` · ${note}` : ''}</small
@@ -41,6 +43,17 @@
 	article.inactive {
 		color: var(--disabled-text);
 		background: var(--muted-bg);
+	}
+
+	article.purchased {
+		color: var(--disabled-text);
+		background: var(--muted-bg);
+		opacity: 0.7;
+	}
+
+	article.purchased strong {
+		text-decoration: line-through;
+		text-decoration-color: var(--disabled-text);
 	}
 
 	small {

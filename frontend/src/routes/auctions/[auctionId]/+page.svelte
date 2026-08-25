@@ -445,24 +445,23 @@
 							{@const tierEntries = strategy.entries.filter(
 								(entry) => entry.role === role && entry.tier_id === tier.id
 							)}
-							{@const availableEntries = tierEntries.filter(
+							{@const availableCount = tierEntries.filter(
 								(entry) => !purchasedIds.has(entry.player_id)
-							)}
+							).length}
 							<div class="tier">
 								<div class="tier-heading">
 									<TierBadge name={tier.name} color={tier.color} compact />
-									<span class="tier-availability"
-										>{availableEntries.length}/{tierEntries.length}</span
-									>
+									<span class="tier-availability">{availableCount}/{tierEntries.length}</span>
 								</div>
-								{#if availableEntries.length > 0}
+								{#if tierEntries.length > 0}
 									<div class="tier-players">
-										{#each availableEntries as entry (entry.player_id)}
+										{#each tierEntries as entry (entry.player_id)}
 											<TierPlayerCard
 												name={entry.name}
 												team={entry.team}
 												maximumPrice={entry.maximum_price}
 												note={entry.note}
+												purchased={purchasedIds.has(entry.player_id)}
 												compact
 											/>
 										{/each}
