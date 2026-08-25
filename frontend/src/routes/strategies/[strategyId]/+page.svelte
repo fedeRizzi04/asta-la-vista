@@ -3,6 +3,8 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import TierBadge from '$lib/components/TierBadge.svelte';
+	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { getPlayers, type Player, type Role } from '$lib/players';
 	import { pushErrorToast } from '$lib/toast.svelte';
@@ -300,18 +302,16 @@
 			<div class="tier-board">
 				{#each orderedTiers as tier (tier.id)}
 					<div class="tier-column" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
-						<h3><span></span>{tier.name}</h3>
+						<h3><TierBadge name={tier.name} color={tier.color} /></h3>
 						<div>
 							{#each (strategy?.entries ?? []).filter((entry) => entry.role === selectedRole && entry.tier_id === tier.id) as entry (entry.player_id)}
-								<article class:inactive={!entry.active}>
-									<strong>{entry.name}</strong>
-									<small
-										>{entry.team}{entry.maximum_price !== null
-											? ` · max ${entry.maximum_price}`
-											: ''}</small
-									>
-									{#if entry.note}<small class="player-note">{entry.note}</small>{/if}
-								</article>
+								<TierPlayerCard
+									name={entry.name}
+									team={entry.team}
+									maximumPrice={entry.maximum_price}
+									note={entry.note}
+									inactive={!entry.active}
+								/>
 							{:else}
 								<p class="empty-tier">Nessun calciatore</p>
 							{/each}
@@ -343,19 +343,19 @@
 		{:else}
 			<div class="player-list">
 				{#each visiblePlayers as player (player.id)}
+					{@const selectedPlayerTier = orderedTiers.find(
+						(tier) => tier.id === entryDrafts[player.id].tierId
+					)}
 					<div class:inactive={!player.active} class="player-row">
 						<div class="player-info">
 							<strong>{player.name}</strong>
 							<span>{player.team}{player.active ? '' : ' · inattivo'}</span>
 						</div>
 						<div class="tier-selector">
-							<span
-								style:background={(strategy?.tiers ?? []).find(
-									(tier) => tier.id === entryDrafts[player.id].tierId
-								)?.color ?? 'var(--tier-default)'}
-							></span>
 							<select
 								bind:value={entryDrafts[player.id].tierId}
+								style:--tier-color={selectedPlayerTier?.color ?? 'var(--tier-default)'}
+								class:has-tier={!!selectedPlayerTier}
 								onchange={() => {
 									if (!entryDrafts[player.id].tierId) {
 										entryDrafts[player.id].maximumPrice = undefined;
@@ -536,7 +536,7 @@
 
 	.tier-row {
 		display: grid;
-		grid-template-columns: 0.35rem minmax(180px, 1fr) auto auto;
+		grid-template-columns: 0.5rem minmax(180px, 1fr) auto auto;
 		align-items: center;
 		gap: 0.65rem;
 		padding: 0.6rem;
@@ -547,7 +547,8 @@
 
 	.color-marker {
 		align-self: stretch;
-		border-radius: 0.2rem;
+		border: 1px solid rgb(0 0 0 / 14%);
+		border-radius: 0.24rem;
 		background: var(--tier-color);
 	}
 
@@ -580,52 +581,15 @@
 	}
 
 	.tier-column h3 {
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
 		margin: 0;
 		padding: 0.65rem 0.75rem;
 		border-bottom: 1px solid var(--border);
-		font-size: 0.9rem;
-	}
-
-	.tier-column h3 span,
-	.tier-selector > span {
-		width: 0.7rem;
-		height: 0.7rem;
-		flex: 0 0 auto;
-		border: 1px solid rgb(0 0 0 / 12%);
-		border-radius: 50%;
-		background: var(--tier-color);
 	}
 
 	.tier-column > div {
 		display: grid;
 		gap: 0.35rem;
 		padding: 0.5rem;
-	}
-
-	.tier-column article {
-		display: grid;
-		gap: 0.12rem;
-		padding: 0.5rem;
-		border-radius: 0.3rem;
-		background: var(--input-bg);
-		font-size: 0.8rem;
-	}
-
-	.tier-column article.inactive {
-		color: var(--disabled-text);
-		background: var(--muted-bg);
-	}
-
-	.tier-column small {
-		color: var(--subdued);
-		font-size: 0.7rem;
-	}
-
-	.tier-column .player-note {
-		color: var(--text);
 	}
 
 	.tier-column .empty-tier {
@@ -674,18 +638,15 @@
 	}
 
 	.tier-selector {
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
 		min-width: 0;
-	}
-
-	.tier-selector > span {
-		background: var(--tier-default);
 	}
 
 	.tier-selector select {
 		width: 100%;
+	}
+
+	.tier-selector select.has-tier {
+		border-left: 4px solid var(--tier-color);
 	}
 
 	@media (max-width: 900px) {

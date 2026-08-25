@@ -3,6 +3,8 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import TierBadge from '$lib/components/TierBadge.svelte';
+	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
@@ -318,11 +320,11 @@
 				<div class="called-player-strategy">
 					<div>
 						<span class="strategy-label">Fascia</span>
-						<strong
-							class="called-tier"
-							style:--tier-color={selectedTier?.color ?? 'var(--tier-default)'}
-							><span></span>{selectedTier?.name ?? 'Senza fascia'}</strong
-						>
+						{#if selectedTier}
+							<TierBadge name={selectedTier.name} color={selectedTier.color} />
+						{:else}
+							<span class="no-tier-note">Senza fascia</span>
+						{/if}
 					</div>
 					<div>
 						<span class="strategy-label">Prezzo massimo</span>
@@ -403,11 +405,12 @@
 													></span
 												><strong class="purchase-price">{purchase.price}</strong>
 												{#if purchaseTier}
-													<span
-														class="purchase-tier"
-														style:--tier-color={purchaseTier.color ?? 'var(--tier-default)'}
-													>
-														<i aria-hidden="true"></i><span>{purchaseTier.name}</span>
+													<span class="purchase-tier">
+														<TierBadge
+															name={purchaseTier.name}
+															color={purchaseTier.color}
+															compact
+														/>
 													</span>
 												{:else}
 													<span class="purchase-tier-spacer" aria-hidden="true"></span>
@@ -439,18 +442,32 @@
 					<div class="strategy-role">
 						<h3>{roleLabels[role]}</h3>
 						{#each [...strategy.tiers].sort((a, b) => a.position - b.position) as tier (tier.id)}
-							<div class="tier" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
-								<h4>{tier.name}</h4>
-								<div>
-									{#each strategy.entries.filter((entry) => entry.role === role && entry.tier_id === tier.id) as entry (entry.player_id)}<span
-											class:purchased={purchasedIds.has(entry.player_id)}
-											><strong>{entry.name}</strong><small
-												>{entry.team}{entry.maximum_price !== null
-													? ` · max ${entry.maximum_price}`
-													: ''}{entry.note ? ` · ${entry.note}` : ''}</small
-											></span
-										>{/each}
+							{@const tierEntries = strategy.entries.filter(
+								(entry) => entry.role === role && entry.tier_id === tier.id
+							)}
+							{@const availableEntries = tierEntries.filter(
+								(entry) => !purchasedIds.has(entry.player_id)
+							)}
+							<div class="tier">
+								<div class="tier-heading">
+									<TierBadge name={tier.name} color={tier.color} compact />
+									<span class="tier-availability"
+										>{availableEntries.length}/{tierEntries.length}</span
+									>
 								</div>
+								{#if availableEntries.length > 0}
+									<div class="tier-players">
+										{#each availableEntries as entry (entry.player_id)}
+											<TierPlayerCard
+												name={entry.name}
+												team={entry.team}
+												maximumPrice={entry.maximum_price}
+												note={entry.note}
+												compact
+											/>
+										{/each}
+									</div>
+								{/if}
 							</div>
 						{/each}
 					</div>
@@ -508,13 +525,7 @@
 								<span class="catalog-player-details">
 									<span>{player.team}</span>
 									{#if playerTier}
-										<span
-											class="catalog-tier"
-											style:--tier-color={playerTier.color ?? 'var(--tier-default)'}
-											><i></i>{playerTier.name}</span
-										>
-									{:else if strategy}
-										<span class="catalog-no-tier">Senza fascia</span>
+										<TierBadge name={playerTier.name} color={playerTier.color} compact />
 									{/if}
 								</span>
 								{#if purchasedIds.has(player.id)}<span class="purchased-label">Acquistato</span
@@ -572,6 +583,8 @@
 		color: var(--completed-text);
 	}
 	.team-card {
+		container-type: inline-size;
+		container-name: team-card;
 		border: 1px solid var(--border);
 		border-radius: 0.7rem;
 		background: var(--surface);
@@ -674,17 +687,9 @@
 	.called-player-strategy strong {
 		font-size: 0.82rem;
 	}
-	.called-tier {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-	}
-	.called-tier span {
-		width: 0.7rem;
-		height: 0.7rem;
-		border: 1px solid rgb(0 0 0 / 12%);
-		border-radius: 50%;
-		background: var(--tier-color);
+	.no-tier-note {
+		color: var(--subdued);
+		font-size: 0.82rem;
 	}
 	.search-results {
 		display: grid;
@@ -774,7 +779,7 @@
 	}
 	.purchase-row {
 		display: grid;
-		grid-template-columns: 1.5rem minmax(70px, 1fr) 2.5rem minmax(0, 6.5rem) auto auto;
+		grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem minmax(4.5rem, 8rem) auto auto;
 		align-items: center;
 		gap: 0.45rem;
 		min-height: 2.25rem;
@@ -813,30 +818,26 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.purchase-tier {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		max-width: 8rem;
-		padding: 0.2rem 0.4rem;
-		border: 1px solid var(--border);
-		border-radius: 999px;
-		background: var(--input-bg);
-		font-size: 0.66rem;
-		font-weight: 700;
-		line-height: 1.2;
+		min-width: 0;
 	}
-	.purchase-tier > i {
-		width: 0.55rem;
-		height: 0.55rem;
-		flex: 0 0 auto;
-		border: 1px solid rgb(0 0 0 / 12%);
-		border-radius: 50%;
-		background: var(--tier-color);
+	.purchase-tier :global(.tier-badge) {
+		max-width: 100%;
 	}
-	.purchase-tier > span {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+	/* A team card can end up narrower than the tier badge needs, regardless of viewport size
+	   (e.g. many participants forcing extra grid columns) — reflow the badge onto its own row
+	   whenever the card itself is tight, not just when the whole page is. */
+	@container team-card (max-width: 380px) {
+		.purchase-row {
+			grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem auto auto;
+		}
+		.purchase-tier {
+			grid-row: 2;
+			grid-column: 2 / 4;
+			justify-self: start;
+		}
+		.purchase-tier-spacer {
+			display: none;
+		}
 	}
 	.text-button {
 		min-height: auto;
@@ -859,37 +860,28 @@
 		font-size: 0.9rem;
 	}
 	.tier {
-		margin-bottom: 0.6rem;
+		margin-bottom: 0.4rem;
 		border: 1px solid var(--border);
-		border-left: 4px solid var(--tier-color);
 		border-radius: 0.45rem;
 		background: var(--surface);
 	}
-	.tier h4 {
-		margin: 0;
-		padding: 0.5rem 0.65rem;
-		border-bottom: 1px solid var(--border);
-		font-size: 0.78rem;
+	.tier-heading {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.4rem;
+		padding: 0.35rem 0.45rem;
 	}
-	.tier > div {
-		display: grid;
-	}
-	.tier span {
-		display: grid;
-		padding: 0.45rem 0.65rem;
-		border-bottom: 1px solid var(--border);
-		font-size: 0.74rem;
-	}
-	.tier span:last-child {
-		border-bottom: 0;
-	}
-	.tier span small {
+	.tier-availability {
+		flex: 0 0 auto;
 		color: var(--subdued);
+		font-size: 0.68rem;
+		font-variant-numeric: tabular-nums;
 	}
-	.tier span.purchased {
-		color: var(--disabled-text);
-		background: var(--muted-bg);
-		text-decoration: line-through;
+	.tier-players {
+		display: grid;
+		gap: 0.35rem;
+		padding: 0 0.45rem 0.45rem;
 	}
 	.catalog-section {
 		margin-top: 3rem;
@@ -1009,27 +1001,11 @@
 		color: var(--subdued);
 		font-size: 0.68rem;
 	}
-	.catalog-tier {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.catalog-tier i {
-		width: 0.55rem;
-		height: 0.55rem;
-		flex: 0 0 auto;
-		border-radius: 50%;
-		background: var(--tier-color);
-	}
 	.catalog-player.purchased {
 		background: var(--muted-bg);
 		color: var(--disabled-text);
 	}
-	.catalog-player.purchased .catalog-tier i {
+	.catalog-player.purchased :global(.tier-badge-accent) {
 		filter: grayscale(1);
 		opacity: 0.5;
 	}
@@ -1066,17 +1042,6 @@
 		}
 		.team-grid {
 			grid-template-columns: 1fr;
-		}
-		.purchase-row {
-			grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem auto auto;
-		}
-		.purchase-tier {
-			grid-row: 2;
-			grid-column: 2 / 4;
-			justify-self: start;
-		}
-		.purchase-tier-spacer {
-			display: none;
 		}
 		.catalog-toolbar {
 			align-items: stretch;
