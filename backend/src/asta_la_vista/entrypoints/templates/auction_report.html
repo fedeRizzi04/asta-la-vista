@@ -16,10 +16,16 @@
       th { color: #626b65; font-size: 12px; text-transform: uppercase; }
       td:last-child, th:last-child { text-align: right; }
       .empty { color: #7a817c; font-style: italic; }
+      .mantra { color: #626b65; font-weight: 400; }
       @media print { body { margin: 0; } }
     </style>
   </head>
   <body>
+    {% set mantra_labels = {
+      "Por": "Por", "Dc": "Dc", "Dd": "Td", "Ds": "Ts", "B": "Br",
+      "E": "E", "M": "Cdc", "C": "Cc", "W": "Ala", "T": "Coc",
+      "Pc": "Pc", "A": "Sp"
+    } %}
     <h1>{{ auction.name }}</h1>
     <p class="meta">Resoconto finale · {{ auction.initial_credits }} crediti iniziali</p>
 
@@ -34,7 +40,15 @@
             <thead><tr><th>Ruolo</th><th>Calciatore</th><th>Squadra</th><th>Prezzo</th></tr></thead>
             <tbody>
               {% for purchase in participant.purchases %}
-                <tr><td>{{ purchase.role }}</td><td>{{ purchase.player_name }}</td><td>{{ purchase.team }}</td><td>{{ purchase.price }}</td></tr>
+                <tr>
+                  <td>
+                    {{ purchase.role }}
+                    {%- if purchase.mantra_roles %}
+                      <span class="mantra">({% for role in purchase.mantra_roles %}{{ mantra_labels.get(role, role) }}{% if not loop.last %} · {% endif %}{% endfor %})</span>
+                    {%- endif %}
+                  </td>
+                  <td>{{ purchase.player_name }}</td><td>{{ purchase.team }}</td><td>{{ purchase.price }}</td>
+                </tr>
               {% endfor %}
             </tbody>
           </table>

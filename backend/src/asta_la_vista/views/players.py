@@ -25,7 +25,7 @@ def player_list(
     with uow:
         rows = uow.session.execute(
             text(f"""
-                SELECT external_id, name, team, role, quotation, active
+                SELECT external_id, name, team, role, quotation, mantra_roles, active
                 FROM player
                 {where}
                 ORDER BY CASE role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
@@ -40,10 +40,15 @@ def player_list(
                 "team": row["team"],
                 "role": row["role"],
                 "quotation": row["quotation"],
+                "mantra_roles": split_mantra_roles(row["mantra_roles"]),
                 "active": bool(row["active"]),
             }
             for row in rows
         ]
+
+
+def split_mantra_roles(value: str | None) -> list[str]:
+    return value.split(",") if value else []
 
 
 def player_counts(uow: AbstractUnitOfWork) -> dict[str, int]:

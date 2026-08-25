@@ -9,6 +9,7 @@ from asta_la_vista.exceptions import ValidationError
 
 REQUIRED_COLUMNS = ("Id", "R", "Nome", "Squadra")
 QUOTATION_COLUMN = "Qt.A"
+MANTRA_ROLE_COLUMN = "RM"
 
 
 def parse_player_file(content: bytes, filename: str) -> tuple[PlayerRow, ...]:
@@ -60,6 +61,9 @@ def _find_headers(rows: Iterable[Iterable[object]]) -> tuple[list[str], Iterable
 def _rows_to_players(headers: list[str], rows: Iterable[Iterable[object]]) -> tuple[PlayerRow, ...]:
     positions = {column: headers.index(column) for column in REQUIRED_COLUMNS}
     quotation_position = headers.index(QUOTATION_COLUMN) if QUOTATION_COLUMN in headers else None
+    mantra_role_position = (
+        headers.index(MANTRA_ROLE_COLUMN) if MANTRA_ROLE_COLUMN in headers else None
+    )
     players: list[PlayerRow] = []
     for row in rows:
         values = list(row)
@@ -79,10 +83,28 @@ def _rows_to_players(headers: list[str], rows: Iterable[Iterable[object]]) -> tu
             if quotation_position is not None and quotation_position < len(values)
             else None
         )
-        players.append(PlayerRow(external_id, name, team, role, quotation))
+        mantra_roles = (
+            _parse_mantra_roles(values[mantra_role_position])
+            if mantra_role_position is not None and mantra_role_position < len(values)
+            else (() if mantra_role_position is not None else None)
+        )
+        players.append(PlayerRow(external_id, name, team, role, quotation, mantra_roles))
     if not players:
         raise ValidationError("The player list is empty")
     return tuple(players)
+
+
+def _parse_mantra_roles(value: object) -> tuple[str, ...]:
+    if value is None or not str(value).strip():
+        return ()
+    codes = [code.strip() for code in str(value).split(";") if code.strip()]
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for code in codes:
+        if code not in seen:
+            seen.add(code)
+            deduped.append(code)
+    return tuple(deduped)
 
 
 def _parse_quotation(value: object) -> int | None:

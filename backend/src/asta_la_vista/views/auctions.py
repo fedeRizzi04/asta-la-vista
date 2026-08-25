@@ -2,6 +2,7 @@ from sqlalchemy import text
 
 from asta_la_vista.exceptions import NotFoundError
 from asta_la_vista.service_layer.unit_of_work import AbstractUnitOfWork
+from asta_la_vista.views.players import split_mantra_roles
 
 
 def auction_list(uow: AbstractUnitOfWork) -> list[dict]:
@@ -73,7 +74,7 @@ def auction_detail(uow: AbstractUnitOfWork, auction_id: str) -> dict:
             uow.session.execute(
                 text("""
                     SELECT p.uuid, p.player_id, p.player_name, pl.team, p.role,
-                           p.participant_id, p.price, pl.active
+                           p.participant_id, p.price, pl.active, pl.mantra_roles
                     FROM purchase p
                     JOIN player pl ON pl.external_id = p.player_id
                     WHERE p.auction_id = :auction_id AND p.cancelled = FALSE
@@ -105,6 +106,7 @@ def auction_detail(uow: AbstractUnitOfWork, auction_id: str) -> dict:
                     "role": purchase["role"],
                     "price": purchase["price"],
                     "player_active": bool(purchase["active"]),
+                    "mantra_roles": split_mantra_roles(purchase["mantra_roles"]),
                 }
             )
         participant_views = []

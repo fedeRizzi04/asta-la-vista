@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { ApiError } from '$lib/api';
 	import Message from '$lib/components/Message.svelte';
+	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { pushErrorToast } from '$lib/toast.svelte';
@@ -199,7 +200,10 @@
 					{#each players as player (player.id)}
 						<tr class:inactive={!player.active}>
 							<td><span class="role" data-role={player.role}>{player.role}</span></td>
-							<td class="player-name">{player.name}</td>
+							<td class="player-name"
+								>{player.name}
+								<MantraRoleBadges roles={player.mantra_roles} compact /></td
+							>
 							<td>{player.team}</td>
 							<td class="quotation">{player.quotation ?? '—'}</td>
 							<td>{player.active ? 'Disponibile' : 'Inattivo'}</td>

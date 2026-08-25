@@ -22,19 +22,34 @@ def import_players(cmd: commands.ImportPlayers, uow: AbstractUnitOfWork) -> dict
             player = existing.get(row.external_id)
             if player is None:
                 uow.players.add(
-                    model.Player(row.external_id, row.name, row.team, role, row.quotation)
+                    model.Player(
+                        row.external_id,
+                        row.name,
+                        row.team,
+                        role,
+                        row.quotation,
+                        row.mantra_roles or (),
+                    )
                 )
                 added += 1
                 continue
-            changed = (player.name, player.team, player.role, player.quotation, player.active) != (
+            changed = (
+                player.name,
+                player.team,
+                player.role,
+                player.quotation,
+                player.mantra_roles,
+                player.active,
+            ) != (
                 row.name.strip(),
                 row.team.strip(),
                 role,
                 row.quotation,
+                row.mantra_roles if row.mantra_roles is not None else player.mantra_roles,
                 True,
             )
             previous_role = player.role
-            player.update(row.name, row.team, role, row.quotation)
+            player.update(row.name, row.team, role, row.quotation, row.mantra_roles)
             updated += changed
             if previous_role != role:
                 role_changes += 1

@@ -11,7 +11,7 @@ def test_import_adds_updates_and_deactivates_players(session_factory):
     uow = SqlAlchemyUnitOfWork(session_factory)
     bus = bootstrap.bootstrap(uow)
     with uow:
-        uow.players.add(Player("1", "Old name", "Old team", Role.DEFENDER))
+        uow.players.add(Player("1", "Old name", "Old team", Role.DEFENDER, mantra_roles=("Dc",)))
         uow.players.add(Player("2", "Leaving", "Team", Role.FORWARD))
         strategy = Strategy("Main")
         tier_id = strategy.add_tier("Top")
@@ -24,7 +24,7 @@ def test_import_adds_updates_and_deactivates_players(session_factory):
     summary = bus.handle(
         commands.ImportPlayers(
             (
-                commands.PlayerRow("1", "New name", "New team", "C", 12),
+                commands.PlayerRow("1", "New name", "New team", "C", 12, ("Cdc",)),
                 commands.PlayerRow("3", "New player", "Team", "A", 8),
             )
         )
@@ -34,6 +34,7 @@ def test_import_adds_updates_and_deactivates_players(session_factory):
     with uow:
         assert uow.players.get("1").role == Role.MIDFIELDER
         assert uow.players.get("1").quotation == 12
+        assert uow.players.get("1").mantra_roles == ("Cdc",)
         assert uow.players.get("2").active is False
         assert uow.players.get("3").team == "Team"
         assert uow.players.get("3").quotation == 8
@@ -43,6 +44,19 @@ def test_import_adds_updates_and_deactivates_players(session_factory):
             None,
             "Keep this note",
         )
+
+
+def test_import_without_rm_column_preserves_existing_mantra_roles(session_factory):
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    bus = bootstrap.bootstrap(uow)
+    with uow:
+        uow.players.add(Player("1", "Player", "Team", Role.DEFENDER, mantra_roles=("Dc",)))
+        uow.commit()
+
+    bus.handle(commands.ImportPlayers((commands.PlayerRow("1", "Player", "Team", "D"),)))
+
+    with uow:
+        assert uow.players.get("1").mantra_roles == ("Dc",)
 
 
 def test_import_during_live_auction_requires_explicit_confirmation(session_factory):

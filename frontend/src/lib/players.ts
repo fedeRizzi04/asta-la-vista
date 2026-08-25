@@ -8,6 +8,7 @@ export type Player = {
 	team: string;
 	role: Role;
 	quotation: number | null;
+	mantra_roles: string[];
 	active: boolean;
 };
 

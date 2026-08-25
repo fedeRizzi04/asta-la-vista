@@ -16,15 +16,15 @@ def test_parses_the_official_excel_columns_from_the_tutti_sheet():
     sheet.append(["Quotazioni Fantacalcio", None, None, None, None])
     sheet.append(["Id", "R", "RM", "Nome", "Squadra", "Qt.A"])
     sheet.append([5841, "P", "Por", "Svilar", "Roma", 18])
-    sheet.append([2764, "A", "Pc", "Martinez L.", "Inter", 35])
+    sheet.append([2764, "A", "Pc;A", "Martinez L.", "Inter", 35])
     content = io.BytesIO()
     workbook.save(content)
 
     players = parse_player_file(content.getvalue(), "players.xlsx")
 
     assert players == (
-        PlayerRow("5841", "Svilar", "Roma", "P", 18),
-        PlayerRow("2764", "Martinez L.", "Inter", "A", 35),
+        PlayerRow("5841", "Svilar", "Roma", "P", 18, ("Por",)),
+        PlayerRow("2764", "Martinez L.", "Inter", "A", 35, ("Pc", "A")),
     )
 
 
@@ -37,6 +37,14 @@ def test_parses_comma_or_semicolon_separated_csv():
     players = parse_player_file(content.getvalue().encode(), "players.csv")
 
     assert players == (PlayerRow("5841", "Svilar", "Roma", "P"),)
+
+
+def test_trims_and_deduplicates_mantra_roles():
+    content = b"Id,R,RM,Nome,Squadra\n5841,D,  Dc ; Ds ;Dc,Svilar,Roma"
+
+    players = parse_player_file(content, "players.csv")
+
+    assert players == (PlayerRow("5841", "Svilar", "Roma", "D", None, ("Dc", "Ds")),)
 
 
 def test_rejects_an_invalid_optional_quotation():

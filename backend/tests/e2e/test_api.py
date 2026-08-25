@@ -28,7 +28,9 @@ def test_player_import_and_strategy_flow(client):
         data={
             "file": (
                 io.BytesIO(
-                    b"Id,R,Nome,Squadra,Qt.A\n5841,P,Svilar,Roma,18\n2764,A,Martinez L.,Inter,35"
+                    b"Id,R,RM,Nome,Squadra,Qt.A\n"
+                    b"5841,P,Por,Svilar,Roma,18\n"
+                    b"2764,A,Pc;A,Martinez L.,Inter,35"
                 ),
                 "players.csv",
             )
@@ -48,6 +50,7 @@ def test_player_import_and_strategy_flow(client):
             "team": "Inter",
             "role": "A",
             "quotation": 35,
+            "mantra_roles": ["Pc", "A"],
             "active": True,
         }
     ]
@@ -108,7 +111,7 @@ def test_player_import_and_strategy_flow(client):
 def test_live_auction_purchase_amendment_and_cancellation_flow(client):
     client.post(
         "/api/players/import",
-        data={"file": (io.BytesIO(b"Id,R,Nome,Squadra\n5841,P,Svilar,Roma"), "players.csv")},
+        data={"file": (io.BytesIO(b"Id,R,RM,Nome,Squadra\n5841,P,Por,Svilar,Roma"), "players.csv")},
     )
     response = client.post(
         "/api/auctions",
@@ -152,12 +155,21 @@ def test_live_auction_purchase_amendment_and_cancellation_flow(client):
     assert auction["purchased_player_ids"] == []
     assert auction["participants"][1]["credits_remaining"] == 100
 
+    assert (
+        client.post(
+            f"/api/auctions/{auction_id}/purchases",
+            json={"player_id": "5841", "participant_id": bob_id, "price": 25},
+        ).status_code
+        == 201
+    )
+
     assert client.post(f"/api/auctions/{auction_id}/complete").status_code == 204
     report = client.get(f"/api/auctions/{auction_id}/report")
     assert report.status_code == 200
     assert report.mimetype == "text/html"
     assert "attachment" in report.headers["Content-Disposition"]
     assert "Asta amici" in report.get_data(as_text=True)
+    assert 'class="mantra">(Por)</span>' in report.get_data(as_text=True)
 
 
 def test_live_import_requires_confirmation(client):

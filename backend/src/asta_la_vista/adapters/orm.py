@@ -21,6 +21,20 @@ auction_status_type = sa.Enum(
     length=10,
 )
 
+
+class MantraRolesType(sa.types.TypeDecorator):
+    """Stores a tuple of Mantra role codes (e.g. ("Dc", "Ts")) as a comma-separated string."""
+
+    impl = sa.Text
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        return ",".join(value) if value else None
+
+    def process_result_value(self, value, dialect):
+        return tuple(value.split(",")) if value else ()
+
+
 players = sa.Table(
     "player",
     metadata,
@@ -29,6 +43,7 @@ players = sa.Table(
     sa.Column("team", sa.String(80), nullable=False),
     sa.Column("role", role_type, nullable=False),
     sa.Column("quotation", sa.Integer),
+    sa.Column("mantra_roles", MantraRolesType()),
     sa.Column("active", sa.Boolean, nullable=False),
     sa.CheckConstraint("quotation IS NULL OR quotation >= 0"),
 )

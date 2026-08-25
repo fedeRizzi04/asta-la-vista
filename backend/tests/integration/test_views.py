@@ -6,7 +6,9 @@ from asta_la_vista.views import auctions, players, strategies
 def test_player_views_filter_by_role_search_and_activity(session_factory):
     uow = SqlAlchemyUnitOfWork(session_factory)
     with uow:
-        uow.players.add(Player("1", "Svilar", "Roma", Role.GOALKEEPER, quotation=18))
+        uow.players.add(
+            Player("1", "Svilar", "Roma", Role.GOALKEEPER, quotation=18, mantra_roles=("Por",))
+        )
         uow.players.add(Player("2", "Sommer", "Inter", Role.GOALKEEPER, active=False))
         uow.players.add(Player("3", "Martinez", "Inter", Role.FORWARD))
         uow.commit()
@@ -18,6 +20,7 @@ def test_player_views_filter_by_role_search_and_activity(session_factory):
             "team": "Roma",
             "role": "P",
             "quotation": 18,
+            "mantra_roles": ["Por"],
             "active": True,
         }
     ]
@@ -31,7 +34,7 @@ def test_player_views_filter_by_role_search_and_activity(session_factory):
 def test_strategy_detail_contains_player_team_status_tiers_and_notes(session_factory):
     uow = SqlAlchemyUnitOfWork(session_factory)
     with uow:
-        player = Player("1", "Martinez", "Inter", Role.FORWARD)
+        player = Player("1", "Martinez", "Inter", Role.FORWARD, mantra_roles=("Pc", "A"))
         strategy = Strategy("Main", uuid="strategy-1")
         tier_id = strategy.add_tier("Top", "#ef4444", uuid="tier-1")
         strategy.assign_player(player.external_id, player.role, tier_id)
@@ -50,6 +53,7 @@ def test_strategy_detail_contains_player_team_status_tiers_and_notes(session_fac
             "team": "Inter",
             "role": "A",
             "active": True,
+            "mantra_roles": ["Pc", "A"],
             "tier_id": "tier-1",
             "note": "Primary target",
             "maximum_price_percentage": None,
@@ -60,7 +64,7 @@ def test_strategy_detail_contains_player_team_status_tiers_and_notes(session_fac
 def test_auction_detail_calculates_rosters_credits_slots_and_maximum_bid(session_factory):
     uow = SqlAlchemyUnitOfWork(session_factory)
     with uow:
-        player = Player("1", "Svilar", "Roma", Role.GOALKEEPER)
+        player = Player("1", "Svilar", "Roma", Role.GOALKEEPER, mantra_roles=("Por",))
         auction = Auction("League", 100, RosterSlots(1, 2, 2, 1), uuid="auction-1")
         alice_id = auction.add_participant("Alice", uuid="alice")
         auction.add_participant("Bob", uuid="bob")
@@ -94,6 +98,7 @@ def test_auction_detail_calculates_rosters_credits_slots_and_maximum_bid(session
         "role": "P",
         "price": 20,
         "player_active": True,
+        "mantra_roles": ["Por"],
     }
     assert (bob["name"], bob["credits_remaining"], bob["maximum_bid"]) == ("Bob", 100, 95)
     assert detail["purchased_player_ids"] == ["1"]

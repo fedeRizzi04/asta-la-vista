@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
+	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
@@ -312,6 +313,7 @@
 								<TierPlayerCard
 									name={entry.name}
 									team={entry.team}
+									mantraRoles={entry.mantra_roles}
 									maximumPricePercentage={entry.maximum_price_percentage}
 									note={entry.note}
 									inactive={!entry.active}
@@ -352,7 +354,12 @@
 					)}
 					<div class:inactive={!player.active} class="player-row">
 						<div class="player-info">
-							<strong>{player.name}</strong>
+							<span class="name-row"
+								><strong>{player.name}</strong><MantraRoleBadges
+									roles={player.mantra_roles}
+									compact
+								/></span
+							>
 							<span>{player.team}{player.active ? '' : ' · inattivo'}</span>
 						</div>
 						<div class="tier-selector">
@@ -643,6 +650,20 @@
 	.player-info span {
 		color: var(--subdued);
 		font-size: 0.76rem;
+	}
+
+	.player-info .name-row {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.3rem;
+		color: inherit;
+		font-size: inherit;
+	}
+
+	.player-info .name-row strong {
+		color: var(--text);
+		font-size: 0.9rem;
 	}
 
 	.tier-selector {

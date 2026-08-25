@@ -12,6 +12,9 @@ class PlayerRow:
     team: str
     role: str
     quotation: int | None = None
+    # ``None`` means that the source file has no RM column. It differs from an
+    # empty tuple, which is an explicit empty RM value.
+    mantra_roles: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)

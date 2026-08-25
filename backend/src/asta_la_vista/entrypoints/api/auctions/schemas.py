@@ -39,6 +39,7 @@ class PurchaseSchema(Schema):
     role = fields.String(required=True)
     price = fields.Integer(required=True)
     player_active = fields.Boolean(required=True)
+    mantra_roles = fields.List(fields.String(), required=True)
 
 
 class ParticipantSchema(Schema):

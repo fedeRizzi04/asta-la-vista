@@ -17,6 +17,7 @@ class PlayerSchema(Schema):
     team = fields.String(required=True)
     role = fields.String(required=True)
     quotation = fields.Integer(allow_none=True)
+    mantra_roles = fields.List(fields.String(), required=True)
     active = fields.Boolean(required=True)
 
 

@@ -2,6 +2,7 @@ from sqlalchemy import text
 
 from asta_la_vista.exceptions import NotFoundError
 from asta_la_vista.service_layer.unit_of_work import AbstractUnitOfWork
+from asta_la_vista.views.players import split_mantra_roles
 
 
 def strategy_list(uow: AbstractUnitOfWork) -> list[dict]:
@@ -51,8 +52,8 @@ def strategy_detail(uow: AbstractUnitOfWork, strategy_id: str) -> dict:
         ).mappings()
         entries = uow.session.execute(
             text("""
-                SELECT e.player_id, p.name, p.team, e.role, p.active, e.tier_id, e.note,
-                       e.maximum_price_percentage
+                SELECT e.player_id, p.name, p.team, e.role, p.active, p.mantra_roles, e.tier_id,
+                       e.note, e.maximum_price_percentage
                 FROM strategy_entry e
                 JOIN player p ON p.external_id = e.player_id
                 WHERE e.strategy_id = :strategy_id
@@ -76,6 +77,7 @@ def strategy_detail(uow: AbstractUnitOfWork, strategy_id: str) -> dict:
                 {
                     **dict(row),
                     "active": bool(row["active"]),
+                    "mantra_roles": split_mantra_roles(row["mantra_roles"]),
                 }
                 for row in entries
             ],

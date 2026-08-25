@@ -23,6 +23,7 @@ export type Purchase = {
 	role: Role;
 	price: number;
 	player_active: boolean;
+	mantra_roles: string[];
 };
 
 export type Participant = {

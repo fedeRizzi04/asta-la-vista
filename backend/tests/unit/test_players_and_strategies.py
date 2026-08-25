@@ -24,6 +24,16 @@ def test_player_can_be_marked_inactive_without_being_deleted():
     assert list(player.events) == [events.PlayerDeactivated("5841")]
 
 
+def test_player_defaults_to_no_mantra_roles_and_can_be_updated():
+    player = Player("5841", "Player", "Team", Role.DEFENDER)
+
+    assert player.mantra_roles == ()
+
+    player.update("Player", "Team", Role.DEFENDER, mantra_roles=("Dc", "Ds"))
+
+    assert player.mantra_roles == ("Dc", "Ds")
+
+
 def test_player_has_an_optional_non_negative_quotation():
     player = Player("5841", "Player", "Team", Role.GOALKEEPER, quotation=18)
 

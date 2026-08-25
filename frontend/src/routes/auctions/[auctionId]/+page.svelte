@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
+	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
@@ -19,6 +20,7 @@
 		type Participant,
 		type Purchase
 	} from '$lib/auctions';
+	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
 	import { getPlayers, type Player, type Role } from '$lib/players';
 	import { getStrategy, percentageToCredits, type Strategy } from '$lib/strategies';
 
@@ -42,6 +44,7 @@
 	let editedParticipantId = $state('');
 	let editedPrice = $state(1);
 	let catalogRole = $state<Role>('P');
+	let catalogMantraRoles = $state<string[]>([]);
 	let catalogSort = $state<CatalogSort>('tier');
 	let loading = $state(true);
 	let saving = $state(false);
@@ -73,10 +76,20 @@
 	let selectedTier = $derived(
 		strategy?.tiers.find((tier) => tier.id === selectedStrategyEntry?.tier_id)
 	);
+	let catalogRolePlayers = $derived(
+		players.filter(
+			(player) => player.role === catalogRole && (player.active || purchasedIds.has(player.id))
+		)
+	);
+	let catalogMantraCodes = $derived(
+		sortMantraRoles([...new Set(catalogRolePlayers.flatMap((player) => player.mantra_roles))])
+	);
 	let catalogPlayers = $derived.by(() => {
-		return players
+		return catalogRolePlayers
 			.filter(
-				(player) => player.role === catalogRole && (player.active || purchasedIds.has(player.id))
+				(player) =>
+					catalogMantraRoles.length === 0 ||
+					catalogMantraRoles.some((role) => player.mantra_roles.includes(role))
 			)
 			.sort((first, second) => {
 				if (catalogSort === 'tier' && strategy) {
@@ -291,8 +304,11 @@
 			<SectionHeading eyebrow="Calciatore chiamato" title="Registra l'acquisto">
 				{#snippet trailing()}
 					{#if selectedPlayer}<span class="selected-player"
-							><strong>{selectedPlayer.name}</strong> · {selectedPlayer.team} · {selectedPlayer.role}{typeof selectedPlayer.quotation ===
-							'number'
+							><strong>{selectedPlayer.name}</strong> · {selectedPlayer.team} · {selectedPlayer.role}
+							<MantraRoleBadges
+								roles={selectedPlayer.mantra_roles}
+								compact
+							/>{typeof selectedPlayer.quotation === 'number'
 								? ` · Q. ${selectedPlayer.quotation}`
 								: ''}</span
 						>{/if}
@@ -353,7 +369,8 @@
 							><strong>{player.name}</strong><span
 								>{player.team} · {player.role}{typeof player.quotation === 'number'
 									? ` · Q. ${player.quotation}`
-									: ''}</span
+									: ''}
+								<MantraRoleBadges roles={player.mantra_roles} compact /></span
 							></button
 						>{/each}
 				</div>
@@ -410,7 +427,9 @@
 												>
 											{:else}
 												<span class="role-badge">{purchase.role}</span><span class="purchase-name"
-													><strong>{purchase.player_name}</strong><small>{purchase.team}</small
+													><strong>{purchase.player_name}</strong><small
+														>{purchase.team}
+														<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
 													></span
 												><strong class="purchase-price">{purchase.price}</strong>
 												{#if purchaseTier}
@@ -468,6 +487,7 @@
 											<TierPlayerCard
 												name={entry.name}
 												team={entry.team}
+												mantraRoles={entry.mantra_roles}
 												maximumPricePercentage={entry.maximum_price_percentage}
 												maximumPriceCredits={entry.maximum_price_percentage != null
 													? percentageToCredits(
@@ -502,16 +522,45 @@
 				</summary>
 				<div class="catalog-content">
 					<div class="catalog-toolbar">
-						<div class="catalog-role-tabs" aria-label="Ruolo calciatori">
-							{#each roles as role (role)}
-								<button
-									type="button"
-									class:active={catalogRole === role}
-									onclick={() => (catalogRole = role)}
-								>
-									{roleLabels[role]}
-								</button>
-							{/each}
+						<div class="catalog-tabs-group">
+							<div class="catalog-role-tabs" aria-label="Ruolo calciatori">
+								{#each roles as role (role)}
+									<button
+										type="button"
+										class:active={catalogRole === role}
+										onclick={() => {
+											catalogRole = role;
+											catalogMantraRoles = [];
+										}}
+									>
+										{roleLabels[role]}
+									</button>
+								{/each}
+							</div>
+							{#if catalogMantraCodes.length > 0}
+								<div class="catalog-mantra-chips" aria-label="Sotto-ruolo mantra">
+									<button
+										type="button"
+										class:active={catalogMantraRoles.length === 0}
+										onclick={() => (catalogMantraRoles = [])}
+									>
+										Tutti
+									</button>
+									{#each catalogMantraCodes as code (code)}
+										<button
+											type="button"
+											class:active={catalogMantraRoles.includes(code)}
+											onclick={() => {
+												catalogMantraRoles = catalogMantraRoles.includes(code)
+													? catalogMantraRoles.filter((role) => role !== code)
+													: [...catalogMantraRoles, code];
+											}}
+										>
+											{mantraRoleLabel(code)}
+										</button>
+									{/each}
+								</div>
+							{/if}
 						</div>
 						<label>
 							<span>Ordina per</span>
@@ -538,6 +587,7 @@
 								</span>
 								<span class="catalog-player-details">
 									<span>{player.team}</span>
+									<MantraRoleBadges roles={player.mantra_roles} compact />
 									{#if playerTier}
 										<TierBadge name={playerTier.name} color={playerTier.color} compact />
 									{/if}
@@ -932,7 +982,8 @@
 		border-top: 1px solid var(--border);
 	}
 	.catalog-toolbar,
-	.catalog-role-tabs {
+	.catalog-role-tabs,
+	.catalog-mantra-chips {
 		display: flex;
 		align-items: center;
 	}
@@ -940,20 +991,32 @@
 		justify-content: space-between;
 		gap: 1rem;
 	}
-	.catalog-role-tabs {
+	.catalog-tabs-group {
+		display: grid;
+		gap: 0.5rem;
+	}
+	.catalog-role-tabs,
+	.catalog-mantra-chips {
 		flex-wrap: wrap;
 		gap: 0.35rem;
 	}
-	.catalog-role-tabs button {
+	.catalog-role-tabs button,
+	.catalog-mantra-chips button {
 		min-height: 2.2rem;
 		border-color: var(--border-strong);
 		background: var(--input-bg);
 		color: var(--text);
 	}
-	.catalog-role-tabs button.active {
+	.catalog-role-tabs button.active,
+	.catalog-mantra-chips button.active {
 		border-color: var(--primary);
 		background: var(--primary);
 		color: var(--on-primary);
+	}
+	.catalog-mantra-chips button {
+		min-height: 1.85rem;
+		padding: 0 0.6rem;
+		font-size: 0.72rem;
 	}
 	.catalog-toolbar label {
 		display: flex;

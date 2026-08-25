@@ -79,6 +79,7 @@ class Player:
         team: str,
         role: Role,
         quotation: int | None = None,
+        mantra_roles: tuple[str, ...] = (),
         active: bool = True,
     ):
         if not external_id.strip() or not name.strip() or not team.strip():
@@ -89,10 +90,18 @@ class Player:
         self.team = team.strip()
         self.role = role
         self.quotation = quotation
+        self.mantra_roles = mantra_roles
         self.active = active
         self.events: deque[events.Event] = deque()
 
-    def update(self, name: str, team: str, role: Role, quotation: int | None = None):
+    def update(
+        self,
+        name: str,
+        team: str,
+        role: Role,
+        quotation: int | None = None,
+        mantra_roles: tuple[str, ...] | None = None,
+    ):
         if not name.strip() or not team.strip():
             raise ValidationError("Player name and team are required")
         self._validate_quotation(quotation)
@@ -101,6 +110,8 @@ class Player:
         self.team = team.strip()
         self.role = role
         self.quotation = quotation
+        if mantra_roles is not None:
+            self.mantra_roles = mantra_roles
         self.active = True
         if role != previous_role:
             self.events.append(events.PlayerRoleChanged(self.external_id, previous_role, role))

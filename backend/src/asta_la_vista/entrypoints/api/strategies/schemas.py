@@ -57,6 +57,7 @@ class StrategyEntrySchema(Schema):
     team = fields.String(required=True)
     role = fields.String(required=True)
     active = fields.Boolean(required=True)
+    mantra_roles = fields.List(fields.String(), required=True)
     tier_id = fields.String(allow_none=True)
     note = fields.String(required=True)
     maximum_price_percentage = fields.Float(allow_none=True)

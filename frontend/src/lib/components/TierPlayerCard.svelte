@@ -1,7 +1,10 @@
 <script lang="ts">
+	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
+
 	let {
 		name,
 		team,
+		mantraRoles = [],
 		maximumPricePercentage = null,
 		maximumPriceCredits = null,
 		note = '',
@@ -11,6 +14,7 @@
 	}: {
 		name: string;
 		team: string;
+		mantraRoles?: string[];
 		maximumPricePercentage?: number | null;
 		maximumPriceCredits?: number | null;
 		note?: string;
@@ -29,7 +33,9 @@
 </script>
 
 <article class:inactive class:purchased class:compact>
-	<strong>{name}</strong>
+	<span class="name-row"
+		><strong>{name}</strong><MantraRoleBadges roles={mantraRoles} compact /></span
+	>
 	<small>{team}{maximumPriceLabel}{note ? ` · ${note}` : ''}</small>
 </article>
 
@@ -66,5 +72,12 @@
 
 	small {
 		color: var(--subdued);
+	}
+
+	.name-row {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.3rem;
 	}
 </style>

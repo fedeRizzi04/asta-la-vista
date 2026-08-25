@@ -21,6 +21,7 @@ export type StrategyEntry = {
 	team: string;
 	role: Role;
 	active: boolean;
+	mantra_roles: string[];
 	tier_id: string | null;
 	note: string;
 	maximum_price_percentage: number | null;
