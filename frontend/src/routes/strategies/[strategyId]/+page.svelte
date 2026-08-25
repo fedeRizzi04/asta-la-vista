@@ -20,7 +20,11 @@
 		type Tier
 	} from '$lib/strategies';
 
-	type EntryDraft = { tierId: string; note: string; maximumPrice: number | undefined };
+	type EntryDraft = {
+		tierId: string;
+		note: string;
+		maximumPricePercentage: number | undefined;
+	};
 
 	const roleLabels: Record<Role, string> = {
 		P: 'Portieri',
@@ -83,7 +87,7 @@
 					{
 						tierId: entry?.tier_id ?? '',
 						note: entry?.note ?? '',
-						maximumPrice: entry?.maximum_price ?? undefined
+						maximumPricePercentage: entry?.maximum_price_percentage ?? undefined
 					}
 				];
 			})
@@ -155,7 +159,7 @@
 				player.id,
 				draft.tierId || null,
 				draft.note,
-				draft.tierId ? (draft.maximumPrice ?? null) : null
+				draft.tierId ? (draft.maximumPricePercentage ?? null) : null
 			);
 			await refreshStrategy();
 			savedPlayerId = player.id;
@@ -308,7 +312,7 @@
 								<TierPlayerCard
 									name={entry.name}
 									team={entry.team}
-									maximumPrice={entry.maximum_price}
+									maximumPricePercentage={entry.maximum_price_percentage}
 									note={entry.note}
 									inactive={!entry.active}
 								/>
@@ -325,7 +329,7 @@
 	<section class="panel players-panel">
 		<SectionHeading
 			title="Calciatori"
-			subtitle="Assegna una fascia, un prezzo massimo e una nota facoltativa."
+			subtitle="Assegna una fascia, una percentuale massima di spesa e una nota facoltativa."
 		>
 			{#snippet trailing()}
 				<input
@@ -358,7 +362,7 @@
 								class:has-tier={!!selectedPlayerTier}
 								onchange={() => {
 									if (!entryDrafts[player.id].tierId) {
-										entryDrafts[player.id].maximumPrice = undefined;
+										entryDrafts[player.id].maximumPricePercentage = undefined;
 									}
 								}}
 								aria-label={`Fascia di ${player.name}`}
@@ -374,15 +378,19 @@
 							placeholder="Nota"
 							aria-label={`Nota per ${player.name}`}
 						/>
-						<input
-							bind:value={entryDrafts[player.id].maximumPrice}
-							type="number"
-							min="1"
-							step="1"
-							placeholder="Prezzo max"
-							aria-label={`Prezzo massimo per ${player.name}`}
-							disabled={!entryDrafts[player.id].tierId}
-						/>
+						<div class="percentage-field">
+							<input
+								bind:value={entryDrafts[player.id].maximumPricePercentage}
+								type="number"
+								min="0.1"
+								max="100"
+								step="0.1"
+								placeholder="% max"
+								aria-label={`Percentuale massima per ${player.name}`}
+								disabled={!entryDrafts[player.id].tierId}
+							/>
+							<span class="percentage-suffix">%</span>
+						</div>
 						<button
 							type="button"
 							class="secondary"
@@ -645,6 +653,26 @@
 		width: 100%;
 	}
 
+	.percentage-field {
+		position: relative;
+		min-width: 0;
+	}
+
+	.percentage-field input {
+		width: 100%;
+		padding-right: 1.6rem;
+	}
+
+	.percentage-suffix {
+		position: absolute;
+		top: 50%;
+		right: 0.7rem;
+		transform: translateY(-50%);
+		color: var(--subdued);
+		font-size: 0.8rem;
+		pointer-events: none;
+	}
+
 	.tier-selector select.has-tier {
 		border-left: 4px solid var(--tier-color);
 	}
@@ -663,6 +691,7 @@
 		.tier-actions,
 		.player-row > input,
 		.player-row > .tier-selector,
+		.player-row > .percentage-field,
 		.player-row > button {
 			grid-column: 2 / -1;
 		}

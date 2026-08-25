@@ -52,7 +52,7 @@ def strategy_detail(uow: AbstractUnitOfWork, strategy_id: str) -> dict:
         entries = uow.session.execute(
             text("""
                 SELECT e.player_id, p.name, p.team, e.role, p.active, e.tier_id, e.note,
-                       e.maximum_price
+                       e.maximum_price_percentage
                 FROM strategy_entry e
                 JOIN player p ON p.external_id = e.player_id
                 WHERE e.strategy_id = :strategy_id

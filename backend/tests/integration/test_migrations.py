@@ -45,7 +45,7 @@ def test_initial_migration_upgrades_and_downgrades_sqlite(tmp_path, monkeypatch)
         "role",
         "tier_id",
         "note",
-        "maximum_price",
+        "maximum_price_percentage",
     }
 
     command.downgrade(alembic_config, "base")
@@ -111,7 +111,7 @@ def test_global_tier_migration_merges_matching_role_tiers(tmp_path, monkeypatch)
         {"player_id": "p1", "tier_id": "top-p"},
         {"player_id": "p2", "tier_id": "top-p"},
     ]
-    assert "maximum_price" in {
+    assert "maximum_price_percentage" in {
         column["name"] for column in sa.inspect(engine).get_columns("strategy_entry")
     }
     engine.dispose()

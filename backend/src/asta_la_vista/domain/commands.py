@@ -113,7 +113,7 @@ class UpdateStrategyPlayer(Command):
     player_id: str
     tier_id: str | None
     note: str
-    maximum_price: int | None
+    maximum_price_percentage: float | None
 
 
 @dataclass(frozen=True)

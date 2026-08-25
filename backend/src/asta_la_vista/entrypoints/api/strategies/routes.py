@@ -90,6 +90,6 @@ class StrategyPlayerResource(MethodView):
                 player_id,
                 body["tier_id"],
                 body["note"],
-                body["maximum_price"],
+                body["maximum_price_percentage"],
             )
         )

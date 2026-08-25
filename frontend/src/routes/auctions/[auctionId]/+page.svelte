@@ -20,7 +20,7 @@
 		type Purchase
 	} from '$lib/auctions';
 	import { getPlayers, type Player, type Role } from '$lib/players';
-	import { getStrategy, type Strategy } from '$lib/strategies';
+	import { getStrategy, percentageToCredits, type Strategy } from '$lib/strategies';
 
 	const roleLabels: Record<Role, string> = {
 		P: 'Portieri',
@@ -64,6 +64,11 @@
 	let selectedPlayer = $derived(players.find((player) => player.id === selectedPlayerId));
 	let selectedStrategyEntry = $derived(
 		strategy?.entries.find((entry) => entry.player_id === selectedPlayerId)
+	);
+	let selectedMaximumPriceCredits = $derived(
+		selectedStrategyEntry?.maximum_price_percentage != null && auction
+			? percentageToCredits(selectedStrategyEntry.maximum_price_percentage, auction.initial_credits)
+			: null
 	);
 	let selectedTier = $derived(
 		strategy?.tiers.find((tier) => tier.id === selectedStrategyEntry?.tier_id)
@@ -328,7 +333,11 @@
 					</div>
 					<div>
 						<span class="strategy-label">Prezzo massimo</span>
-						<strong>{selectedStrategyEntry?.maximum_price ?? 'Non indicato'}</strong>
+						<strong
+							>{selectedMaximumPriceCredits !== null
+								? `${selectedMaximumPriceCredits} (${selectedStrategyEntry?.maximum_price_percentage}%)`
+								: 'Non indicato'}</strong
+						>
 					</div>
 					<div class="called-note">
 						<span class="strategy-label">Note</span>
@@ -459,7 +468,13 @@
 											<TierPlayerCard
 												name={entry.name}
 												team={entry.team}
-												maximumPrice={entry.maximum_price}
+												maximumPricePercentage={entry.maximum_price_percentage}
+												maximumPriceCredits={entry.maximum_price_percentage != null
+													? percentageToCredits(
+															entry.maximum_price_percentage,
+															auction.initial_credits
+														)
+													: null}
 												note={entry.note}
 												purchased={purchasedIds.has(entry.player_id)}
 												compact

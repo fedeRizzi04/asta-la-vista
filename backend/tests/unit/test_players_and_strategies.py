@@ -73,30 +73,34 @@ def test_role_change_moves_player_to_unassigned_and_keeps_note():
     )
 
 
-def test_strategy_player_can_have_an_optional_maximum_price():
+def test_strategy_player_can_have_an_optional_maximum_price_percentage():
     strategy = Strategy("Main strategy")
     tier_id = strategy.add_tier("Top")
 
-    strategy.update_player("player-1", Role.FORWARD, tier_id, "Primary target", 80)
+    strategy.update_player("player-1", Role.FORWARD, tier_id, "Primary target", 15.5)
 
     entry = strategy.entries[0]
-    assert (entry.tier_id, entry.note, entry.maximum_price) == (tier_id, "Primary target", 80)
+    assert (entry.tier_id, entry.note, entry.maximum_price_percentage) == (
+        tier_id,
+        "Primary target",
+        15.5,
+    )
 
 
-@pytest.mark.parametrize("maximum_price", [0, -1, 1.5, True])
-def test_strategy_rejects_invalid_maximum_prices(maximum_price):
+@pytest.mark.parametrize("maximum_price_percentage", [0, -1, 100.1, 12.34, True])
+def test_strategy_rejects_invalid_maximum_price_percentages(maximum_price_percentage):
     strategy = Strategy("Main strategy")
     tier_id = strategy.add_tier("Top")
 
     with pytest.raises(ValidationError):
-        strategy.update_player("player-1", Role.FORWARD, tier_id, "", maximum_price)
+        strategy.update_player("player-1", Role.FORWARD, tier_id, "", maximum_price_percentage)
 
 
-def test_maximum_price_requires_a_tier():
+def test_maximum_price_percentage_requires_a_tier():
     strategy = Strategy("Main strategy")
 
     with pytest.raises(ValidationError):
-        strategy.update_player("player-1", Role.FORWARD, None, "", 80)
+        strategy.update_player("player-1", Role.FORWARD, None, "", 15.5)
 
 
 def test_strategy_copy_can_be_changed_without_affecting_the_original():
@@ -104,7 +108,7 @@ def test_strategy_copy_can_be_changed_without_affecting_the_original():
     tier_id = strategy.add_tier("Top", "#ef4444")
     strategy.assign_player("player-1", Role.FORWARD, tier_id)
     strategy.set_player_note("player-1", Role.FORWARD, "Primary target")
-    strategy.update_player("player-1", Role.FORWARD, tier_id, "Primary target", 80)
+    strategy.update_player("player-1", Role.FORWARD, tier_id, "Primary target", 15.5)
 
     duplicate = strategy.duplicate("Alternative strategy")
     duplicate.remove_tier(duplicate.tiers[0].uuid)
@@ -113,7 +117,7 @@ def test_strategy_copy_can_be_changed_without_affecting_the_original():
     assert strategy.tiers[0].name == "Top"
     assert strategy.entries[0].tier_id == tier_id
     assert strategy.entries[0].note == "Primary target"
-    assert strategy.entries[0].maximum_price == 80
+    assert strategy.entries[0].maximum_price_percentage == 15.5
     assert duplicate.entries[0].tier_id is None
 
 

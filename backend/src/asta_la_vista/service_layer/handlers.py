@@ -180,7 +180,7 @@ def update_strategy_player(cmd: commands.UpdateStrategyPlayer, uow: AbstractUnit
             player.role,
             cmd.tier_id,
             cmd.note,
-            cmd.maximum_price,
+            cmd.maximum_price_percentage,
         )
         uow.commit()
 

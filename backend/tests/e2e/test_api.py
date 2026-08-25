@@ -68,7 +68,7 @@ def test_player_import_and_strategy_flow(client):
     assert response.status_code == 204
     response = client.put(
         f"/api/strategies/{strategy_id}/players/2764",
-        json={"tier_id": tier_id, "note": "Obiettivo principale", "maximum_price": 80},
+        json={"tier_id": tier_id, "note": "Obiettivo principale", "maximum_price_percentage": 15.5},
     )
     assert response.status_code == 204
 
@@ -77,7 +77,7 @@ def test_player_import_and_strategy_flow(client):
     assert strategy["entries"][0]["team"] == "Inter"
     assert strategy["entries"][0]["tier_id"] == tier_id
     assert strategy["entries"][0]["note"] == "Obiettivo principale"
-    assert strategy["entries"][0]["maximum_price"] == 80
+    assert strategy["entries"][0]["maximum_price_percentage"] == 15.5
 
     response = client.post(f"/api/strategies/{strategy_id}/duplicate", json={"name": "Alternativa"})
     assert response.status_code == 201
@@ -86,23 +86,23 @@ def test_player_import_and_strategy_flow(client):
     assert duplicate["name"] == "Alternativa"
     assert duplicate["tiers"][0]["name"] == "Seconda fascia"
     assert duplicate["entries"][0]["note"] == "Obiettivo principale"
-    assert duplicate["entries"][0]["maximum_price"] == 80
+    assert duplicate["entries"][0]["maximum_price_percentage"] == 15.5
 
     response = client.put(
         f"/api/strategies/{strategy_id}/players/2764",
-        json={"tier_id": tier_id, "note": "", "maximum_price": 0},
+        json={"tier_id": tier_id, "note": "", "maximum_price_percentage": 0},
     )
     assert response.status_code == 422
 
     response = client.put(
         f"/api/strategies/{strategy_id}/players/2764",
-        json={"tier_id": None, "note": "Changed note", "maximum_price": 80},
+        json={"tier_id": None, "note": "Changed note", "maximum_price_percentage": 15.5},
     )
     assert response.status_code == 422
     unchanged_entry = client.get(f"/api/strategies/{strategy_id}").get_json()["entries"][0]
     assert unchanged_entry["tier_id"] == tier_id
     assert unchanged_entry["note"] == "Obiettivo principale"
-    assert unchanged_entry["maximum_price"] == 80
+    assert unchanged_entry["maximum_price_percentage"] == 15.5
 
 
 def test_live_auction_purchase_amendment_and_cancellation_flow(client):

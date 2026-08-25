@@ -23,7 +23,7 @@ export type StrategyEntry = {
 	active: boolean;
 	tier_id: string | null;
 	note: string;
-	maximum_price: number | null;
+	maximum_price_percentage: number | null;
 };
 
 export type Strategy = {
@@ -105,11 +105,23 @@ export function updateStrategyEntry(
 	playerId: string,
 	tierId: string | null,
 	note: string,
-	maximumPrice: number | null
+	maximumPricePercentage: number | null
 ): Promise<void> {
 	return apiRequest<void>(`/api/strategies/${strategyId}/players/${playerId}`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ tier_id: tierId, note, maximum_price: maximumPrice })
+		body: JSON.stringify({
+			tier_id: tierId,
+			note,
+			maximum_price_percentage: maximumPricePercentage
+		})
 	});
+}
+
+/**
+ * Converts a strategy entry's maximum-price percentage into an absolute credit amount
+ * for a specific auction budget, using standard rounding.
+ */
+export function percentageToCredits(percentage: number, budget: number): number {
+	return Math.round((percentage / 100) * budget);
 }

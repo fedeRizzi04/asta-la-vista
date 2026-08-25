@@ -2,7 +2,8 @@
 	let {
 		name,
 		team,
-		maximumPrice = null,
+		maximumPricePercentage = null,
+		maximumPriceCredits = null,
 		note = '',
 		inactive = false,
 		purchased = false,
@@ -10,19 +11,26 @@
 	}: {
 		name: string;
 		team: string;
-		maximumPrice?: number | null;
+		maximumPricePercentage?: number | null;
+		maximumPriceCredits?: number | null;
 		note?: string;
 		inactive?: boolean;
 		purchased?: boolean;
 		compact?: boolean;
 	} = $props();
+
+	let maximumPriceLabel = $derived.by(() => {
+		if (maximumPricePercentage === null) return '';
+		const percentageText = `${maximumPricePercentage}%`;
+		return maximumPriceCredits === null
+			? ` · max ${percentageText}`
+			: ` · max ${maximumPriceCredits} cr (${percentageText})`;
+	});
 </script>
 
 <article class:inactive class:purchased class:compact>
 	<strong>{name}</strong>
-	<small
-		>{team}{maximumPrice !== null ? ` · max ${maximumPrice}` : ''}{note ? ` · ${note}` : ''}</small
-	>
+	<small>{team}{maximumPriceLabel}{note ? ` · ${note}` : ''}</small>
 </article>
 
 <style>
