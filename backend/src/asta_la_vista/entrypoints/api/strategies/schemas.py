@@ -1,6 +1,4 @@
-from marshmallow import Schema, fields, validate
-
-role_field = fields.String(required=True, validate=validate.OneOf(["P", "D", "C", "A"]))
+from marshmallow import Schema, fields
 
 
 class StrategyIdSchema(Schema):
@@ -23,7 +21,6 @@ class StrategySummarySchema(Schema):
 
 
 class TierCreateSchema(Schema):
-    role = role_field
     name = fields.String(required=True)
     color = fields.String(allow_none=True)
 
@@ -34,13 +31,11 @@ class TierUpdateSchema(Schema):
 
 
 class TierOrderSchema(Schema):
-    role = role_field
     tier_ids = fields.List(fields.String(), required=True)
 
 
 class TierSchema(Schema):
     id = fields.String(required=True)
-    role = fields.String(required=True)
     name = fields.String(required=True)
     position = fields.Integer(required=True)
     color = fields.String(allow_none=True)

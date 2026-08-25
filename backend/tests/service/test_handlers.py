@@ -63,7 +63,7 @@ def test_strategy_flow_uses_the_player_current_role(session_factory):
         uow.commit()
 
     strategy_id = bus.handle(commands.CreateStrategy("Main strategy"))
-    tier_id = bus.handle(commands.AddTier(strategy_id, Role.FORWARD, "Top", "#ef4444"))
+    tier_id = bus.handle(commands.AddTier(strategy_id, "Top", "#ef4444"))
     bus.handle(commands.AssignPlayerToTier(strategy_id, "2764", tier_id))
     bus.handle(commands.SetStrategyPlayerNote(strategy_id, "2764", "Primary target"))
 

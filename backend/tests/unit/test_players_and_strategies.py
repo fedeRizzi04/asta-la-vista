@@ -1,8 +1,5 @@
-import pytest
-
 from asta_la_vista.domain import events
 from asta_la_vista.domain.model import Player, Role, Strategy
-from asta_la_vista.exceptions import ValidationError
 
 
 def test_player_update_reactivates_and_reports_a_role_change():
@@ -24,35 +21,32 @@ def test_player_can_be_marked_inactive_without_being_deleted():
     assert list(player.events) == [events.PlayerDeactivated("5841")]
 
 
-def test_strategy_has_independent_ordered_tiers_for_each_role():
+def test_strategy_has_global_ordered_tiers():
     strategy = Strategy("Main strategy")
-    first = strategy.add_tier(Role.FORWARD, "Top", "#ef4444", uuid="first")
-    second = strategy.add_tier(Role.FORWARD, "Good", "#f59e0b", uuid="second")
-    goalkeeper = strategy.add_tier(Role.GOALKEEPER, "Reliable", uuid="goalkeeper")
+    first = strategy.add_tier("Top", "#ef4444", uuid="first")
+    second = strategy.add_tier("Good", "#f59e0b", uuid="second")
 
-    strategy.reorder_tiers(Role.FORWARD, [second, first])
+    strategy.reorder_tiers([second, first])
 
-    assert [(tier.uuid, tier.position) for tier in strategy.tiers if tier.role == Role.FORWARD] == [
-        (first, 1),
-        (second, 0),
+    assert [(tier.uuid, tier.position) for tier in strategy.tiers] == [(first, 1), (second, 0)]
+
+
+def test_players_from_different_roles_can_share_a_tier():
+    strategy = Strategy("Main strategy")
+    tier_id = strategy.add_tier("Top")
+
+    strategy.assign_player("player-1", Role.MIDFIELDER, tier_id)
+    strategy.assign_player("player-2", Role.FORWARD, tier_id)
+
+    assert [(entry.role, entry.tier_id) for entry in strategy.entries] == [
+        (Role.MIDFIELDER, tier_id),
+        (Role.FORWARD, tier_id),
     ]
-    assert next(tier.position for tier in strategy.tiers if tier.uuid == goalkeeper) == 0
-
-
-def test_player_can_only_be_assigned_to_a_tier_for_the_same_role():
-    strategy = Strategy("Main strategy")
-    forward_tier = strategy.add_tier(Role.FORWARD, "Top")
-
-    with pytest.raises(ValidationError):
-        strategy.assign_player("player-1", Role.MIDFIELDER, forward_tier)
-
-    strategy.assign_player("player-1", Role.FORWARD, forward_tier)
-    assert strategy.entries[0].tier_id == forward_tier
 
 
 def test_role_change_moves_player_to_unassigned_and_keeps_note():
     strategy = Strategy("Main strategy")
-    tier_id = strategy.add_tier(Role.DEFENDER, "Top")
+    tier_id = strategy.add_tier("Top")
     strategy.assign_player("player-1", Role.DEFENDER, tier_id)
     strategy.set_player_note("player-1", Role.DEFENDER, "Set-piece threat")
 
@@ -68,7 +62,7 @@ def test_role_change_moves_player_to_unassigned_and_keeps_note():
 
 def test_strategy_copy_can_be_changed_without_affecting_the_original():
     strategy = Strategy("Main strategy")
-    tier_id = strategy.add_tier(Role.FORWARD, "Top", "#ef4444")
+    tier_id = strategy.add_tier("Top", "#ef4444")
     strategy.assign_player("player-1", Role.FORWARD, tier_id)
     strategy.set_player_note("player-1", Role.FORWARD, "Primary target")
 
@@ -84,8 +78,8 @@ def test_strategy_copy_can_be_changed_without_affecting_the_original():
 
 def test_tier_can_be_updated_removed_and_leave_players_unassigned():
     strategy = Strategy("Main strategy")
-    first = strategy.add_tier(Role.FORWARD, "Top", "#ef4444")
-    second = strategy.add_tier(Role.FORWARD, "Good", "#f59e0b")
+    first = strategy.add_tier("Top", "#ef4444")
+    second = strategy.add_tier("Good", "#f59e0b")
     strategy.assign_player("player-1", Role.FORWARD, first)
 
     strategy.update_tier(first, "Elite", "#dc2626")

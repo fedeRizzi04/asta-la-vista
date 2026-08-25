@@ -38,7 +38,7 @@ def test_strategy_round_trip_keeps_tiers_assignments_and_notes(session_factory):
     with session_factory() as session:
         player = Player("2764", "Martinez L.", "Inter", Role.FORWARD)
         strategy = Strategy("Main strategy", uuid="strategy-1")
-        tier_id = strategy.add_tier(Role.FORWARD, "Top", "#ef4444", uuid="tier-1")
+        tier_id = strategy.add_tier("Top", "#ef4444", uuid="tier-1")
         strategy.assign_player(player.external_id, player.role, tier_id)
         strategy.set_player_note(player.external_id, player.role, "Primary target")
         session.add(player)
@@ -49,9 +49,7 @@ def test_strategy_round_trip_keeps_tiers_assignments_and_notes(session_factory):
         saved = repository.StrategyRepository(session).get("strategy-1")
 
         assert saved is not None
-        assert [(tier.role, tier.name, tier.position) for tier in saved.tiers] == [
-            (Role.FORWARD, "Top", 0)
-        ]
+        assert [(tier.name, tier.position) for tier in saved.tiers] == [("Top", 0)]
         assert saved.entries[0].player_id == "2764"
         assert saved.entries[0].note == "Primary target"
         assert list(saved.events) == []

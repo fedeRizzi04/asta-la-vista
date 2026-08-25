@@ -326,13 +326,11 @@
 				{#each roles as role (role)}
 					<div class="strategy-role">
 						<h3>{roleLabels[role]}</h3>
-						{#each strategy.tiers
-							.filter((tier) => tier.role === role)
-							.sort((a, b) => a.position - b.position) as tier (tier.id)}
+						{#each [...strategy.tiers].sort((a, b) => a.position - b.position) as tier (tier.id)}
 							<div class="tier" style:--tier-color={tier.color ?? '#d8ded9'}>
 								<h4>{tier.name}</h4>
 								<div>
-									{#each strategy.entries.filter((entry) => entry.tier_id === tier.id) as entry (entry.player_id)}<span
+									{#each strategy.entries.filter((entry) => entry.role === role && entry.tier_id === tier.id) as entry (entry.player_id)}<span
 											class:purchased={purchasedIds.has(entry.player_id)}
 											><strong>{entry.name}</strong><small
 												>{entry.team}{entry.note ? ` · ${entry.note}` : ''}</small

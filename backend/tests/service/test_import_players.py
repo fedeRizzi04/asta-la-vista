@@ -14,7 +14,7 @@ def test_import_adds_updates_and_deactivates_players(session_factory):
         uow.players.add(Player("1", "Old name", "Old team", Role.DEFENDER))
         uow.players.add(Player("2", "Leaving", "Team", Role.FORWARD))
         strategy = Strategy("Main")
-        tier_id = strategy.add_tier(Role.DEFENDER, "Top")
+        tier_id = strategy.add_tier("Top")
         strategy.assign_player("1", Role.DEFENDER, tier_id)
         strategy.set_player_note("1", Role.DEFENDER, "Keep this note")
         uow.strategies.add(strategy)

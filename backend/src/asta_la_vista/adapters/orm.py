@@ -43,12 +43,10 @@ tiers = sa.Table(
     metadata,
     sa.Column("uuid", sa.String(36), primary_key=True),
     sa.Column("strategy_id", sa.ForeignKey("strategy.uuid", ondelete="CASCADE"), nullable=False),
-    sa.Column("role", role_type, nullable=False),
     sa.Column("name", sa.String(80), nullable=False),
     sa.Column("position", sa.Integer, nullable=False),
     sa.Column("color", sa.String(32)),
-    sa.UniqueConstraint("strategy_id", "role", "name"),
-    sa.UniqueConstraint("strategy_id", "role", "position"),
+    sa.UniqueConstraint("strategy_id", "name"),
 )
 
 strategy_entries = sa.Table(

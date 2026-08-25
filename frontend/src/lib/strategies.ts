@@ -10,7 +10,6 @@ export type StrategySummary = {
 
 export type Tier = {
 	id: string;
-	role: Role;
 	name: string;
 	position: number;
 	color: string | null;
@@ -67,16 +66,11 @@ export function renameStrategy(strategyId: string, name: string): Promise<void> 
 	});
 }
 
-export function addTier(
-	strategyId: string,
-	role: Role,
-	name: string,
-	color: string | null
-): Promise<EntityId> {
+export function addTier(strategyId: string, name: string, color: string | null): Promise<EntityId> {
 	return apiRequest<EntityId>(`/api/strategies/${strategyId}/tiers`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ role, name, color })
+		body: JSON.stringify({ name, color })
 	});
 }
 
@@ -97,11 +91,11 @@ export function removeTier(strategyId: string, tierId: string): Promise<void> {
 	return apiRequest<void>(`/api/strategies/${strategyId}/tiers/${tierId}`, { method: 'DELETE' });
 }
 
-export function reorderTiers(strategyId: string, role: Role, tierIds: string[]): Promise<void> {
+export function reorderTiers(strategyId: string, tierIds: string[]): Promise<void> {
 	return apiRequest<void>(`/api/strategies/${strategyId}/tiers/order`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ role, tier_ids: tierIds })
+		body: JSON.stringify({ tier_ids: tierIds })
 	});
 }
 

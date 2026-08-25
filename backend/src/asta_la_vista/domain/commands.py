@@ -82,7 +82,6 @@ class RenameStrategy(Command):
 @dataclass(frozen=True)
 class AddTier(Command):
     strategy_id: str
-    role: str
     name: str
     color: str | None = None
 
@@ -104,7 +103,6 @@ class RemoveTier(Command):
 @dataclass(frozen=True)
 class ReorderTiers(Command):
     strategy_id: str
-    role: str
     tier_ids: tuple[str, ...]
 
 

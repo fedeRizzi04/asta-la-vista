@@ -26,7 +26,7 @@ def test_strategy_detail_contains_player_team_status_tiers_and_notes(session_fac
     with uow:
         player = Player("1", "Martinez", "Inter", Role.FORWARD)
         strategy = Strategy("Main", uuid="strategy-1")
-        tier_id = strategy.add_tier(Role.FORWARD, "Top", "#ef4444", uuid="tier-1")
+        tier_id = strategy.add_tier("Top", "#ef4444", uuid="tier-1")
         strategy.assign_player(player.external_id, player.role, tier_id)
         strategy.set_player_note(player.external_id, player.role, "Primary target")
         uow.players.add(player)
@@ -35,9 +35,7 @@ def test_strategy_detail_contains_player_team_status_tiers_and_notes(session_fac
 
     detail = strategies.strategy_detail(uow, "strategy-1")
 
-    assert detail["tiers"] == [
-        {"id": "tier-1", "role": "A", "name": "Top", "position": 0, "color": "#ef4444"}
-    ]
+    assert detail["tiers"] == [{"id": "tier-1", "name": "Top", "position": 0, "color": "#ef4444"}]
     assert detail["entries"] == [
         {
             "player_id": "1",

@@ -38,10 +38,8 @@
 	let savedPlayerId = $state('');
 	let error = $state('');
 
-	let roleTiers = $derived(
-		(strategy?.tiers ?? [])
-			.filter((tier) => tier.role === selectedRole)
-			.sort((first, second) => first.position - second.position)
+	let orderedTiers = $derived(
+		[...(strategy?.tiers ?? [])].sort((first, second) => first.position - second.position)
 	);
 	let visiblePlayers = $derived(
 		players.filter(
@@ -98,7 +96,7 @@
 		const name = newTierName.trim();
 		if (!strategy || !name) return;
 		await runMutation(async () => {
-			await addTier(strategy!.id, selectedRole, name, newTierColor);
+			await addTier(strategy!.id, name, newTierColor);
 			newTierName = '';
 			await refreshStrategy();
 		});
@@ -119,13 +117,13 @@
 
 	async function moveTier(tier: Tier, offset: number): Promise<void> {
 		if (!strategy) return;
-		const tierIds = roleTiers.map((item) => item.id);
+		const tierIds = orderedTiers.map((item) => item.id);
 		const currentIndex = tierIds.indexOf(tier.id);
 		const targetIndex = currentIndex + offset;
 		if (targetIndex < 0 || targetIndex >= tierIds.length) return;
 		[tierIds[currentIndex], tierIds[targetIndex]] = [tierIds[targetIndex], tierIds[currentIndex]];
 		await runMutation(async () => {
-			await reorderTiers(strategy!.id, selectedRole, tierIds);
+			await reorderTiers(strategy!.id, tierIds);
 			await refreshStrategy();
 		});
 	}
@@ -215,8 +213,8 @@
 	<section class="panel">
 		<div class="section-heading">
 			<div>
-				<h2>Fasce</h2>
-				<p>Ordinale dalla priorità più alta a quella più bassa.</p>
+				<h2>Fasce globali</h2>
+				<p>La stessa sequenza viene utilizzata per tutti i ruoli.</p>
 			</div>
 			<form class="tier-form" onsubmit={submitTier}>
 				<input bind:value={newTierName} placeholder="Nome fascia" aria-label="Nome nuova fascia" />
@@ -225,11 +223,11 @@
 			</form>
 		</div>
 
-		{#if roleTiers.length === 0}
-			<div class="compact-empty">Nessuna fascia per questo ruolo.</div>
+		{#if orderedTiers.length === 0}
+			<div class="compact-empty">Non hai ancora creato nessuna fascia.</div>
 		{:else}
 			<div class="tier-list">
-				{#each roleTiers as tier, index (tier.id)}
+				{#each orderedTiers as tier, index (tier.id)}
 					<div class="tier-row" style:--tier-color={tier.color ?? '#d8ded9'}>
 						<span class="color-marker"></span>
 						<input bind:value={tier.name} aria-label="Nome fascia" />
@@ -251,7 +249,7 @@
 								type="button"
 								class="icon"
 								onclick={() => moveTier(tier, 1)}
-								disabled={index === roleTiers.length - 1 || saving}
+								disabled={index === orderedTiers.length - 1 || saving}
 								aria-label="Sposta in basso">↓</button
 							>
 							<button
@@ -266,6 +264,36 @@
 								onclick={() => deleteTier(tier)}
 								disabled={saving}>Elimina</button
 							>
+						</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	</section>
+
+	<section class="panel role-tier-panel">
+		<div class="section-heading">
+			<div>
+				<h2>Fasce per {roleLabels[selectedRole].toLowerCase()}</h2>
+				<p>Vista raggruppata dei calciatori già assegnati.</p>
+			</div>
+		</div>
+		{#if orderedTiers.length === 0}
+			<div class="compact-empty">Crea almeno una fascia per organizzare i calciatori.</div>
+		{:else}
+			<div class="tier-board">
+				{#each orderedTiers as tier (tier.id)}
+					<div class="tier-column" style:--tier-color={tier.color ?? '#d8ded9'}>
+						<h3><span></span>{tier.name}</h3>
+						<div>
+							{#each (strategy?.entries ?? []).filter((entry) => entry.role === selectedRole && entry.tier_id === tier.id) as entry (entry.player_id)}
+								<article class:inactive={!entry.active}>
+									<strong>{entry.name}</strong>
+									<small>{entry.team}{entry.note ? ` · ${entry.note}` : ''}</small>
+								</article>
+							{:else}
+								<p class="empty-tier">Nessun calciatore</p>
+							{/each}
 						</div>
 					</div>
 				{/each}
@@ -298,15 +326,22 @@
 							<strong>{player.name}</strong>
 							<span>{player.team}{player.active ? '' : ' · inattivo'}</span>
 						</div>
-						<select
-							bind:value={entryDrafts[player.id].tierId}
-							aria-label={`Fascia di ${player.name}`}
-						>
-							<option value="">Senza fascia</option>
-							{#each roleTiers as tier (tier.id)}
-								<option value={tier.id}>{tier.name}</option>
-							{/each}
-						</select>
+						<div class="tier-selector">
+							<span
+								style:background={(strategy?.tiers ?? []).find(
+									(tier) => tier.id === entryDrafts[player.id].tierId
+								)?.color ?? '#d8ded9'}
+							></span>
+							<select
+								bind:value={entryDrafts[player.id].tierId}
+								aria-label={`Fascia di ${player.name}`}
+							>
+								<option value="">Senza fascia</option>
+								{#each orderedTiers as tier (tier.id)}
+									<option value={tier.id}>{tier.name}</option>
+								{/each}
+							</select>
+						</div>
 						<input
 							bind:value={entryDrafts[player.id].note}
 							placeholder="Nota"
@@ -528,6 +563,77 @@
 		font-size: 0.85rem;
 	}
 
+	.role-tier-panel {
+		background: #fff;
+	}
+
+	.tier-board {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		gap: 0.75rem;
+		margin-top: 1rem;
+	}
+
+	.tier-column {
+		min-width: 0;
+		border: 1px solid #e0e3df;
+		border-top: 0.35rem solid var(--tier-color);
+		border-radius: 0.45rem;
+		background: #fafbf8;
+	}
+
+	.tier-column h3 {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		margin: 0;
+		padding: 0.65rem 0.75rem;
+		border-bottom: 1px solid #e0e3df;
+		font-size: 0.9rem;
+	}
+
+	.tier-column h3 span,
+	.tier-selector > span {
+		width: 0.7rem;
+		height: 0.7rem;
+		flex: 0 0 auto;
+		border: 1px solid rgb(0 0 0 / 12%);
+		border-radius: 50%;
+		background: var(--tier-color);
+	}
+
+	.tier-column > div {
+		display: grid;
+		gap: 0.35rem;
+		padding: 0.5rem;
+	}
+
+	.tier-column article {
+		display: grid;
+		gap: 0.12rem;
+		padding: 0.5rem;
+		border-radius: 0.3rem;
+		background: #fff;
+		font-size: 0.8rem;
+	}
+
+	.tier-column article.inactive {
+		color: #929893;
+		background: #eceeeb;
+	}
+
+	.tier-column small {
+		color: #707971;
+		font-size: 0.7rem;
+	}
+
+	.tier-column .empty-tier {
+		margin: 0;
+		padding: 0.45rem;
+		color: #858c87;
+		font-size: 0.72rem;
+	}
+
 	.players-panel {
 		margin-top: 1rem;
 	}
@@ -564,6 +670,21 @@
 		font-size: 0.76rem;
 	}
 
+	.tier-selector {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		min-width: 0;
+	}
+
+	.tier-selector > span {
+		background: #d8ded9;
+	}
+
+	.tier-selector select {
+		width: 100%;
+	}
+
 	@media (max-width: 900px) {
 		.detail-heading,
 		.section-heading {
@@ -578,7 +699,7 @@
 
 		.tier-actions,
 		.player-row > input,
-		.player-row > select,
+		.player-row > .tier-selector,
 		.player-row > button {
 			grid-column: 2 / -1;
 		}

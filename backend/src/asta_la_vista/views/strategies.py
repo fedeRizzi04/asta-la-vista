@@ -42,11 +42,10 @@ def strategy_detail(uow: AbstractUnitOfWork, strategy_id: str) -> dict:
             raise NotFoundError("Strategy not found")
         tiers = uow.session.execute(
             text("""
-                SELECT uuid, role, name, position, color
+                SELECT uuid, name, position, color
                 FROM tier
                 WHERE strategy_id = :strategy_id
-                ORDER BY CASE role WHEN 'P' THEN 1 WHEN 'D' THEN 2 WHEN 'C' THEN 3 ELSE 4 END,
-                         position
+                ORDER BY position
             """),
             {"strategy_id": strategy_id},
         ).mappings()
@@ -66,7 +65,6 @@ def strategy_detail(uow: AbstractUnitOfWork, strategy_id: str) -> dict:
             "tiers": [
                 {
                     "id": row["uuid"],
-                    "role": row["role"],
                     "name": row["name"],
                     "position": row["position"],
                     "color": row["color"],

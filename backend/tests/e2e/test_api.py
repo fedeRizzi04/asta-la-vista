@@ -46,8 +46,17 @@ def test_player_import_and_strategy_flow(client):
     strategy_id = client.post("/api/strategies", json={"name": "Principale"}).get_json()["id"]
     tier_id = client.post(
         f"/api/strategies/{strategy_id}/tiers",
-        json={"role": "A", "name": "Prima fascia", "color": "#ef4444"},
+        json={"name": "Prima fascia", "color": "#ef4444"},
     ).get_json()["id"]
+    second_tier_id = client.post(
+        f"/api/strategies/{strategy_id}/tiers",
+        json={"name": "Seconda fascia", "color": "#f59e0b"},
+    ).get_json()["id"]
+    response = client.put(
+        f"/api/strategies/{strategy_id}/tiers/order",
+        json={"tier_ids": [second_tier_id, tier_id]},
+    )
+    assert response.status_code == 204
     response = client.put(
         f"/api/strategies/{strategy_id}/players/2764",
         json={"tier_id": tier_id, "note": "Obiettivo principale"},
@@ -55,6 +64,7 @@ def test_player_import_and_strategy_flow(client):
     assert response.status_code == 204
 
     strategy = client.get(f"/api/strategies/{strategy_id}").get_json()
+    assert [tier["id"] for tier in strategy["tiers"]] == [second_tier_id, tier_id]
     assert strategy["entries"][0]["team"] == "Inter"
     assert strategy["entries"][0]["tier_id"] == tier_id
     assert strategy["entries"][0]["note"] == "Obiettivo principale"
@@ -64,7 +74,7 @@ def test_player_import_and_strategy_flow(client):
     duplicate_id = response.get_json()["id"]
     duplicate = client.get(f"/api/strategies/{duplicate_id}").get_json()
     assert duplicate["name"] == "Alternativa"
-    assert duplicate["tiers"][0]["name"] == "Prima fascia"
+    assert duplicate["tiers"][0]["name"] == "Seconda fascia"
     assert duplicate["entries"][0]["note"] == "Obiettivo principale"
 
 

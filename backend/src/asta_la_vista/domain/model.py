@@ -101,7 +101,6 @@ class Player:
 
 @dataclass
 class Tier:
-    role: Role
     name: str
     position: int
     color: str | None
@@ -136,7 +135,6 @@ class Strategy:
 
     def add_tier(
         self,
-        role: Role,
         name: str,
         color: str | None = None,
         uuid: str | None = None,
@@ -144,23 +142,19 @@ class Strategy:
         name = name.strip()
         if not name:
             raise ValidationError("Tier name is required")
-        if any(
-            tier.role == role and tier.name.casefold() == name.casefold() for tier in self.tiers
-        ):
-            raise ValidationError("Tier names must be unique within a role")
-        position = sum(tier.role == role for tier in self.tiers)
-        tier = Tier(role, name, position, color, uuid or new_uuid())
+        if any(tier.name.casefold() == name.casefold() for tier in self.tiers):
+            raise ValidationError("Tier names must be unique within a strategy")
+        tier = Tier(name, len(self.tiers), color, uuid or new_uuid())
         self.tiers.append(tier)
         return tier.uuid
 
-    def reorder_tiers(self, role: Role, ordered_tier_ids: list[str]):
-        role_tiers = [tier for tier in self.tiers if tier.role == role]
+    def reorder_tiers(self, ordered_tier_ids: list[str]):
         if len(ordered_tier_ids) != len(set(ordered_tier_ids)) or set(ordered_tier_ids) != {
-            tier.uuid for tier in role_tiers
+            tier.uuid for tier in self.tiers
         }:
-            raise ValidationError("Tier order must contain every tier for the role exactly once")
+            raise ValidationError("Tier order must contain every tier exactly once")
         positions = {tier_id: position for position, tier_id in enumerate(ordered_tier_ids)}
-        for tier in role_tiers:
+        for tier in self.tiers:
             tier.position = positions[tier.uuid]
 
     def update_tier(self, tier_id: str, name: str, color: str | None = None):
@@ -169,12 +163,9 @@ class Strategy:
         if not name:
             raise ValidationError("Tier name is required")
         if any(
-            item.uuid != tier_id
-            and item.role == tier.role
-            and item.name.casefold() == name.casefold()
-            for item in self.tiers
+            item.uuid != tier_id and item.name.casefold() == name.casefold() for item in self.tiers
         ):
-            raise ValidationError("Tier names must be unique within a role")
+            raise ValidationError("Tier names must be unique within a strategy")
         tier.name = name
         tier.color = color
 
@@ -184,16 +175,12 @@ class Strategy:
         for entry in self.entries:
             if entry.tier_id == tier_id:
                 entry.tier_id = None
-        remaining = sorted(
-            (item for item in self.tiers if item.role == tier.role), key=lambda x: x.position
-        )
+        remaining = sorted(self.tiers, key=lambda item: item.position)
         for position, item in enumerate(remaining):
             item.position = position
 
     def assign_player(self, player_id: str, role: Role, tier_id: str):
-        tier = self._tier(tier_id)
-        if tier.role != role:
-            raise ValidationError("Player and tier roles must match")
+        self._tier(tier_id)
         entry = self._entry(player_id)
         if entry is None:
             self.entries.append(StrategyEntry(player_id, role, tier_id, "", new_uuid()))
@@ -225,8 +212,8 @@ class Strategy:
     def duplicate(self, name: str) -> "Strategy":
         duplicate = Strategy(name)
         tier_ids: dict[str, str] = {}
-        for tier in sorted(self.tiers, key=lambda item: (item.role, item.position)):
-            tier_ids[tier.uuid] = duplicate.add_tier(tier.role, tier.name, tier.color)
+        for tier in sorted(self.tiers, key=lambda item: item.position):
+            tier_ids[tier.uuid] = duplicate.add_tier(tier.name, tier.color)
         for entry in self.entries:
             duplicate.entries.append(
                 StrategyEntry(

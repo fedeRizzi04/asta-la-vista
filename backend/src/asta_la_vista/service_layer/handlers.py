@@ -140,7 +140,7 @@ def rename_strategy(cmd: commands.RenameStrategy, uow: AbstractUnitOfWork):
 def add_tier(cmd: commands.AddTier, uow: AbstractUnitOfWork) -> str:
     with uow:
         strategy = _strategy(uow, cmd.strategy_id)
-        tier_id = strategy.add_tier(model.Role(cmd.role), cmd.name, cmd.color)
+        tier_id = strategy.add_tier(cmd.name, cmd.color)
         uow.commit()
     return tier_id
 
@@ -162,7 +162,7 @@ def remove_tier(cmd: commands.RemoveTier, uow: AbstractUnitOfWork):
 def reorder_tiers(cmd: commands.ReorderTiers, uow: AbstractUnitOfWork):
     with uow:
         strategy = _strategy(uow, cmd.strategy_id)
-        strategy.reorder_tiers(model.Role(cmd.role), list(cmd.tier_ids))
+        strategy.reorder_tiers(list(cmd.tier_ids))
         uow.commit()
 
 

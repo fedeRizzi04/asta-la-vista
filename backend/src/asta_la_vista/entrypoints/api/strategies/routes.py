@@ -55,9 +55,7 @@ class TierCollection(MethodView):
     @blueprint.arguments(TierCreateSchema)
     @blueprint.response(201, StrategyIdSchema)
     def post(self, body: dict, strategy_id: str) -> dict[str, str]:
-        tier_id = bus().handle(
-            commands.AddTier(strategy_id, body["role"], body["name"], body.get("color"))
-        )
+        tier_id = bus().handle(commands.AddTier(strategy_id, body["name"], body.get("color")))
         return {"id": tier_id}
 
 
@@ -66,7 +64,7 @@ class TierOrder(MethodView):
     @blueprint.arguments(TierOrderSchema)
     @blueprint.response(204)
     def put(self, body: dict, strategy_id: str):
-        bus().handle(commands.ReorderTiers(strategy_id, body["role"], tuple(body["tier_ids"])))
+        bus().handle(commands.ReorderTiers(strategy_id, tuple(body["tier_ids"])))
 
 
 @blueprint.route("/strategies/<string:strategy_id>/tiers/<string:tier_id>")

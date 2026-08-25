@@ -71,9 +71,9 @@
 
 <section class="page-heading heading-row">
 	<div>
-		<p class="eyebrow">Fasce per ruolo</p>
+		<p class="eyebrow">Pianificazione dell'asta</p>
 		<h1>Strategie</h1>
-		<p>Crea fasce riutilizzabili e prepara in anticipo obiettivi e alternative per ogni ruolo.</p>
+		<p>Crea fasce globali riutilizzabili e organizza al loro interno i calciatori di ogni ruolo.</p>
 	</div>
 
 	<form class="create-form" onsubmit={submitStrategy}>
