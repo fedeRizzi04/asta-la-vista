@@ -5,7 +5,9 @@ set -eu
 alembic upgrade head
 exec gunicorn \
   --bind "${APP_HOST}:${APP_PORT}" \
-  --workers 1 \
+  --workers 2 \
+  --worker-class gthread \
+  --threads 4 \
   --no-control-socket \
   --access-logfile - \
   "asta_la_vista.entrypoints.flask_app:create_app()"
