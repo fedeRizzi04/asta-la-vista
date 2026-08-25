@@ -179,10 +179,10 @@
 	.message {
 		margin-top: 1.5rem;
 		padding: 0.85rem 1rem;
-		border: 1px solid #d4a7a7;
+		border: 1px solid var(--error-border);
 		border-radius: 0.5rem;
-		background: #fff7f7;
-		color: #7a2727;
+		background: var(--error-bg);
+		color: var(--error-text);
 		font-size: 0.9rem;
 	}
 
@@ -196,9 +196,9 @@
 
 	.panel {
 		padding: 1.25rem;
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.7rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 
 	.section-heading h2,
@@ -214,7 +214,7 @@
 
 	.section-heading p {
 		margin-top: 0.35rem;
-		color: #667069;
+		color: var(--subdued);
 		font-size: 0.8rem;
 	}
 
@@ -241,9 +241,9 @@
 	textarea {
 		width: 100%;
 		padding: 0.65rem 0.7rem;
-		border: 1px solid #bdc5bf;
+		border: 1px solid var(--border-strong);
 		border-radius: 0.4rem;
-		background: #fff;
+		background: var(--input-bg);
 		color: inherit;
 		font: inherit;
 	}
@@ -260,10 +260,10 @@
 
 	button {
 		min-height: 2.65rem;
-		border: 1px solid #204c39;
+		border: 1px solid var(--primary);
 		border-radius: 0.45rem;
-		background: #204c39;
-		color: #fff;
+		background: var(--primary);
+		color: var(--on-primary);
 		font: inherit;
 		font-size: 0.86rem;
 		font-weight: 700;
@@ -288,7 +288,7 @@
 	}
 
 	.list-heading > span {
-		color: #667069;
+		color: var(--subdued);
 		font-size: 0.8rem;
 	}
 
@@ -299,15 +299,15 @@
 
 	.auction-list > a {
 		padding: 1.15rem;
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.65rem;
-		background: #fafbf8;
+		background: var(--surface);
 		text-decoration: none;
 		transition: border-color 140ms ease;
 	}
 
 	.auction-list > a:hover {
-		border-color: #94a098;
+		border-color: var(--border-hover);
 	}
 
 	.auction-title h3 {
@@ -318,25 +318,25 @@
 	.auction-title span {
 		padding: 0.25rem 0.5rem;
 		border-radius: 999px;
-		background: #e5e8e4;
-		color: #5e665f;
+		background: var(--status-bg);
+		color: var(--status-text);
 		font-size: 0.7rem;
 		font-weight: 750;
 	}
 
 	.auction-title span[data-status='live'] {
-		background: #dcebe1;
-		color: #24583b;
+		background: var(--live-bg);
+		color: var(--live-text);
 	}
 
 	.auction-title span[data-status='completed'] {
-		background: #e1e3e2;
-		color: #555c58;
+		background: var(--completed-bg);
+		color: var(--completed-text);
 	}
 
 	.auction-list p {
 		margin: 0.8rem 0 0.35rem;
-		color: #667069;
+		color: var(--subdued);
 		font-size: 0.82rem;
 	}
 

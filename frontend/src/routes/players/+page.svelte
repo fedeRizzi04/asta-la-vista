@@ -222,9 +222,9 @@
 	.import-form {
 		width: min(100%, 390px);
 		padding: 1rem;
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.65rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 
 	.import-form > label,
@@ -249,10 +249,10 @@
 	button {
 		min-height: 2.55rem;
 		padding: 0 1rem;
-		border: 1px solid #204c39;
+		border: 1px solid var(--primary);
 		border-radius: 0.45rem;
-		background: #204c39;
-		color: #fff;
+		background: var(--primary);
+		color: var(--on-primary);
 		font: inherit;
 		font-size: 0.85rem;
 		font-weight: 700;
@@ -273,15 +273,15 @@
 	}
 
 	.error {
-		border-color: #d4a7a7;
-		background: #fff7f7;
-		color: #7a2727;
+		border-color: var(--error-border);
+		background: var(--error-bg);
+		color: var(--error-text);
 	}
 
 	.success {
-		border-color: #a9c6b5;
-		background: #f3faf5;
-		color: #204c39;
+		border-color: var(--success-border);
+		background: var(--success-bg);
+		color: var(--success-text);
 	}
 
 	.counts {
@@ -297,13 +297,13 @@
 		justify-content: space-between;
 		gap: 1rem;
 		padding: 1rem;
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.6rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 
 	.count-card span {
-		color: #5d665f;
+		color: var(--muted);
 		font-size: 0.78rem;
 		font-weight: 650;
 	}
@@ -313,7 +313,7 @@
 	}
 
 	.total-card {
-		border-color: #9eaaa2;
+		border-color: var(--border-hover);
 	}
 
 	.filters {
@@ -323,9 +323,9 @@
 		gap: 1rem;
 		margin-top: 2rem;
 		padding: 1rem;
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.65rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 
 	.filters input[type='search'],
@@ -333,9 +333,9 @@
 		width: 100%;
 		height: 2.55rem;
 		padding: 0 0.75rem;
-		border: 1px solid #bdc5bf;
+		border: 1px solid var(--border-strong);
 		border-radius: 0.4rem;
-		background: #fff;
+		background: var(--input-bg);
 		color: inherit;
 		font: inherit;
 	}
@@ -370,15 +370,15 @@
 	}
 
 	.table-heading span {
-		color: #667069;
+		color: var(--subdued);
 		font-size: 0.8rem;
 	}
 
 	.table-scroll {
 		overflow-x: auto;
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.65rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 
 	table {
@@ -390,12 +390,12 @@
 	th,
 	td {
 		padding: 0.75rem 1rem;
-		border-bottom: 1px solid #e1e4df;
+		border-bottom: 1px solid var(--border);
 		text-align: left;
 	}
 
 	th {
-		color: #667069;
+		color: var(--subdued);
 		font-size: 0.72rem;
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
@@ -406,12 +406,12 @@
 	}
 
 	tbody tr:hover {
-		background: #f1f3ef;
+		background: var(--muted-bg);
 	}
 
 	.inactive {
-		color: #8b918d;
-		background: #f0f1ef;
+		color: var(--disabled-text);
+		background: var(--muted-bg);
 	}
 
 	.player-name {
@@ -424,29 +424,29 @@
 		width: 1.75rem;
 		height: 1.75rem;
 		border-radius: 0.35rem;
-		background: #e2e6e2;
+		background: var(--muted-bg);
 		font-size: 0.75rem;
 		font-weight: 800;
 	}
 
 	.role[data-role='P'] {
-		background: #f3e6bf;
-		color: #72560c;
+		background: var(--goalkeeper-bg);
+		color: var(--goalkeeper-text);
 	}
 
 	.role[data-role='D'] {
-		background: #d8eadf;
-		color: #24583b;
+		background: var(--defender-bg);
+		color: var(--defender-text);
 	}
 
 	.role[data-role='C'] {
-		background: #dce7f2;
-		color: #2b557a;
+		background: var(--midfielder-bg);
+		color: var(--midfielder-text);
 	}
 
 	.role[data-role='A'] {
-		background: #efdddd;
-		color: #773434;
+		background: var(--forward-bg);
+		color: var(--forward-text);
 	}
 
 	@media (max-width: 900px) {

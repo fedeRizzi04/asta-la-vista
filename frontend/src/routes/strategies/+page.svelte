@@ -144,9 +144,9 @@
 	.create-form {
 		width: min(100%, 390px);
 		padding: 1rem;
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.65rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 
 	.create-form label {
@@ -167,7 +167,7 @@
 		flex: 1;
 		height: 2.55rem;
 		padding: 0 0.75rem;
-		border: 1px solid #bdc5bf;
+		border: 1px solid var(--border-strong);
 		border-radius: 0.4rem;
 		font: inherit;
 	}
@@ -179,10 +179,10 @@
 		justify-content: center;
 		min-height: 2.55rem;
 		padding: 0 1rem;
-		border: 1px solid #204c39;
+		border: 1px solid var(--primary);
 		border-radius: 0.45rem;
-		background: #204c39;
-		color: #fff;
+		background: var(--primary);
+		color: var(--on-primary);
 		font: inherit;
 		font-size: 0.85rem;
 		font-weight: 700;
@@ -196,18 +196,18 @@
 	}
 
 	button.secondary {
-		border-color: #bdc5bf;
+		border-color: var(--border-strong);
 		background: transparent;
-		color: #344039;
+		color: var(--text);
 	}
 
 	.message {
 		margin-top: 1.5rem;
 		padding: 0.85rem 1rem;
-		border: 1px solid #d4a7a7;
+		border: 1px solid var(--error-border);
 		border-radius: 0.5rem;
-		background: #fff7f7;
-		color: #7a2727;
+		background: var(--error-bg);
+		color: var(--error-text);
 		font-size: 0.9rem;
 	}
 
@@ -229,7 +229,7 @@
 	}
 
 	.section-heading span {
-		color: #667069;
+		color: var(--subdued);
 		font-size: 0.8rem;
 	}
 
@@ -244,9 +244,9 @@
 		justify-content: space-between;
 		gap: 2rem;
 		padding: 1.25rem;
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.65rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 
 	article h3 {
@@ -256,7 +256,7 @@
 
 	article p {
 		margin: 0.4rem 0 0;
-		color: #667069;
+		color: var(--subdued);
 		font-size: 0.84rem;
 	}
 

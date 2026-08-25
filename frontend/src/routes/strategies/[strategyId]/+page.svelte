@@ -242,7 +242,7 @@
 		{:else}
 			<div class="tier-list">
 				{#each orderedTiers as tier, index (tier.id)}
-					<div class="tier-row" style:--tier-color={tier.color ?? '#d8ded9'}>
+					<div class="tier-row" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
 						<span class="color-marker"></span>
 						<input bind:value={tier.name} aria-label="Nome fascia" />
 						<input
@@ -297,7 +297,7 @@
 		{:else}
 			<div class="tier-board">
 				{#each orderedTiers as tier (tier.id)}
-					<div class="tier-column" style:--tier-color={tier.color ?? '#d8ded9'}>
+					<div class="tier-column" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
 						<h3><span></span>{tier.name}</h3>
 						<div>
 							{#each (strategy?.entries ?? []).filter((entry) => entry.role === selectedRole && entry.tier_id === tier.id) as entry (entry.player_id)}
@@ -349,7 +349,7 @@
 							<span
 								style:background={(strategy?.tiers ?? []).find(
 									(tier) => tier.id === entryDrafts[player.id].tierId
-								)?.color ?? '#d8ded9'}
+								)?.color ?? 'var(--tier-default)'}
 							></span>
 							<select
 								bind:value={entryDrafts[player.id].tierId}
@@ -399,7 +399,7 @@
 	.back-link {
 		display: inline-block;
 		margin-bottom: 1.5rem;
-		color: #526057;
+		color: var(--muted);
 		font-size: 0.84rem;
 		font-weight: 650;
 	}
@@ -444,9 +444,9 @@
 		min-width: 0;
 		height: 2.5rem;
 		padding: 0 0.7rem;
-		border: 1px solid #bdc5bf;
+		border: 1px solid var(--border-strong);
 		border-radius: 0.4rem;
-		background: #fff;
+		background: var(--input-bg);
 		color: inherit;
 		font: inherit;
 	}
@@ -459,18 +459,18 @@
 		width: 2.75rem;
 		height: 2.5rem;
 		padding: 0.2rem;
-		border: 1px solid #bdc5bf;
+		border: 1px solid var(--border-strong);
 		border-radius: 0.4rem;
-		background: #fff;
+		background: var(--input-bg);
 	}
 
 	button {
 		min-height: 2.5rem;
 		padding: 0 0.9rem;
-		border: 1px solid #204c39;
+		border: 1px solid var(--primary);
 		border-radius: 0.42rem;
-		background: #204c39;
-		color: #fff;
+		background: var(--primary);
+		color: var(--on-primary);
 		font: inherit;
 		font-size: 0.82rem;
 		font-weight: 700;
@@ -484,15 +484,15 @@
 
 	button.secondary,
 	button.icon {
-		border-color: #bdc5bf;
-		background: #fff;
-		color: #344039;
+		border-color: var(--border-strong);
+		background: var(--input-bg);
+		color: var(--text);
 	}
 
 	button.danger {
 		border-color: transparent;
 		background: transparent;
-		color: #8b3434;
+		color: var(--error-text);
 	}
 
 	button.icon {
@@ -503,10 +503,10 @@
 	.message {
 		margin-top: 1.5rem;
 		padding: 0.85rem 1rem;
-		border: 1px solid #d4a7a7;
+		border: 1px solid var(--error-border);
 		border-radius: 0.5rem;
-		background: #fff7f7;
-		color: #7a2727;
+		background: var(--error-bg);
+		color: var(--error-text);
 		font-size: 0.9rem;
 	}
 
@@ -514,7 +514,7 @@
 		display: flex;
 		gap: 0.4rem;
 		margin-top: 3rem;
-		border-bottom: 1px solid #d9ddd7;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.role-tabs button {
@@ -522,20 +522,20 @@
 		border-bottom: 2px solid transparent;
 		border-radius: 0;
 		background: transparent;
-		color: #667069;
+		color: var(--subdued);
 	}
 
 	.role-tabs button.active {
-		border-bottom-color: #204c39;
-		color: #204c39;
+		border-bottom-color: var(--primary);
+		color: var(--primary);
 	}
 
 	.panel {
 		margin-top: 1.5rem;
 		padding: 1.25rem;
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.7rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 
 	.section-heading {
@@ -556,7 +556,7 @@
 
 	.section-heading p {
 		margin-top: 0.3rem;
-		color: #667069;
+		color: var(--subdued);
 	}
 
 	.tier-form input:not([type='color']) {
@@ -576,9 +576,9 @@
 		align-items: center;
 		gap: 0.65rem;
 		padding: 0.6rem;
-		border: 1px solid #e0e3df;
+		border: 1px solid var(--border);
 		border-radius: 0.5rem;
-		background: #fff;
+		background: var(--input-bg);
 	}
 
 	.color-marker {
@@ -590,14 +590,14 @@
 	.compact-empty {
 		margin-top: 1rem;
 		padding: 1rem;
-		border: 1px dashed #c8cec9;
+		border: 1px dashed var(--border-strong);
 		border-radius: 0.5rem;
-		color: #667069;
+		color: var(--subdued);
 		font-size: 0.85rem;
 	}
 
 	.role-tier-panel {
-		background: #fff;
+		background: var(--input-bg);
 	}
 
 	.tier-board {
@@ -609,10 +609,10 @@
 
 	.tier-column {
 		min-width: 0;
-		border: 1px solid #e0e3df;
+		border: 1px solid var(--border);
 		border-top: 0.35rem solid var(--tier-color);
 		border-radius: 0.45rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 
 	.tier-column h3 {
@@ -621,7 +621,7 @@
 		gap: 0.45rem;
 		margin: 0;
 		padding: 0.65rem 0.75rem;
-		border-bottom: 1px solid #e0e3df;
+		border-bottom: 1px solid var(--border);
 		font-size: 0.9rem;
 	}
 
@@ -646,28 +646,28 @@
 		gap: 0.12rem;
 		padding: 0.5rem;
 		border-radius: 0.3rem;
-		background: #fff;
+		background: var(--input-bg);
 		font-size: 0.8rem;
 	}
 
 	.tier-column article.inactive {
-		color: #929893;
-		background: #eceeeb;
+		color: var(--disabled-text);
+		background: var(--muted-bg);
 	}
 
 	.tier-column small {
-		color: #707971;
+		color: var(--subdued);
 		font-size: 0.7rem;
 	}
 
 	.tier-column .player-note {
-		color: #4c574f;
+		color: var(--text);
 	}
 
 	.tier-column .empty-tier {
 		margin: 0;
 		padding: 0.45rem;
-		color: #858c87;
+		color: var(--subdued);
 		font-size: 0.72rem;
 	}
 
@@ -687,7 +687,7 @@
 		align-items: center;
 		gap: 0.65rem;
 		padding: 0.65rem;
-		border-bottom: 1px solid #e0e3df;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.player-row:last-child {
@@ -695,8 +695,8 @@
 	}
 
 	.player-row.inactive {
-		color: #929893;
-		background: #f0f1ef;
+		color: var(--disabled-text);
+		background: var(--muted-bg);
 	}
 
 	.player-info {
@@ -705,7 +705,7 @@
 	}
 
 	.player-info span {
-		color: #707971;
+		color: var(--subdued);
 		font-size: 0.76rem;
 	}
 
@@ -717,7 +717,7 @@
 	}
 
 	.tier-selector > span {
-		background: #d8ded9;
+		background: var(--tier-default);
 	}
 
 	.tier-selector select {

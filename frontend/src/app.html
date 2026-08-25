@@ -4,6 +4,17 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
+		<script>
+			const savedTheme = localStorage.getItem('theme');
+			const theme =
+				savedTheme === 'light' || savedTheme === 'dark'
+					? savedTheme
+					: window.matchMedia('(prefers-color-scheme: dark)').matches
+						? 'dark'
+						: 'light';
+			document.documentElement.dataset.theme = theme;
+			document.documentElement.style.colorScheme = theme;
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="tap">

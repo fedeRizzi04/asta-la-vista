@@ -253,7 +253,9 @@
 				<div class="called-player-strategy">
 					<div>
 						<span class="strategy-label">Fascia</span>
-						<strong class="called-tier" style:--tier-color={selectedTier?.color ?? '#d8ded9'}
+						<strong
+							class="called-tier"
+							style:--tier-color={selectedTier?.color ?? 'var(--tier-default)'}
 							><span></span>{selectedTier?.name ?? 'Senza fascia'}</strong
 						>
 					</div>
@@ -351,7 +353,7 @@
 					<div class="strategy-role">
 						<h3>{roleLabels[role]}</h3>
 						{#each [...strategy.tiers].sort((a, b) => a.position - b.position) as tier (tier.id)}
-							<div class="tier" style:--tier-color={tier.color ?? '#d8ded9'}>
+							<div class="tier" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
 								<h4>{tier.name}</h4>
 								<div>
 									{#each strategy.entries.filter((entry) => entry.role === role && entry.tier_id === tier.id) as entry (entry.player_id)}<span
@@ -376,7 +378,7 @@
 	.back-link {
 		display: inline-block;
 		margin-bottom: 1.5rem;
-		color: #526057;
+		color: var(--muted);
 		font-size: 0.84rem;
 		font-weight: 650;
 	}
@@ -408,20 +410,20 @@
 	.status-actions > span {
 		padding: 0.35rem 0.65rem;
 		border-radius: 999px;
-		background: #dcebe1;
-		color: #24583b;
+		background: var(--live-bg);
+		color: var(--live-text);
 		font-size: 0.72rem;
 		font-weight: 750;
 	}
 	.status-actions > span[data-status='completed'] {
-		background: #e1e3e2;
-		color: #555c58;
+		background: var(--completed-bg);
+		color: var(--completed-text);
 	}
 	.panel,
 	.team-card {
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.7rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 	.panel {
 		margin-top: 2rem;
@@ -430,28 +432,28 @@
 	.message {
 		margin-top: 1.5rem;
 		padding: 0.85rem 1rem;
-		border: 1px solid #d4a7a7;
+		border: 1px solid var(--error-border);
 		border-radius: 0.5rem;
-		background: #fff7f7;
-		color: #7a2727;
+		background: var(--error-bg);
+		color: var(--error-text);
 		font-size: 0.9rem;
 	}
 	button {
 		min-height: 2.5rem;
 		padding: 0 0.9rem;
-		border: 1px solid #204c39;
+		border: 1px solid var(--primary);
 		border-radius: 0.42rem;
-		background: #204c39;
-		color: #fff;
+		background: var(--primary);
+		color: var(--on-primary);
 		font: inherit;
 		font-size: 0.82rem;
 		font-weight: 700;
 		cursor: pointer;
 	}
 	button.secondary {
-		border-color: #bdc5bf;
-		background: #fff;
-		color: #344039;
+		border-color: var(--border-strong);
+		background: var(--input-bg);
+		color: var(--text);
 	}
 	button:disabled {
 		cursor: not-allowed;
@@ -462,7 +464,7 @@
 		margin: 0;
 	}
 	.draft-summary p {
-		color: #667069;
+		color: var(--subdued);
 	}
 	.slot-summary,
 	.slots {
@@ -473,7 +475,7 @@
 	.slots span {
 		padding: 0.35rem 0.55rem;
 		border-radius: 0.35rem;
-		background: #edf0ec;
+		background: var(--muted-bg);
 		font-size: 0.76rem;
 	}
 	.call-panel form {
@@ -494,17 +496,17 @@
 		width: 100%;
 		height: 2.5rem;
 		padding: 0 0.65rem;
-		border: 1px solid #bdc5bf;
+		border: 1px solid var(--border-strong);
 		border-radius: 0.4rem;
-		background: #fff;
+		background: var(--input-bg);
 		color: inherit;
 		font: inherit;
 	}
 	.selected-player {
 		padding: 0.5rem 0.7rem;
 		border-radius: 0.4rem;
-		background: #edf3ef;
-		color: #315641;
+		background: var(--primary-soft);
+		color: var(--primary-soft-text);
 		font-size: 0.82rem;
 	}
 	.called-player-strategy {
@@ -513,9 +515,9 @@
 		gap: 0.7rem;
 		margin-top: 0.8rem;
 		padding: 0.8rem;
-		border: 1px solid #d9ddd7;
+		border: 1px solid var(--border);
 		border-radius: 0.45rem;
-		background: #fff;
+		background: var(--input-bg);
 	}
 	.called-player-strategy > div {
 		display: grid;
@@ -523,7 +525,7 @@
 		gap: 0.25rem;
 	}
 	.strategy-label {
-		color: #707971;
+		color: var(--subdued);
 		font-size: 0.68rem;
 		font-weight: 700;
 		text-transform: uppercase;
@@ -556,13 +558,13 @@
 		gap: 0.2rem;
 		height: auto;
 		padding: 0.6rem;
-		border-color: #d9ddd7;
-		background: #fff;
-		color: #26322b;
+		border-color: var(--border);
+		background: var(--input-bg);
+		color: var(--text);
 		text-align: left;
 	}
 	.search-results span {
-		color: #6a736c;
+		color: var(--subdued);
 		font-size: 0.72rem;
 	}
 	.teams-section,
@@ -592,26 +594,26 @@
 		font-size: 1.6rem;
 	}
 	.team-card header div span {
-		color: #69736c;
+		color: var(--subdued);
 		font-size: 0.7rem;
 	}
 	.maximum-bid {
 		margin: 0.7rem 0;
 		padding: 0.6rem;
 		border-radius: 0.4rem;
-		background: #edf3ef;
-		color: #375544;
+		background: var(--primary-soft);
+		color: var(--primary-soft-text);
 		font-size: 0.78rem;
 	}
 	.slots span.full {
-		background: #e2e3e1;
-		color: #8a908c;
+		background: var(--muted-bg);
+		color: var(--disabled-text);
 	}
 	.roster {
 		margin-top: 0.8rem;
 	}
 	.roster > p {
-		color: #777f79;
+		color: var(--subdued);
 		font-size: 0.8rem;
 	}
 	.purchase-row {
@@ -619,7 +621,7 @@
 		align-items: center;
 		gap: 0.45rem;
 		min-height: 2.25rem;
-		border-top: 1px solid #e2e5e1;
+		border-top: 1px solid var(--border);
 		font-size: 0.78rem;
 	}
 	.purchase-row input,
@@ -632,7 +634,7 @@
 		width: 1.5rem;
 		height: 1.5rem;
 		border-radius: 0.3rem;
-		background: #e4e8e4;
+		background: var(--muted-bg);
 		font-weight: 800;
 	}
 	.purchase-name {
@@ -640,18 +642,18 @@
 		flex: 1;
 	}
 	.purchase-name small {
-		color: #747c76;
+		color: var(--subdued);
 	}
 	.text-button {
 		min-height: auto;
 		padding: 0.2rem;
 		border: 0;
 		background: transparent;
-		color: #315e48;
+		color: var(--primary-text);
 		font-size: 0.7rem;
 	}
 	.text-button.danger {
-		color: #8b3434;
+		color: var(--error-text);
 	}
 	.strategy-roles {
 		display: grid;
@@ -664,15 +666,15 @@
 	}
 	.tier {
 		margin-bottom: 0.6rem;
-		border: 1px solid #dde1dd;
+		border: 1px solid var(--border);
 		border-left: 4px solid var(--tier-color);
 		border-radius: 0.45rem;
-		background: #fafbf8;
+		background: var(--surface);
 	}
 	.tier h4 {
 		margin: 0;
 		padding: 0.5rem 0.65rem;
-		border-bottom: 1px solid #e3e6e2;
+		border-bottom: 1px solid var(--border);
 		font-size: 0.78rem;
 	}
 	.tier > div {
@@ -681,18 +683,18 @@
 	.tier span {
 		display: grid;
 		padding: 0.45rem 0.65rem;
-		border-bottom: 1px solid #eceeeb;
+		border-bottom: 1px solid var(--border);
 		font-size: 0.74rem;
 	}
 	.tier span:last-child {
 		border-bottom: 0;
 	}
 	.tier span small {
-		color: #747c76;
+		color: var(--subdued);
 	}
 	.tier span.purchased {
-		color: #969b97;
-		background: #eeefed;
+		color: var(--disabled-text);
+		background: var(--muted-bg);
 		text-decoration: line-through;
 	}
 	@media (max-width: 950px) {
