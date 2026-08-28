@@ -60,6 +60,10 @@ class StrategyResource(MethodView):
     def patch(self, body: dict, strategy_id: str):
         bus().handle(commands.RenameStrategy(strategy_id, body["name"]))
 
+    @blueprint.response(204)
+    def delete(self, strategy_id: str):
+        bus().handle(commands.DeleteStrategy(strategy_id))
+
 
 @blueprint.route("/strategies/<string:strategy_id>/duplicate")
 class StrategyDuplicateResource(MethodView):

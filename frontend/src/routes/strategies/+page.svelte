@@ -9,6 +9,7 @@
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		createStrategy,
+		deleteStrategy,
 		duplicateStrategy,
 		getStrategies,
 		importStrategy,
@@ -96,6 +97,25 @@
 		saving = true;
 		try {
 			await duplicateStrategy(strategy.id, name);
+			await loadStrategies();
+		} catch (caught) {
+			pushErrorToast(caught);
+		} finally {
+			saving = false;
+		}
+	}
+
+	async function removeStrategy(strategy: StrategySummary): Promise<void> {
+		const confirmed = await confirmDialog({
+			title: 'Elimina strategia',
+			message: `Eliminare la strategia “${strategy.name}”? Questa azione non può essere annullata.`,
+			confirmLabel: 'Elimina',
+			danger: true
+		});
+		if (!confirmed) return;
+		saving = true;
+		try {
+			await deleteStrategy(strategy.id);
 			await loadStrategies();
 		} catch (caught) {
 			pushErrorToast(caught);
@@ -195,6 +215,14 @@
 							disabled={saving}
 						>
 							Duplica
+						</button>
+						<button
+							class="danger"
+							type="button"
+							onclick={() => removeStrategy(strategy)}
+							disabled={saving}
+						>
+							Elimina
 						</button>
 						<a href={resolve('/strategies/[strategyId]', { strategyId: strategy.id })}>Apri</a>
 					</div>
@@ -330,6 +358,12 @@
 		border-color: var(--border-strong);
 		background: transparent;
 		color: var(--text);
+	}
+
+	button.danger {
+		border-color: transparent;
+		background: transparent;
+		color: var(--error-text);
 	}
 
 	.strategy-section {

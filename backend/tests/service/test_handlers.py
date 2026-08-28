@@ -72,3 +72,14 @@ def test_strategy_flow_uses_the_player_current_role(session_factory):
         assert strategy.entries[0].tier_id == tier_id
         assert strategy.entries[0].note == "Primary target"
         assert strategy.entries[0].maximum_price_percentage == 15.5
+
+
+def test_strategy_can_be_deleted(session_factory):
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    bus = bootstrap.bootstrap(uow)
+
+    strategy_id = bus.handle(commands.CreateStrategy("Main strategy"))
+    bus.handle(commands.DeleteStrategy(strategy_id))
+
+    with uow:
+        assert uow.strategies.get(strategy_id) is None

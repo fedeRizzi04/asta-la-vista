@@ -108,6 +108,16 @@ def test_player_import_and_strategy_flow(client):
     assert unassigned_entry["maximum_price_percentage"] == 15.5
 
 
+def test_strategy_can_be_deleted(client):
+    strategy_id = client.post("/api/strategies", json={"name": "Da eliminare"}).get_json()["id"]
+
+    response = client.delete(f"/api/strategies/{strategy_id}")
+
+    assert response.status_code == 204
+    assert client.get("/api/strategies").get_json() == []
+    assert client.get(f"/api/strategies/{strategy_id}").status_code == 404
+
+
 def test_live_auction_purchase_amendment_and_cancellation_flow(client):
     client.post(
         "/api/players/import",

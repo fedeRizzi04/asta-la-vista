@@ -155,6 +155,13 @@ def rename_strategy(cmd: commands.RenameStrategy, uow: AbstractUnitOfWork):
         uow.commit()
 
 
+def delete_strategy(cmd: commands.DeleteStrategy, uow: AbstractUnitOfWork):
+    with uow:
+        strategy = _strategy(uow, cmd.strategy_id)
+        uow.strategies.remove(strategy)
+        uow.commit()
+
+
 def add_tier(cmd: commands.AddTier, uow: AbstractUnitOfWork) -> str:
     with uow:
         strategy = _strategy(uow, cmd.strategy_id)
@@ -285,6 +292,7 @@ COMMAND_HANDLERS = {
     commands.ReopenAuction: reopen_auction,
     commands.CreateStrategy: create_strategy,
     commands.RenameStrategy: rename_strategy,
+    commands.DeleteStrategy: delete_strategy,
     commands.AddTier: add_tier,
     commands.UpdateTier: update_tier,
     commands.RemoveTier: remove_tier,

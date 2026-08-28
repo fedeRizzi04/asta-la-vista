@@ -84,6 +84,11 @@ class RenameStrategy(Command):
 
 
 @dataclass(frozen=True)
+class DeleteStrategy(Command):
+    strategy_id: str
+
+
+@dataclass(frozen=True)
 class AddTier(Command):
     strategy_id: str
     name: str

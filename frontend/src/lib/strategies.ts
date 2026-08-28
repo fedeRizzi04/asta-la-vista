@@ -88,6 +88,10 @@ export function renameStrategy(strategyId: string, name: string): Promise<void> 
 	});
 }
 
+export function deleteStrategy(strategyId: string): Promise<void> {
+	return apiRequest<void>(`/api/strategies/${strategyId}`, { method: 'DELETE' });
+}
+
 export function addTier(strategyId: string, name: string, color: string | null): Promise<EntityId> {
 	return apiRequest<EntityId>(`/api/strategies/${strategyId}/tiers`, {
 		method: 'POST',

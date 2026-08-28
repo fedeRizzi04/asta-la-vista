@@ -170,7 +170,7 @@
 				player.id,
 				draft.tierId || null,
 				draft.note,
-				draft.tierId ? (draft.maximumPricePercentage ?? null) : null
+				draft.maximumPricePercentage ?? null
 			);
 			await refreshStrategy();
 			savedPlayerId = player.id;

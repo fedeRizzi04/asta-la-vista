@@ -34,6 +34,9 @@ class AbstractStrategyRepository(ABC):
     def add(self, strategy: model.Strategy): ...
 
     @abstractmethod
+    def remove(self, strategy: model.Strategy): ...
+
+    @abstractmethod
     def get(self, uuid: str) -> model.Strategy | None: ...
 
     @abstractmethod
@@ -77,6 +80,9 @@ class StrategyRepository:
 
     def add(self, strategy: model.Strategy):
         self.session.add(strategy)
+
+    def remove(self, strategy: model.Strategy):
+        self.session.delete(strategy)
 
     def get(self, uuid: str) -> model.Strategy | None:
         return self.session.get(model.Strategy, uuid)
@@ -145,6 +151,10 @@ class TrackingStrategyRepository:
     def add(self, strategy: model.Strategy):
         self._repository.add(strategy)
         self.seen.add(strategy)
+
+    def remove(self, strategy: model.Strategy):
+        self._repository.remove(strategy)
+        self.seen.discard(strategy)
 
     def get(self, uuid: str) -> model.Strategy | None:
         return self._track(self._repository.get(uuid))
