@@ -106,11 +106,13 @@ def test_strategy_rejects_invalid_maximum_price_percentages(maximum_price_percen
         strategy.update_player("player-1", Role.FORWARD, tier_id, "", maximum_price_percentage)
 
 
-def test_maximum_price_percentage_requires_a_tier():
+def test_strategy_player_can_have_a_maximum_price_percentage_without_a_tier():
     strategy = Strategy("Main strategy")
 
-    with pytest.raises(ValidationError):
-        strategy.update_player("player-1", Role.FORWARD, None, "", 15.5)
+    strategy.update_player("player-1", Role.FORWARD, None, "Monitorare", 15.5)
+
+    entry = strategy.entries[0]
+    assert (entry.tier_id, entry.note, entry.maximum_price_percentage) == (None, "Monitorare", 15.5)
 
 
 def test_strategy_copy_can_be_changed_without_affecting_the_original():

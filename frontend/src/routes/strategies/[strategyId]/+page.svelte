@@ -377,11 +377,6 @@
 								bind:value={entryDrafts[player.id].tierId}
 								style:--tier-color={selectedPlayerTier?.color ?? 'var(--tier-default)'}
 								class:has-tier={!!selectedPlayerTier}
-								onchange={() => {
-									if (!entryDrafts[player.id].tierId) {
-										entryDrafts[player.id].maximumPricePercentage = undefined;
-									}
-								}}
 								aria-label={`Fascia di ${player.name}`}
 							>
 								<option value="">Senza fascia</option>
@@ -404,7 +399,6 @@
 								step="0.1"
 								placeholder="% max"
 								aria-label={`Percentuale massima per ${player.name}`}
-								disabled={!entryDrafts[player.id].tierId}
 							/>
 							<span class="percentage-suffix">%</span>
 						</div>

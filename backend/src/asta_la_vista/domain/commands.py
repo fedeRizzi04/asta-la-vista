@@ -123,3 +123,19 @@ class UpdateStrategyPlayer(Command):
 class DuplicateStrategy(Command):
     strategy_id: str
     name: str
+
+
+@dataclass(frozen=True)
+class TierImportRow:
+    name: str
+    # Empty string means the source row has no tier for this player (note-only row).
+    fascia: str = ""
+    note: str = ""
+    maximum_price_percentage: float | None = None
+
+
+@dataclass(frozen=True)
+class ImportStrategy(Command):
+    name: str
+    rows: tuple[TierImportRow, ...]
+    allow_unmatched_players: bool = False

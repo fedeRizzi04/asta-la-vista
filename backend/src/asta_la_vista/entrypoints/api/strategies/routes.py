@@ -1,7 +1,10 @@
+from flask import request
 from flask.views import MethodView
 
+from asta_la_vista.adapters.strategy_import_file import parse_strategy_import_file
 from asta_la_vista.domain import commands
 from asta_la_vista.entrypoints.flask_app import bus, uow
+from asta_la_vista.exceptions import ValidationError
 from asta_la_vista.views import strategies
 
 from . import blueprint
@@ -10,6 +13,8 @@ from .schemas import (
     StrategyDetailSchema,
     StrategyEntryUpdateSchema,
     StrategyIdSchema,
+    StrategyImportQuerySchema,
+    StrategyImportSummarySchema,
     StrategySummarySchema,
     StrategyUpdateSchema,
     TierCreateSchema,
@@ -28,6 +33,20 @@ class StrategyCollection(MethodView):
     @blueprint.response(201, StrategyIdSchema)
     def post(self, body: dict) -> dict[str, str]:
         return {"id": bus().handle(commands.CreateStrategy(body["name"]))}
+
+
+@blueprint.route("/strategies/import")
+class StrategyImport(MethodView):
+    @blueprint.arguments(StrategyImportQuerySchema, location="query")
+    @blueprint.response(201, StrategyImportSummarySchema)
+    def post(self, query: dict) -> dict[str, str | int | list[str]]:
+        uploaded_file = request.files.get("file")
+        if uploaded_file is None or not uploaded_file.filename:
+            raise ValidationError("A .csv tier file is required")
+        rows = parse_strategy_import_file(uploaded_file.read(), uploaded_file.filename)
+        return bus().handle(
+            commands.ImportStrategy(query["name"], rows, query["confirm_unmatched"])
+        )
 
 
 @blueprint.route("/strategies/<string:strategy_id>")

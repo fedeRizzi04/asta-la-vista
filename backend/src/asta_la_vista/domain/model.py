@@ -259,9 +259,6 @@ class Strategy:
                 raise ValidationError(
                     "Maximum price percentage must have at most one decimal place"
                 )
-            if tier_id is None:
-                raise ValidationError("Maximum price percentage requires a tier")
-
         entry = self._entry(player_id)
         if entry is None:
             self.entries.append(

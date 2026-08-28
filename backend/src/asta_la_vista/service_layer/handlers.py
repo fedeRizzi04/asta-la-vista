@@ -200,6 +200,56 @@ def update_strategy_player(cmd: commands.UpdateStrategyPlayer, uow: AbstractUnit
         uow.commit()
 
 
+def import_strategy(
+    cmd: commands.ImportStrategy, uow: AbstractUnitOfWork
+) -> dict[str, str | int | list[str]]:
+    if not cmd.rows:
+        raise ValidationError("The tier list is empty")
+    with uow:
+        players_by_name = {player.name.casefold(): player for player in uow.players.list_all()}
+        missing = sorted(
+            {row.name for row in cmd.rows if row.name.casefold() not in players_by_name}
+        )
+        if missing and not cmd.allow_unmatched_players:
+            raise ConfirmationRequiredError(f"No matching player found for: {', '.join(missing)}")
+
+        strategy = model.Strategy(cmd.name)
+        tier_ids: dict[str, str] = {}
+        players_assigned = 0
+        for row in cmd.rows:
+            player = players_by_name.get(row.name.casefold())
+            if player is None:
+                continue
+            if not row.fascia:
+                if row.note or row.maximum_price_percentage is not None:
+                    strategy.update_player(
+                        player.external_id,
+                        player.role,
+                        None,
+                        row.note,
+                        row.maximum_price_percentage,
+                    )
+                    players_assigned += 1
+                continue
+            tier_id = tier_ids.get(row.fascia)
+            if tier_id is None:
+                tier_id = strategy.add_tier(row.fascia)
+                tier_ids[row.fascia] = tier_id
+            strategy.update_player(
+                player.external_id, player.role, tier_id, row.note, row.maximum_price_percentage
+            )
+            players_assigned += 1
+        uow.strategies.add(strategy)
+        strategy_id = strategy.uuid
+        uow.commit()
+    return {
+        "strategy_id": strategy_id,
+        "tiers_created": len(tier_ids),
+        "players_assigned": players_assigned,
+        "unmatched": missing,
+    }
+
+
 def duplicate_strategy(cmd: commands.DuplicateStrategy, uow: AbstractUnitOfWork) -> str:
     with uow:
         strategy = _strategy(uow, cmd.strategy_id)
@@ -241,5 +291,6 @@ COMMAND_HANDLERS = {
     commands.ReorderTiers: reorder_tiers,
     commands.UpdateStrategyPlayer: update_strategy_player,
     commands.DuplicateStrategy: duplicate_strategy,
+    commands.ImportStrategy: import_strategy,
 }
 EVENT_HANDLERS: dict[type[events.Event], list] = {}

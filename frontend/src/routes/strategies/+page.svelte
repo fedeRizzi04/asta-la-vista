@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
+	import { ApiError } from '$lib/api';
+	import FilePicker from '$lib/components/FilePicker.svelte';
+	import Message from '$lib/components/Message.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
-	import { promptDialog } from '$lib/dialog.svelte';
+	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		createStrategy,
 		duplicateStrategy,
 		getStrategies,
+		importStrategy,
+		type ImportSummary,
 		type StrategySummary
 	} from '$lib/strategies';
 
@@ -15,6 +20,11 @@
 	let newStrategyName = $state('');
 	let loading = $state(true);
 	let saving = $state(false);
+
+	let importName = $state('');
+	let importFile = $state<File>();
+	let importing = $state(false);
+	let importSummary = $state<ImportSummary>();
 
 	onMount(loadStrategies);
 
@@ -42,6 +52,36 @@
 			pushErrorToast(caught);
 		} finally {
 			saving = false;
+		}
+	}
+
+	async function submitImport(event: SubmitEvent): Promise<void> {
+		event.preventDefault();
+		if (!importName.trim() || !importFile) return;
+		await runImport(false);
+	}
+
+	async function runImport(confirmUnmatched: boolean): Promise<void> {
+		const name = importName.trim();
+		if (!name || !importFile) return;
+		importing = true;
+		try {
+			importSummary = await importStrategy(name, importFile, confirmUnmatched);
+			importName = '';
+			importFile = undefined;
+			await loadStrategies();
+		} catch (caught) {
+			if (
+				caught instanceof ApiError &&
+				caught.code === 'confirmation_required' &&
+				(await confirmDialog({ message: caught.message, confirmLabel: 'Continua comunque' }))
+			) {
+				await runImport(true);
+				return;
+			}
+			pushErrorToast(caught);
+		} finally {
+			importing = false;
 		}
 	}
 
@@ -88,6 +128,45 @@
 		</div>
 	</form>
 </section>
+
+<section class="import-section">
+	<form class="import-form" onsubmit={submitImport}>
+		<div class="import-intro">
+			<label for="import-strategy-name">Importa una strategia da CSV</label>
+			<p>Crea una nuova strategia a partire dalle fasce che hai già preparato.</p>
+		</div>
+		<div class="import-fields">
+			<input id="import-strategy-name" bind:value={importName} placeholder="Nome della strategia" />
+			<div class="file-row">
+				<FilePicker
+					id="strategy-import-file"
+					accept=".csv"
+					bind:selectedFile={importFile}
+					ariaLabel="File CSV della strategia"
+					onSelect={() => (importSummary = undefined)}
+				/>
+				<button type="submit" disabled={!importName.trim() || !importFile || importing}>
+					{importing ? 'Importazione…' : 'Importa'}
+				</button>
+			</div>
+		</div>
+		<p class="hint">
+			Il file deve contenere le colonne <code>Nome,Fascia,MaxPrezzo%,Note</code>. Fascia, prezzo
+			massimo e nota sono facoltativi. Se un nome non corrisponde a nessun calciatore del Listone ti
+			verrà chiesto se vuoi procedere comunque, ignorando quel calciatore.
+		</p>
+	</form>
+</section>
+
+{#if importSummary}
+	<Message kind="success">
+		Strategia creata: {importSummary.tiers_created} fasce e {importSummary.players_assigned} calciatori
+		assegnati.
+		{#if importSummary.unmatched.length}
+			{importSummary.unmatched.length} non trovati e ignorati: {importSummary.unmatched.join(', ')}.
+		{/if}
+	</Message>
+{/if}
 
 <section class="strategy-section" aria-live="polite" aria-busy={loading}>
 	<SectionHeading title="Le tue strategie">
@@ -167,6 +246,61 @@
 		border: 1px solid var(--border-strong);
 		border-radius: 0.4rem;
 		font: inherit;
+	}
+
+	.import-section {
+		margin-top: 1.5rem;
+	}
+
+	.import-form {
+		width: min(100%, 560px);
+		padding: 1.2rem;
+		border: 1px solid var(--border);
+		border-radius: 0.75rem;
+		background: var(--surface);
+	}
+
+	.import-intro label {
+		margin: 0;
+		font-size: 0.95rem;
+	}
+
+	.import-intro p {
+		margin: 0.3rem 0 0;
+		color: var(--subdued);
+		font-size: 0.8rem;
+	}
+
+	.import-fields {
+		display: grid;
+		gap: 0.65rem;
+		margin-top: 0.9rem;
+	}
+
+	.import-fields > input {
+		width: 100%;
+		min-width: 0;
+		height: 2.55rem;
+		padding: 0 0.75rem;
+		border: 1px solid var(--border-strong);
+		border-radius: 0.4rem;
+		font: inherit;
+	}
+
+	.file-row {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+	}
+
+	.import-form .hint {
+		margin: 0.8rem 0 0;
+		color: var(--subdued);
+		font-size: 0.76rem;
+	}
+
+	.import-form .hint code {
+		font-size: 0.74rem;
 	}
 
 	button,

@@ -63,6 +63,18 @@ class StrategyEntrySchema(Schema):
     maximum_price_percentage = fields.Float(allow_none=True)
 
 
+class StrategyImportQuerySchema(Schema):
+    name = fields.String(required=True)
+    confirm_unmatched = fields.Boolean(load_default=False)
+
+
+class StrategyImportSummarySchema(Schema):
+    strategy_id = fields.String(required=True)
+    tiers_created = fields.Integer(required=True)
+    players_assigned = fields.Integer(required=True)
+    unmatched = fields.List(fields.String(), required=True)
+
+
 class StrategyDetailSchema(Schema):
     id = fields.String(required=True)
     name = fields.String(required=True)

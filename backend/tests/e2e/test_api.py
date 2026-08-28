@@ -101,11 +101,11 @@ def test_player_import_and_strategy_flow(client):
         f"/api/strategies/{strategy_id}/players/2764",
         json={"tier_id": None, "note": "Changed note", "maximum_price_percentage": 15.5},
     )
-    assert response.status_code == 422
-    unchanged_entry = client.get(f"/api/strategies/{strategy_id}").get_json()["entries"][0]
-    assert unchanged_entry["tier_id"] == tier_id
-    assert unchanged_entry["note"] == "Obiettivo principale"
-    assert unchanged_entry["maximum_price_percentage"] == 15.5
+    assert response.status_code == 204
+    unassigned_entry = client.get(f"/api/strategies/{strategy_id}").get_json()["entries"][0]
+    assert unassigned_entry["tier_id"] is None
+    assert unassigned_entry["note"] == "Changed note"
+    assert unassigned_entry["maximum_price_percentage"] == 15.5
 
 
 def test_live_auction_purchase_amendment_and_cancellation_flow(client):
@@ -170,6 +170,78 @@ def test_live_auction_purchase_amendment_and_cancellation_flow(client):
     assert "attachment" in report.headers["Content-Disposition"]
     assert "Asta amici" in report.get_data(as_text=True)
     assert 'class="mantra">(Por)</span>' in report.get_data(as_text=True)
+
+
+def test_strategy_import_flow(client):
+    client.post(
+        "/api/players/import",
+        data={
+            "file": (
+                io.BytesIO(b"Id,R,Nome,Squadra\n5841,P,Svilar,Roma\n2764,A,Martinez L.,Inter"),
+                "players.csv",
+            )
+        },
+    )
+
+    response = client.post(
+        "/api/strategies/import?name=Fasce+importate",
+        data={
+            "file": (
+                io.BytesIO(
+                    b"Nome,Fascia,MaxPrezzo%,Note\n"
+                    b"Martinez L.,Top,5.8,Rigorista\n"
+                    b"Svilar,,3.2,Da monitorare\n"
+                ),
+                "fasce.csv",
+            )
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.get_json()
+    assert (body["tiers_created"], body["players_assigned"], body["unmatched"]) == (1, 2, [])
+    strategy = client.get(f"/api/strategies/{body['strategy_id']}").get_json()
+    assert strategy["name"] == "Fasce importate"
+    martinez = next(e for e in strategy["entries"] if e["player_id"] == "2764")
+    assert (martinez["note"], martinez["maximum_price_percentage"]) == ("Rigorista", 5.8)
+    svilar = next(e for e in strategy["entries"] if e["player_id"] == "5841")
+    assert (svilar["tier_id"], svilar["note"], svilar["maximum_price_percentage"]) == (
+        None,
+        "Da monitorare",
+        3.2,
+    )
+
+
+def test_strategy_import_requires_confirmation_when_a_player_is_not_found(client):
+    client.post(
+        "/api/players/import",
+        data={"file": (io.BytesIO(b"Id,R,Nome,Squadra\n5841,P,Svilar,Roma"), "players.csv")},
+    )
+    file = {
+        "file": (
+            io.BytesIO(b"Nome,Fascia,MaxPrezzo%,Note\nSvilar,Top,,\nGiocatore Ignoto,Top,,\n"),
+            "fasce.csv",
+        )
+    }
+
+    response = client.post("/api/strategies/import?name=Fasce", data=file)
+
+    assert response.status_code == 409
+    assert response.get_json()["code"] == "confirmation_required"
+    assert "Giocatore Ignoto" in response.get_json()["message"]
+    assert client.get("/api/strategies").get_json() == []
+
+    file = {
+        "file": (
+            io.BytesIO(b"Nome,Fascia,MaxPrezzo%,Note\nSvilar,Top,,\nGiocatore Ignoto,Top,,\n"),
+            "fasce.csv",
+        )
+    }
+    response = client.post("/api/strategies/import?name=Fasce&confirm_unmatched=true", data=file)
+
+    assert response.status_code == 201
+    body = response.get_json()
+    assert (body["players_assigned"], body["unmatched"]) == (1, ["Giocatore Ignoto"])
 
 
 def test_live_import_requires_confirmation(client):

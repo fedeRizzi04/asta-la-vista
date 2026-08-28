@@ -52,6 +52,26 @@ export function createStrategy(name: string): Promise<EntityId> {
 	});
 }
 
+export type ImportSummary = {
+	strategy_id: string;
+	tiers_created: number;
+	players_assigned: number;
+	unmatched: string[];
+};
+
+export function importStrategy(
+	name: string,
+	file: File,
+	confirmUnmatched = false
+): Promise<ImportSummary> {
+	const data = new FormData();
+	data.set('file', file);
+	return apiRequest<ImportSummary>(
+		`/api/strategies/import?name=${encodeURIComponent(name)}&confirm_unmatched=${confirmUnmatched}`,
+		{ method: 'POST', body: data }
+	);
+}
+
 export function duplicateStrategy(strategyId: string, name: string): Promise<EntityId> {
 	return apiRequest<EntityId>(`/api/strategies/${strategyId}/duplicate`, {
 		method: 'POST',
