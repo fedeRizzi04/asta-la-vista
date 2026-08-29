@@ -7,6 +7,7 @@
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
+	import { press } from '$lib/actions/press';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		amendPurchase,
@@ -507,7 +508,7 @@
 							</select>
 						</label>
 						{#if viewingStrategyId !== (auction?.strategy_id ?? '')}
-							<button type="button" disabled={saving} onclick={fixViewedStrategy}>
+							<button type="button" use:press disabled={saving} onclick={fixViewedStrategy}>
 								Fissa per l'asta
 							</button>
 						{/if}
