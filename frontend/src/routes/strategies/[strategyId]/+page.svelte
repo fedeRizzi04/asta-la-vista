@@ -7,6 +7,9 @@
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
+	import { press } from '$lib/actions/press';
+	import { dragReorder } from '$lib/actions/dragReorder';
+	import { slidingIndicator } from '$lib/actions/slidingIndicator.svelte';
 	import { getPlayers, type Player, type Role } from '$lib/players';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
@@ -47,10 +50,10 @@
 	let loading = $state(true);
 	let saving = $state(false);
 	let savedPlayerId = $state('');
+	let orderedTiers = $state<Tier[]>([]);
+	let roleTabsEl = $state<HTMLElement>();
+	let activeRoleTabEl = $state<HTMLElement>();
 
-	let orderedTiers = $derived(
-		[...(strategy?.tiers ?? [])].sort((first, second) => first.position - second.position)
-	);
 	let visiblePlayers = $derived(
 		players.filter(
 			(player) =>
@@ -81,12 +84,19 @@
 			]);
 			strategyName = strategy.name;
 			buildEntryDrafts();
+			syncOrderedTiers();
 		} catch (caught) {
 			pushErrorToast(caught);
 		} finally {
 			loading = false;
 		}
 	}
+
+	$effect(() => {
+		// Re-measure whenever the selected role changes, so the indicator glides across.
+		void selectedRole;
+		activeRoleTabEl = roleTabsEl?.querySelector<HTMLElement>('button.active') ?? undefined;
+	});
 
 	function buildEntryDrafts(): void {
 		const entries = new Map(strategy?.entries.map((entry) => [entry.player_id, entry]));
@@ -147,17 +157,12 @@
 		});
 	}
 
-	async function moveTier(tier: Tier, offset: number): Promise<void> {
+	/** Called once by the drag/keyboard reorder gesture, with the final tier order. */
+	async function commitTierOrder(nextIds: string[]): Promise<void> {
 		if (!strategy) return;
-		const tierIds = orderedTiers.map((item) => item.id);
-		const currentIndex = tierIds.indexOf(tier.id);
-		const targetIndex = currentIndex + offset;
-		if (targetIndex < 0 || targetIndex >= tierIds.length) return;
-		[tierIds[currentIndex], tierIds[targetIndex]] = [tierIds[targetIndex], tierIds[currentIndex]];
-		await runMutation(async () => {
-			await reorderTiers(strategy!.id, tierIds);
-			await refreshStrategy();
-		});
+		const byId = new Map(orderedTiers.map((tier) => [tier.id, tier]));
+		orderedTiers = nextIds.map((id) => byId.get(id)).filter((tier) => tier !== undefined);
+		await runMutation(() => reorderTiers(strategy!.id, nextIds));
 	}
 
 	async function saveEntry(player: Player): Promise<void> {
@@ -181,6 +186,13 @@
 		strategy = await getStrategy(currentStrategyId());
 		strategyName = strategy.name;
 		buildEntryDrafts();
+		syncOrderedTiers();
+	}
+
+	function syncOrderedTiers(): void {
+		orderedTiers = [...(strategy?.tiers ?? [])].sort(
+			(first, second) => first.position - second.position
+		);
 	}
 
 	function currentStrategyId(): string {
@@ -216,7 +228,7 @@
 		<label for="strategy-name">Nome</label>
 		<div class="inline-fields">
 			<input id="strategy-name" bind:value={strategyName} />
-			<button type="submit" disabled={!strategyName.trim() || saving}>Salva</button>
+			<button type="submit" use:press disabled={!strategyName.trim() || saving}>Salva</button>
 		</div>
 	</form>
 </section>
@@ -224,11 +236,12 @@
 {#if loading}
 	<div class="empty-state">Caricamento della strategia…</div>
 {:else if strategy}
-	<div class="role-tabs" role="tablist" aria-label="Ruoli">
+	<div class="role-tabs" role="tablist" aria-label="Ruoli" bind:this={roleTabsEl}>
 		{#each roles as role (role)}
 			<button
 				type="button"
 				class:active={selectedRole === role}
+				use:press
 				onclick={() => {
 					selectedRole = role;
 					playerSearch = '';
@@ -238,6 +251,7 @@
 				{roleLabels[role]}
 			</button>
 		{/each}
+		<span class="tab-indicator" use:slidingIndicator={activeRoleTabEl} aria-hidden="true"></span>
 	</div>
 
 	<section class="panel">
@@ -253,7 +267,7 @@
 						aria-label="Nome nuova fascia"
 					/>
 					<input bind:value={newTierColor} type="color" aria-label="Colore nuova fascia" />
-					<button type="submit" disabled={!newTierName.trim() || saving}>Aggiungi</button>
+					<button type="submit" use:press disabled={!newTierName.trim() || saving}>Aggiungi</button>
 				</form>
 			{/snippet}
 		</SectionHeading>
@@ -261,9 +275,29 @@
 		{#if orderedTiers.length === 0}
 			<div class="compact-empty">Non hai ancora creato nessuna fascia.</div>
 		{:else}
-			<div class="tier-list">
-				{#each orderedTiers as tier, index (tier.id)}
-					<div class="tier-row" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
+			<div
+				class="tier-list"
+				use:dragReorder={{
+					ids: () => orderedTiers.map((tier) => tier.id),
+					onCommit: commitTierOrder,
+					disabled: () => saving
+				}}
+			>
+				{#each orderedTiers as tier (tier.id)}
+					<div
+						class="tier-row"
+						data-drag-id={tier.id}
+						style:--tier-color={tier.color ?? 'var(--tier-default)'}
+					>
+						<button
+							type="button"
+							class="drag-handle"
+							data-drag-handle
+							use:press
+							aria-label={`Trascina per riordinare “${tier.name}”, o usa le frecce su/giù`}
+						>
+							⠿
+						</button>
 						<span class="color-marker"></span>
 						<input bind:value={tier.name} aria-label="Nome fascia" />
 						<input
@@ -275,27 +309,15 @@
 						<div class="tier-actions">
 							<button
 								type="button"
-								class="icon"
-								onclick={() => moveTier(tier, -1)}
-								disabled={index === 0 || saving}
-								aria-label="Sposta in alto">↑</button
-							>
-							<button
-								type="button"
-								class="icon"
-								onclick={() => moveTier(tier, 1)}
-								disabled={index === orderedTiers.length - 1 || saving}
-								aria-label="Sposta in basso">↓</button
-							>
-							<button
-								type="button"
 								class="secondary"
+								use:press
 								onclick={() => saveTier(tier)}
 								disabled={saving}>Salva</button
 							>
 							<button
 								type="button"
 								class="danger"
+								use:press
 								onclick={() => deleteTier(tier)}
 								disabled={saving}>Elimina</button
 							>
@@ -405,6 +427,8 @@
 						<button
 							type="button"
 							class="secondary"
+							class:saved={savedPlayerId === player.id}
+							use:press
 							onclick={() => saveEntry(player)}
 							disabled={saving}
 						>
@@ -500,8 +524,7 @@
 		opacity: 0.45;
 	}
 
-	button.secondary,
-	button.icon {
+	button.secondary {
 		border-color: var(--border-strong);
 		background: var(--input-bg);
 		color: var(--text);
@@ -513,12 +536,26 @@
 		color: var(--error-text);
 	}
 
-	button.icon {
-		width: 2.5rem;
-		padding: 0;
+	/* Completion feedback (§Feedback comes in four kinds): a quick, non-bouncy pulse
+	   the instant a save actually lands, so it reads distinct from the idle state. */
+	button.saved {
+		animation: save-pulse 320ms cubic-bezier(0.19, 1, 0.22, 1);
+	}
+
+	@keyframes save-pulse {
+		0% {
+			transform: scale(1);
+		}
+		40% {
+			transform: scale(1.06);
+		}
+		100% {
+			transform: scale(1);
+		}
 	}
 
 	.role-tabs {
+		position: relative;
 		display: flex;
 		gap: 0.4rem;
 		margin-top: 3rem;
@@ -527,14 +564,12 @@
 
 	.role-tabs button {
 		border: 0;
-		border-bottom: 2px solid transparent;
 		border-radius: 0;
 		background: transparent;
 		color: var(--subdued);
 	}
 
 	.role-tabs button.active {
-		border-bottom-color: var(--primary);
 		color: var(--primary);
 	}
 
@@ -555,13 +590,48 @@
 
 	.tier-row {
 		display: grid;
-		grid-template-columns: 0.5rem minmax(180px, 1fr) auto auto;
+		grid-template-columns: auto 0.5rem minmax(180px, 1fr) auto auto;
 		align-items: center;
 		gap: 0.65rem;
 		padding: 0.6rem;
 		border: 1px solid var(--border);
 		border-radius: 0.5rem;
 		background: var(--input-bg);
+		transition:
+			box-shadow 180ms ease,
+			border-color 180ms ease;
+	}
+
+	/* Direct manipulation feedback while held: lift off the list, follow the pointer 1:1.
+	   `is-dragging` is toggled imperatively by the dragReorder action, not by Svelte's
+	   `class:` directive, so it's marked :global to keep the compiler from tree-shaking it. */
+	.tier-row:global(.is-dragging) {
+		position: relative;
+		z-index: 5;
+		border-color: var(--border-hover);
+		box-shadow: 0 18px 32px -12px rgb(0 0 0 / 30%);
+		cursor: grabbing;
+	}
+
+	.drag-handle {
+		display: grid;
+		place-items: center;
+		width: 2.1rem;
+		min-height: 2.1rem;
+		padding: 0;
+		border-color: var(--border-strong);
+		border-radius: 0.4rem;
+		background: var(--input-bg);
+		color: var(--subdued);
+		font-size: 1rem;
+		letter-spacing: 0;
+		line-height: 1;
+		cursor: grab;
+		touch-action: none;
+	}
+
+	.drag-handle:active {
+		cursor: grabbing;
 	}
 
 	.color-marker {
@@ -708,12 +778,18 @@
 			flex-direction: column;
 		}
 
-		.tier-row,
 		.player-row {
 			grid-template-columns: 0.35rem 1fr auto;
 		}
 
-		.tier-actions,
+		.tier-row {
+			grid-template-columns: auto 0.35rem 1fr auto;
+		}
+
+		.tier-actions {
+			grid-column: 3 / -1;
+		}
+
 		.player-row > input,
 		.player-row > .tier-selector,
 		.player-row > .percentage-field,

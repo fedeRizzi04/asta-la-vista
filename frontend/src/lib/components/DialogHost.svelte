@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { acceptDialog, dialogState, dismissDialog } from '$lib/dialog.svelte';
+	import { press } from '$lib/actions/press';
 
 	let confirmButton = $state<HTMLButtonElement>();
 	let inputEl = $state<HTMLInputElement>();
@@ -45,13 +46,14 @@
 				/>
 			{/if}
 			<div class="dialog-actions">
-				<button type="button" class="secondary" onclick={dismissDialog}>
+				<button type="button" class="secondary" use:press onclick={dismissDialog}>
 					{dialogState.request.cancelLabel ?? 'Annulla'}
 				</button>
 				<button
 					type="button"
 					class:danger={dialogState.request.danger}
 					bind:this={confirmButton}
+					use:press
 					onclick={acceptDialog}
 				>
 					{dialogState.request.confirmLabel ?? 'Conferma'}
@@ -70,17 +72,22 @@
 		place-items: center;
 		padding: 1.5rem;
 		background: var(--overlay);
-		animation: overlay-in 140ms ease;
+		backdrop-filter: blur(0);
+		animation: overlay-in 220ms cubic-bezier(0.19, 1, 0.22, 1);
 	}
 
 	.dialog {
 		width: min(420px, 100%);
 		padding: 1.5rem;
 		border: 1px solid var(--border);
-		border-radius: 0.75rem;
-		background: var(--surface);
-		box-shadow: 0 20px 48px rgb(0 0 0 / 28%);
-		animation: dialog-in 160ms ease;
+		border-radius: 0.9rem;
+		background: color-mix(in srgb, var(--surface) 92%, transparent);
+		backdrop-filter: blur(24px) saturate(160%);
+		box-shadow:
+			0 1px 0 rgb(255 255 255 / 6%) inset,
+			0 24px 60px -12px rgb(0 0 0 / 32%);
+		/* Materialize, don't just fade: blur and scale settle together, like a real surface arriving. */
+		animation: dialog-in 260ms cubic-bezier(0.19, 1, 0.22, 1);
 	}
 
 	.dialog h2 {
@@ -146,20 +153,51 @@
 	@keyframes overlay-in {
 		from {
 			opacity: 0;
+			backdrop-filter: blur(0);
 		}
 		to {
 			opacity: 1;
+			backdrop-filter: blur(6px);
 		}
 	}
 
 	@keyframes dialog-in {
 		from {
 			opacity: 0;
-			transform: translateY(6px) scale(0.98);
+			transform: translateY(10px) scale(0.96);
+			backdrop-filter: blur(0);
 		}
 		to {
 			opacity: 1;
 			transform: translateY(0) scale(1);
+			backdrop-filter: blur(24px) saturate(160%);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.dialog-overlay,
+		.dialog {
+			animation: fade-in 160ms ease;
+		}
+
+		@keyframes fade-in {
+			from {
+				opacity: 0;
+			}
+			to {
+				opacity: 1;
+			}
+		}
+	}
+
+	@media (prefers-reduced-transparency: reduce) {
+		.dialog-overlay {
+			backdrop-filter: none;
+		}
+
+		.dialog {
+			background: var(--surface);
+			backdrop-filter: none;
 		}
 	}
 </style>
