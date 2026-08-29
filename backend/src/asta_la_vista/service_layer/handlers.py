@@ -139,6 +139,13 @@ def reopen_auction(cmd: commands.ReopenAuction, uow: AbstractUnitOfWork):
         uow.commit()
 
 
+def delete_auction(cmd: commands.DeleteAuction, uow: AbstractUnitOfWork):
+    with uow:
+        auction = _auction(uow, cmd.auction_id)
+        uow.auctions.remove(auction)
+        uow.commit()
+
+
 def create_strategy(cmd: commands.CreateStrategy, uow: AbstractUnitOfWork) -> str:
     with uow:
         strategy = model.Strategy(cmd.name)
@@ -290,6 +297,7 @@ COMMAND_HANDLERS = {
     commands.CancelPurchase: cancel_purchase,
     commands.CompleteAuction: complete_auction,
     commands.ReopenAuction: reopen_auction,
+    commands.DeleteAuction: delete_auction,
     commands.CreateStrategy: create_strategy,
     commands.RenameStrategy: rename_strategy,
     commands.DeleteStrategy: delete_strategy,

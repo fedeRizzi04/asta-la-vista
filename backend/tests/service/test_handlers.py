@@ -55,6 +55,25 @@ def test_inactive_player_cannot_be_purchased(session_factory):
         bus.handle(commands.RecordPurchase(auction_id, "5841", participant_id, 1))
 
 
+def test_auction_can_be_deleted(session_factory):
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    bus = bootstrap.bootstrap(uow)
+    with uow:
+        uow.players.add(Player("5841", "Svilar", "Roma", Role.GOALKEEPER))
+        uow.commit()
+
+    auction_id = bus.handle(commands.CreateAuction("League", 10, 1, 0, 0, 0, ("Alice",)))
+    with uow:
+        participant_id = uow.auctions.get(auction_id).participants[0].uuid
+    bus.handle(commands.StartAuction(auction_id))
+    bus.handle(commands.RecordPurchase(auction_id, "5841", participant_id, 1))
+
+    bus.handle(commands.DeleteAuction(auction_id))
+
+    with uow:
+        assert uow.auctions.get(auction_id) is None
+
+
 def test_strategy_flow_uses_the_player_current_role(session_factory):
     uow = SqlAlchemyUnitOfWork(session_factory)
     bus = bootstrap.bootstrap(uow)

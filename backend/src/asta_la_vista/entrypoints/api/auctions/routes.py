@@ -48,6 +48,10 @@ class AuctionResource(MethodView):
     def get(self, auction_id: str) -> dict:
         return auctions.auction_detail(uow(), auction_id)
 
+    @blueprint.response(204)
+    def delete(self, auction_id: str):
+        bus().handle(commands.DeleteAuction(auction_id))
+
 
 @blueprint.route("/auctions/<string:auction_id>/report")
 class AuctionReport(MethodView):

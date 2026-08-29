@@ -2,10 +2,13 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
+	import { press } from '$lib/actions/press';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import { confirmDialog } from '$lib/dialog.svelte';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		createAuction,
+		deleteAuction,
 		getAuctions,
 		type AuctionStatus,
 		type AuctionSummary
@@ -64,6 +67,25 @@
 				strategy_id: strategyId || null
 			});
 			await goto(resolve('/auctions/[auctionId]', { auctionId: result.id }));
+		} catch (caught) {
+			pushErrorToast(caught);
+		} finally {
+			saving = false;
+		}
+	}
+
+	async function removeAuction(auction: AuctionSummary): Promise<void> {
+		const confirmed = await confirmDialog({
+			title: 'Elimina asta',
+			message: `Eliminare l'asta “${auction.name}”? Questa azione non può essere annullata.`,
+			confirmLabel: 'Elimina',
+			danger: true
+		});
+		if (!confirmed) return;
+		saving = true;
+		try {
+			await deleteAuction(auction.id);
+			await loadPage();
 		} catch (caught) {
 			pushErrorToast(caught);
 		} finally {
@@ -153,14 +175,30 @@
 		{:else}
 			<div class="auction-list">
 				{#each auctions as auction (auction.id)}
-					<a href={resolve('/auctions/[auctionId]', { auctionId: auction.id })}>
-						<div class="auction-title">
-							<h3>{auction.name}</h3>
-							<span data-status={auction.status}>{statusLabels[auction.status]}</span>
+					<article>
+						<div>
+							<div class="auction-title">
+								<h3>{auction.name}</h3>
+								<span data-status={auction.status}>{statusLabels[auction.status]}</span>
+							</div>
+							<p>{auction.participant_count} partecipanti · {auction.purchase_count} acquisti</p>
+							<strong>{auction.initial_credits} crediti iniziali</strong>
 						</div>
-						<p>{auction.participant_count} partecipanti · {auction.purchase_count} acquisti</p>
-						<strong>{auction.initial_credits} crediti iniziali</strong>
-					</a>
+						<div class="actions">
+							<button
+								class="danger"
+								type="button"
+								use:press
+								onclick={() => removeAuction(auction)}
+								disabled={saving}
+							>
+								Elimina
+							</button>
+							<a use:press href={resolve('/auctions/[auctionId]', { auctionId: auction.id })}
+								>Apri</a
+							>
+						</div>
+					</article>
 				{/each}
 			</div>
 		{/if}
@@ -217,8 +255,13 @@
 		line-height: 1.45;
 	}
 
-	button {
+	button,
+	.actions a {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		min-height: 2.65rem;
+		padding: 0 1rem;
 		border: 1px solid var(--primary);
 		border-radius: 0.45rem;
 		background: var(--primary);
@@ -226,12 +269,19 @@
 		font: inherit;
 		font-size: 0.86rem;
 		font-weight: 700;
+		text-decoration: none;
 		cursor: pointer;
 	}
 
 	button:disabled {
 		cursor: not-allowed;
 		opacity: 0.5;
+	}
+
+	button.danger {
+		border-color: transparent;
+		background: transparent;
+		color: var(--error-text);
 	}
 
 	.auction-title {
@@ -246,17 +296,26 @@
 		gap: 0.7rem;
 	}
 
-	.auction-list > a {
+	.auction-list article {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1.5rem;
 		padding: 1.15rem;
 		border: 1px solid var(--border);
 		border-radius: 0.65rem;
 		background: var(--surface);
-		text-decoration: none;
 		transition: border-color 140ms ease;
 	}
 
-	.auction-list > a:hover {
+	.auction-list article:hover {
 		border-color: var(--border-hover);
+	}
+
+	.actions {
+		display: flex;
+		flex-shrink: 0;
+		gap: 0.65rem;
 	}
 
 	.auction-title h3 {
@@ -306,6 +365,15 @@
 
 		.wide {
 			grid-column: auto;
+		}
+
+		.auction-list article {
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		.actions > * {
+			flex: 1;
 		}
 	}
 </style>

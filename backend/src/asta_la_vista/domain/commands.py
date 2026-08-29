@@ -73,6 +73,11 @@ class ReopenAuction(Command):
 
 
 @dataclass(frozen=True)
+class DeleteAuction(Command):
+    auction_id: str
+
+
+@dataclass(frozen=True)
 class CreateStrategy(Command):
     name: str
 

@@ -149,7 +149,15 @@ def start_mappers():
         },
     )
     mapper_registry.map_imperatively(model.Participant, participants)
-    mapper_registry.map_imperatively(model.Purchase, purchases)
+    mapper_registry.map_imperatively(
+        model.Purchase,
+        purchases,
+        properties={
+            "_participant": relationship(
+                model.Participant, foreign_keys=[purchases.c.participant_id]
+            )
+        },
+    )
     mapper_registry.map_imperatively(
         model.Auction,
         auctions,

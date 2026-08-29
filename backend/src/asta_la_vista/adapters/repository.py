@@ -12,6 +12,9 @@ class AbstractAuctionRepository(ABC):
     def add(self, auction: model.Auction): ...
 
     @abstractmethod
+    def remove(self, auction: model.Auction): ...
+
+    @abstractmethod
     def get(self, uuid: str) -> model.Auction | None: ...
 
     @abstractmethod
@@ -49,6 +52,9 @@ class AuctionRepository:
 
     def add(self, auction: model.Auction):
         self.session.add(auction)
+
+    def remove(self, auction: model.Auction):
+        self.session.delete(auction)
 
     def get(self, uuid: str) -> model.Auction | None:
         return self.session.get(model.Auction, uuid)
@@ -104,6 +110,10 @@ class TrackingAuctionRepository:
     def add(self, auction: model.Auction):
         self._repository.add(auction)
         self.seen.add(auction)
+
+    def remove(self, auction: model.Auction):
+        self._repository.remove(auction)
+        self.seen.discard(auction)
 
     def get(self, uuid: str) -> model.Auction | None:
         return self._track(self._repository.get(uuid))

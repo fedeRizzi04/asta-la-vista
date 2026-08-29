@@ -88,6 +88,10 @@ export function reopenAuction(auctionId: string): Promise<void> {
 	return apiRequest<void>(`/api/auctions/${auctionId}/reopen`, { method: 'POST' });
 }
 
+export function deleteAuction(auctionId: string): Promise<void> {
+	return apiRequest<void>(`/api/auctions/${auctionId}`, { method: 'DELETE' });
+}
+
 export function recordPurchase(
 	auctionId: string,
 	playerId: string,
