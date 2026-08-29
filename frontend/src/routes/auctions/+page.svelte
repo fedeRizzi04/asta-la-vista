@@ -137,7 +137,7 @@
 				<input bind:value={forwardSlots} type="number" min="0" required />
 			</label>
 			<label class="wide">
-				<span>Strategia</span>
+				<span>Strategia predefinita</span>
 				<select bind:value={strategyId}>
 					<option value="">Nessuna strategia</option>
 					{#each strategies as strategy (strategy.id)}
