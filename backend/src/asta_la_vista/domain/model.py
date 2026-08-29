@@ -1,5 +1,6 @@
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import StrEnum
 from uuid import uuid4
 
@@ -69,6 +70,7 @@ class Purchase:
     price: int
     uuid: str
     cancelled: bool = False
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class Player:

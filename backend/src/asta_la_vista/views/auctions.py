@@ -74,7 +74,7 @@ def auction_detail(uow: AbstractUnitOfWork, auction_id: str) -> dict:
             uow.session.execute(
                 text("""
                     SELECT p.uuid, p.player_id, p.player_name, pl.team, p.role,
-                           p.participant_id, p.price, pl.active, pl.mantra_roles
+                           p.participant_id, p.price, pl.active, pl.mantra_roles, p.created_at
                     FROM purchase p
                     JOIN player pl ON pl.external_id = p.player_id
                     WHERE p.auction_id = :auction_id AND p.cancelled = FALSE
@@ -107,6 +107,7 @@ def auction_detail(uow: AbstractUnitOfWork, auction_id: str) -> dict:
                     "price": purchase["price"],
                     "player_active": bool(purchase["active"]),
                     "mantra_roles": split_mantra_roles(purchase["mantra_roles"]),
+                    "created_at": str(purchase["created_at"]),
                 }
             )
         participant_views = []

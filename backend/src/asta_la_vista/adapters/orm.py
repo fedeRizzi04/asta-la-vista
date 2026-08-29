@@ -119,6 +119,7 @@ purchases = sa.Table(
     sa.Column("participant_id", sa.ForeignKey("participant.uuid"), nullable=False),
     sa.Column("price", sa.Integer, nullable=False),
     sa.Column("cancelled", sa.Boolean, nullable=False),
+    sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     sa.CheckConstraint("price >= 1"),
 )
 sa.Index(

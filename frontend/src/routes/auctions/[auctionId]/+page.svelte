@@ -429,9 +429,9 @@
 					<div class="roster">
 						{#if participant.purchases.length === 0}<p>Nessun acquisto.</p>{/if}
 						{#each roles as role (role)}
-							{@const rolePurchases = participant.purchases.filter(
-								(purchase) => purchase.role === role
-							)}
+							{@const rolePurchases = participant.purchases
+								.filter((purchase) => purchase.role === role)
+								.sort((first, second) => (first.created_at < second.created_at ? -1 : 1))}
 							{#if rolePurchases.length > 0}
 								<div class="purchase-group" data-role={role} aria-label={roleLabels[role]}>
 									{#each rolePurchases as purchase (purchase.id)}

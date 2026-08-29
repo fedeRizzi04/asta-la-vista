@@ -24,6 +24,7 @@ export type Purchase = {
 	price: number;
 	player_active: boolean;
 	mantra_roles: string[];
+	created_at: string;
 };
 
 export type Participant = {

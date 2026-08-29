@@ -90,7 +90,9 @@ def test_auction_detail_calculates_rosters_credits_slots_and_maximum_bid(session
         76,
     )
     assert alice["slots"]["P"] == {"filled": 1, "total": 1}
-    assert alice["purchases"][0] == {
+    purchase = alice["purchases"][0]
+    assert purchase.pop("created_at")
+    assert purchase == {
         "id": "purchase-1",
         "player_id": "1",
         "player_name": "Svilar",
