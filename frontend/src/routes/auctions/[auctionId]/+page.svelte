@@ -15,6 +15,7 @@
 		getAuction,
 		recordPurchase,
 		reopenAuction,
+		setAuctionStrategy,
 		startAuction,
 		type Auction,
 		type Participant,
@@ -22,7 +23,13 @@
 	} from '$lib/auctions';
 	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
 	import { getPlayers, type Player, type Role } from '$lib/players';
-	import { getStrategy, percentageToCredits, type Strategy } from '$lib/strategies';
+	import {
+		getStrategies,
+		getStrategy,
+		percentageToCredits,
+		type Strategy,
+		type StrategySummary
+	} from '$lib/strategies';
 
 	const roleLabels: Record<Role, string> = {
 		P: 'Portieri',
@@ -35,7 +42,9 @@
 
 	let auction = $state<Auction>();
 	let players = $state<Player[]>([]);
+	let strategies = $state<StrategySummary[]>([]);
 	let strategy = $state<Strategy>();
+	let viewingStrategyId = $state('');
 	let playerSearch = $state('');
 	let selectedPlayerId = $state('');
 	let selectedParticipantId = $state('');
@@ -108,18 +117,39 @@
 	async function loadAuction(): Promise<void> {
 		loading = true;
 		try {
-			[auction, players] = await Promise.all([
+			[auction, players, strategies] = await Promise.all([
 				getAuction(currentAuctionId()),
-				getPlayers({ includeInactive: true })
+				getPlayers({ includeInactive: true }),
+				getStrategies()
 			]);
 			selectedParticipantId ||= auction.participants[0]?.id ?? '';
-			strategy = auction.strategy_id ? await getStrategy(auction.strategy_id) : undefined;
-			if (!strategy) catalogSort = 'quotation';
+			viewingStrategyId = auction.strategy_id ?? '';
+			await loadViewedStrategy();
 		} catch (caught) {
 			pushErrorToast(caught);
 		} finally {
 			loading = false;
 		}
+	}
+
+	async function loadViewedStrategy(): Promise<void> {
+		strategy = viewingStrategyId ? await getStrategy(viewingStrategyId) : undefined;
+		if (!strategy) catalogSort = 'quotation';
+	}
+
+	async function viewSelectedStrategy(): Promise<void> {
+		try {
+			await loadViewedStrategy();
+		} catch (caught) {
+			pushErrorToast(caught);
+		}
+	}
+
+	async function fixViewedStrategy(): Promise<void> {
+		await runMutation(async () => {
+			await setAuctionStrategy(currentAuctionId(), viewingStrategyId || null);
+			await refreshAuction();
+		});
 	}
 
 	async function changeStatus(action: 'start' | 'complete' | 'reopen'): Promise<void> {
@@ -462,51 +492,72 @@
 		</div>
 	</section>
 
-	{#if strategy}
+	{#if strategies.length > 0}
 		<section class="strategy-section">
-			<SectionHeading eyebrow="Strategia" title={strategy.name} />
-			<div class="strategy-roles">
-				{#each roles as role (role)}
-					<div class="strategy-role">
-						<h3>{roleLabels[role]}</h3>
-						{#each [...strategy.tiers].sort((a, b) => a.position - b.position) as tier (tier.id)}
-							{@const tierEntries = strategy.entries.filter(
-								(entry) => entry.role === role && entry.tier_id === tier.id
-							)}
-							{@const availableCount = tierEntries.filter(
-								(entry) => !purchasedIds.has(entry.player_id)
-							).length}
-							<div class="tier">
-								<div class="tier-heading">
-									<TierBadge name={tier.name} color={tier.color} compact />
-									<span class="tier-availability">{availableCount}/{tierEntries.length}</span>
-								</div>
-								{#if tierEntries.length > 0}
-									<div class="tier-players">
-										{#each tierEntries as entry (entry.player_id)}
-											<TierPlayerCard
-												name={entry.name}
-												team={entry.team}
-												mantraRoles={entry.mantra_roles}
-												maximumPricePercentage={entry.maximum_price_percentage}
-												maximumPriceCredits={entry.maximum_price_percentage != null
-													? percentageToCredits(
-															entry.maximum_price_percentage,
-															auction.initial_credits
-														)
-													: null}
-												note={entry.note}
-												purchased={purchasedIds.has(entry.player_id)}
-												compact
-											/>
-										{/each}
-									</div>
-								{/if}
-							</div>
-						{/each}
+			<SectionHeading eyebrow="Strategia" title={strategy?.name ?? 'Nessuna strategia selezionata'}>
+				{#snippet trailing()}
+					<div class="strategy-picker">
+						<label>
+							<span>Visualizza</span>
+							<select bind:value={viewingStrategyId} onchange={viewSelectedStrategy}>
+								<option value="">Nessuna strategia</option>
+								{#each strategies as candidate (candidate.id)}
+									<option value={candidate.id}>{candidate.name}</option>
+								{/each}
+							</select>
+						</label>
+						{#if viewingStrategyId !== (auction?.strategy_id ?? '')}
+							<button type="button" disabled={saving} onclick={fixViewedStrategy}>
+								Fissa per l'asta
+							</button>
+						{/if}
 					</div>
-				{/each}
-			</div>
+				{/snippet}
+			</SectionHeading>
+			{#if strategy}
+				<div class="strategy-roles">
+					{#each roles as role (role)}
+						<div class="strategy-role">
+							<h3>{roleLabels[role]}</h3>
+							{#each [...strategy.tiers].sort((a, b) => a.position - b.position) as tier (tier.id)}
+								{@const tierEntries = strategy.entries.filter(
+									(entry) => entry.role === role && entry.tier_id === tier.id
+								)}
+								{@const availableCount = tierEntries.filter(
+									(entry) => !purchasedIds.has(entry.player_id)
+								).length}
+								<div class="tier">
+									<div class="tier-heading">
+										<TierBadge name={tier.name} color={tier.color} compact />
+										<span class="tier-availability">{availableCount}/{tierEntries.length}</span>
+									</div>
+									{#if tierEntries.length > 0}
+										<div class="tier-players">
+											{#each tierEntries as entry (entry.player_id)}
+												<TierPlayerCard
+													name={entry.name}
+													team={entry.team}
+													mantraRoles={entry.mantra_roles}
+													maximumPricePercentage={entry.maximum_price_percentage}
+													maximumPriceCredits={entry.maximum_price_percentage != null
+														? percentageToCredits(
+																entry.maximum_price_percentage,
+																auction.initial_credits
+															)
+														: null}
+													note={entry.note}
+													purchased={purchasedIds.has(entry.player_id)}
+													compact
+												/>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					{/each}
+				</div>
+			{/if}
 		</section>
 	{/if}
 
@@ -779,6 +830,23 @@
 	.teams-section,
 	.strategy-section {
 		margin-top: 3rem;
+	}
+	.strategy-picker {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+	.strategy-picker label {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+	.strategy-picker select {
+		width: auto;
+		min-width: 9rem;
 	}
 	.team-grid {
 		display: grid;

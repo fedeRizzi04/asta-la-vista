@@ -344,6 +344,9 @@ class Auction:
         self.participants.append(participant)
         return participant.uuid
 
+    def set_strategy(self, strategy_id: str | None):
+        self.strategy_id = strategy_id
+
     def start(self):
         self._require_status(AuctionStatus.DRAFT)
         if not self.participants:

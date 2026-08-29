@@ -92,6 +92,14 @@ export function deleteAuction(auctionId: string): Promise<void> {
 	return apiRequest<void>(`/api/auctions/${auctionId}`, { method: 'DELETE' });
 }
 
+export function setAuctionStrategy(auctionId: string, strategyId: string | null): Promise<void> {
+	return apiRequest<void>(`/api/auctions/${auctionId}/strategy`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ strategy_id: strategyId })
+	});
+}
+
 export function recordPurchase(
 	auctionId: string,
 	playerId: string,

@@ -146,6 +146,15 @@ def delete_auction(cmd: commands.DeleteAuction, uow: AbstractUnitOfWork):
         uow.commit()
 
 
+def set_auction_strategy(cmd: commands.SetAuctionStrategy, uow: AbstractUnitOfWork):
+    with uow:
+        auction = _auction(uow, cmd.auction_id)
+        if cmd.strategy_id is not None and uow.strategies.get(cmd.strategy_id) is None:
+            raise NotFoundError("Strategy not found")
+        auction.set_strategy(cmd.strategy_id)
+        uow.commit()
+
+
 def create_strategy(cmd: commands.CreateStrategy, uow: AbstractUnitOfWork) -> str:
     with uow:
         strategy = model.Strategy(cmd.name)
@@ -298,6 +307,7 @@ COMMAND_HANDLERS = {
     commands.CompleteAuction: complete_auction,
     commands.ReopenAuction: reopen_auction,
     commands.DeleteAuction: delete_auction,
+    commands.SetAuctionStrategy: set_auction_strategy,
     commands.CreateStrategy: create_strategy,
     commands.RenameStrategy: rename_strategy,
     commands.DeleteStrategy: delete_strategy,

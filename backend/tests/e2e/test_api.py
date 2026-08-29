@@ -140,6 +140,37 @@ def test_auction_can_be_deleted(client):
     assert client.get(f"/api/auctions/{auction_id}").status_code == 404
 
 
+def test_auction_strategy_can_be_changed(client):
+    response = client.post(
+        "/api/auctions",
+        json={
+            "name": "Amichevole",
+            "initial_credits": 100,
+            "goalkeeper_slots": 1,
+            "defender_slots": 2,
+            "midfielder_slots": 2,
+            "forward_slots": 1,
+            "participant_names": ["Alice", "Bob"],
+        },
+    )
+    auction_id = response.get_json()["id"]
+    strategy_id = client.post("/api/strategies", json={"name": "Preferita"}).get_json()["id"]
+
+    response = client.put(f"/api/auctions/{auction_id}/strategy", json={"strategy_id": strategy_id})
+
+    assert response.status_code == 204
+    assert client.get(f"/api/auctions/{auction_id}").get_json()["strategy_id"] == strategy_id
+
+    response = client.put(f"/api/auctions/{auction_id}/strategy", json={"strategy_id": None})
+
+    assert response.status_code == 204
+    assert client.get(f"/api/auctions/{auction_id}").get_json()["strategy_id"] is None
+
+    response = client.put(f"/api/auctions/{auction_id}/strategy", json={"strategy_id": "missing"})
+
+    assert response.status_code == 404
+
+
 def test_live_auction_purchase_amendment_and_cancellation_flow(client):
     client.post(
         "/api/players/import",

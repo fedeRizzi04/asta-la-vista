@@ -12,6 +12,7 @@ from .schemas import (
     AuctionCreateSchema,
     AuctionDetailSchema,
     AuctionIdSchema,
+    AuctionStrategySchema,
     AuctionSummarySchema,
     PurchaseCreateSchema,
     PurchaseUpdateSchema,
@@ -51,6 +52,14 @@ class AuctionResource(MethodView):
     @blueprint.response(204)
     def delete(self, auction_id: str):
         bus().handle(commands.DeleteAuction(auction_id))
+
+
+@blueprint.route("/auctions/<string:auction_id>/strategy")
+class AuctionStrategy(MethodView):
+    @blueprint.arguments(AuctionStrategySchema)
+    @blueprint.response(204)
+    def put(self, body: dict, auction_id: str):
+        bus().handle(commands.SetAuctionStrategy(auction_id, body["strategy_id"]))
 
 
 @blueprint.route("/auctions/<string:auction_id>/report")

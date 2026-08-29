@@ -16,6 +16,10 @@ class AuctionCreateSchema(Schema):
     strategy_id = fields.String(allow_none=True)
 
 
+class AuctionStrategySchema(Schema):
+    strategy_id = fields.String(allow_none=True, load_default=None)
+
+
 class AuctionSummarySchema(Schema):
     id = fields.String(required=True)
     name = fields.String(required=True)

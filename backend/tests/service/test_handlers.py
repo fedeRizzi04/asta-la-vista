@@ -3,7 +3,7 @@ import pytest
 from asta_la_vista import bootstrap
 from asta_la_vista.domain import commands
 from asta_la_vista.domain.model import Player, Role
-from asta_la_vista.exceptions import ValidationError
+from asta_la_vista.exceptions import NotFoundError, ValidationError
 from asta_la_vista.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -72,6 +72,32 @@ def test_auction_can_be_deleted(session_factory):
 
     with uow:
         assert uow.auctions.get(auction_id) is None
+
+
+def test_auction_strategy_can_be_changed(session_factory):
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    bus = bootstrap.bootstrap(uow)
+
+    auction_id = bus.handle(commands.CreateAuction("League", 10, 1, 0, 0, 0, ("Alice",)))
+    strategy_id = bus.handle(commands.CreateStrategy("Preferita"))
+
+    bus.handle(commands.SetAuctionStrategy(auction_id, strategy_id))
+    with uow:
+        assert uow.auctions.get(auction_id).strategy_id == strategy_id
+
+    bus.handle(commands.SetAuctionStrategy(auction_id, None))
+    with uow:
+        assert uow.auctions.get(auction_id).strategy_id is None
+
+
+def test_auction_strategy_cannot_be_set_to_an_unknown_strategy(session_factory):
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    bus = bootstrap.bootstrap(uow)
+
+    auction_id = bus.handle(commands.CreateAuction("League", 10, 1, 0, 0, 0, ("Alice",)))
+
+    with pytest.raises(NotFoundError):
+        bus.handle(commands.SetAuctionStrategy(auction_id, "missing"))
 
 
 def test_strategy_flow_uses_the_player_current_role(session_factory):
