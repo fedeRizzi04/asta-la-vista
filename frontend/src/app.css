@@ -61,50 +61,53 @@
 	letter-spacing: 0;
 }
 
+/* Inspired by GitHub's "Dark Dimmed" theme: a warm-neutral gray canvas instead of
+   near-black, with clear, restrained lightness steps between page/surface/field so
+   hierarchy stays legible without every surface competing for attention. */
 :root[data-theme='dark'] {
-	--page-bg: #101411;
-	--surface: #181e1a;
-	--input-bg: #222a24;
-	--text: #e5ebe7;
-	--muted: #aab4ad;
-	--subdued: #919c94;
-	--disabled-text: #737d76;
-	--border: #354038;
-	--border-strong: #526158;
-	--border-hover: #718078;
-	--primary: #4e9b70;
-	--primary-text: #7dcc9f;
-	--on-primary: #0c1710;
-	--primary-soft: #22382b;
-	--primary-soft-text: #a2d8b9;
-	--muted-bg: #252c27;
-	--error-border: #754848;
-	--error-bg: #2d1d1d;
-	--error-text: #f0aaaa;
-	--success-border: #47705a;
-	--success-bg: #18291f;
-	--success-text: #9bd5b2;
-	--status-bg: #2a312c;
-	--status-text: #b7c0ba;
-	--live-bg: #203a2b;
-	--live-text: #9bd5b2;
-	--completed-bg: #2a302c;
-	--completed-text: #b7c0ba;
-	--goalkeeper-bg: #443a20;
-	--goalkeeper-text: #f0d482;
-	--defender-bg: #203b2b;
-	--defender-text: #98d5b0;
-	--midfielder-bg: #23384b;
-	--midfielder-text: #a8cbea;
-	--forward-bg: #452929;
-	--forward-text: #eeb0b0;
-	--tier-default: #69766e;
-	--tier-badge-bg: #252d27;
-	--tier-badge-border: #4b584f;
-	--danger: #c65f5f;
-	--danger-hover: #b34d4d;
-	--on-danger: #170d0d;
-	--overlay: rgb(4 6 5 / 65%);
+	--page-bg: #22272e;
+	--surface: #2d333b;
+	--input-bg: #383e47;
+	--text: #adbac7;
+	--muted: #768390;
+	--subdued: #636e7b;
+	--disabled-text: #545d68;
+	--border: #373e47;
+	--border-strong: #444c56;
+	--border-hover: #636e7b;
+	--primary: #2f6f39;
+	--primary-text: #57ab5a;
+	--on-primary: #ffffff;
+	--primary-soft: #1b2b21;
+	--primary-soft-text: #7ee2a8;
+	--muted-bg: #262b32;
+	--error-border: #6e3630;
+	--error-bg: #2d1a19;
+	--error-text: #f85149;
+	--success-border: #3a6b46;
+	--success-bg: #172a1e;
+	--success-text: #57ab5a;
+	--status-bg: #343b44;
+	--status-text: #909dab;
+	--live-bg: #15281d;
+	--live-text: #57ab5a;
+	--completed-bg: #343b44;
+	--completed-text: #909dab;
+	--goalkeeper-bg: #3a2e14;
+	--goalkeeper-text: #d29922;
+	--defender-bg: #14261c;
+	--defender-text: #57ab5a;
+	--midfielder-bg: #16232f;
+	--midfielder-text: #6cb6ff;
+	--forward-bg: #2d1a19;
+	--forward-text: #f85149;
+	--tier-default: #4c5561;
+	--tier-badge-bg: #343b44;
+	--tier-badge-border: #444c56;
+	--danger: #c93c37;
+	--danger-hover: #e5534b;
+	--on-danger: #ffffff;
+	--overlay: rgb(10 12 15 / 62%);
 }
 
 * {
