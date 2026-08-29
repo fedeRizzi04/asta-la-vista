@@ -53,6 +53,9 @@
 	let editingPurchaseId = $state('');
 	let editedParticipantId = $state('');
 	let editedPrice = $state(1);
+	let teamsVisible = $state(true);
+	let strategyVisible = $state(true);
+	let strategyRole = $state<Role>('P');
 	let catalogRole = $state<Role>('P');
 	let catalogMantraRoles = $state<string[]>([]);
 	let catalogSort = $state<CatalogSort>('tier');
@@ -60,6 +63,23 @@
 	let saving = $state(false);
 
 	let purchasedIds = $derived(new Set(auction?.purchased_player_ids ?? []));
+	/** Tiers for the selected strategy role, with their entries resolved once for reuse below. */
+	let strategyRoleTiers = $derived.by(() => {
+		const currentStrategy = strategy;
+		if (!currentStrategy) return [];
+		return [...currentStrategy.tiers]
+			.sort((first, second) => first.position - second.position)
+			.map((tier) => {
+				const entries = currentStrategy.entries.filter(
+					(entry) => entry.role === strategyRole && entry.tier_id === tier.id
+				);
+				return {
+					tier,
+					entries,
+					availableCount: entries.filter((entry) => !purchasedIds.has(entry.player_id)).length
+				};
+			});
+	});
 	let matchingPlayers = $derived.by(() => {
 		const query = playerSearch.trim().toLowerCase();
 		return players
@@ -212,6 +232,11 @@
 		if (auction?.status !== 'live' || purchasedIds.has(player.id)) return;
 		selectPlayer(player);
 		document.querySelector('.call-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	function callPlayerFromStrategy(playerId: string): void {
+		const player = players.find((candidate) => candidate.id === playerId);
+		if (player) callPlayerFromCatalog(player);
 	}
 
 	function tierForPlayer(playerId: string) {
@@ -410,87 +435,102 @@
 	{/if}
 
 	<section class="teams-section">
-		<SectionHeading eyebrow="Situazione squadre" title="Crediti, slot e rose" />
-		<div class="team-grid">
-			{#each auction.participants as participant (participant.id)}
-				<article class="team-card">
-					<header>
-						<h3>{participant.name}</h3>
-						<div><strong>{participant.credits_remaining}</strong><span>crediti</span></div>
-					</header>
-					<div class="maximum-bid">Puntata massima <strong>{participant.maximum_bid}</strong></div>
-					<div class="slots">
-						{#each roles as role (role)}<span
-								class:full={participant.slots[role].filled === participant.slots[role].total}
-								><strong>{role}</strong>
-								{participant.slots[role].filled}/{participant.slots[role].total}</span
-							>{/each}
-					</div>
-					<div class="roster">
-						{#if participant.purchases.length === 0}<p>Nessun acquisto.</p>{/if}
-						{#each roles as role (role)}
-							{@const rolePurchases = participant.purchases
-								.filter((purchase) => purchase.role === role)
-								.sort((first, second) => (first.created_at < second.created_at ? -1 : 1))}
-							{#if rolePurchases.length > 0}
-								<div class="purchase-group" data-role={role} aria-label={roleLabels[role]}>
-									{#each rolePurchases as purchase (purchase.id)}
-										{@const strategyEntry = strategy?.entries.find(
-											(entry) => entry.player_id === purchase.player_id
-										)}
-										{@const purchaseTier = strategy?.tiers.find(
-											(tier) => tier.id === strategyEntry?.tier_id
-										)}
-										<div class="purchase-row" class:editing={editingPurchaseId === purchase.id}>
-											{#if editingPurchaseId === purchase.id}
-												<select bind:value={editedParticipantId} aria-label="Vincitore"
-													>{#each auction.participants as option (option.id)}<option
-															value={option.id}>{option.name}</option
-														>{/each}</select
-												>
-												<input bind:value={editedPrice} type="number" min="1" aria-label="Prezzo" />
-												<button
-													class="text-button"
-													onclick={() => savePurchase(purchase.id)}
-													disabled={saving}>Salva</button
-												><button class="text-button" onclick={() => (editingPurchaseId = '')}
-													>Annulla</button
-												>
-											{:else}
-												<span class="role-badge">{purchase.role}</span><span class="purchase-name"
-													><strong>{purchase.player_name}</strong><small
-														>{purchase.team}
-														<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
-													></span
-												><strong class="purchase-price">{purchase.price}</strong>
-												{#if purchaseTier}
-													<span class="purchase-tier">
-														<TierBadge
-															name={purchaseTier.name}
-															color={purchaseTier.color}
-															compact
-														/>
-													</span>
-												{:else}
-													<span class="purchase-tier-spacer" aria-hidden="true"></span>
-												{/if}
-												{#if auction.status === 'live'}<button
+		<SectionHeading eyebrow="Situazione squadre" title="Crediti, slot e rose">
+			{#snippet trailing()}
+				<button type="button" class="text-button" onclick={() => (teamsVisible = !teamsVisible)}>
+					{teamsVisible ? 'Nascondi' : 'Mostra'}
+				</button>
+			{/snippet}
+		</SectionHeading>
+		{#if teamsVisible}
+			<div class="team-grid">
+				{#each auction.participants as participant (participant.id)}
+					<article class="team-card">
+						<header>
+							<h3>{participant.name}</h3>
+							<div><strong>{participant.credits_remaining}</strong><span>crediti</span></div>
+						</header>
+						<div class="maximum-bid">
+							Puntata massima <strong>{participant.maximum_bid}</strong>
+						</div>
+						<div class="slots">
+							{#each roles as role (role)}<span
+									class:full={participant.slots[role].filled === participant.slots[role].total}
+									><strong>{role}</strong>
+									{participant.slots[role].filled}/{participant.slots[role].total}</span
+								>{/each}
+						</div>
+						<div class="roster">
+							{#if participant.purchases.length === 0}<p>Nessun acquisto.</p>{/if}
+							{#each roles as role (role)}
+								{@const rolePurchases = participant.purchases
+									.filter((purchase) => purchase.role === role)
+									.sort((first, second) => (first.created_at < second.created_at ? -1 : 1))}
+								{#if rolePurchases.length > 0}
+									<div class="purchase-group" data-role={role} aria-label={roleLabels[role]}>
+										{#each rolePurchases as purchase (purchase.id)}
+											{@const strategyEntry = strategy?.entries.find(
+												(entry) => entry.player_id === purchase.player_id
+											)}
+											{@const purchaseTier = strategy?.tiers.find(
+												(tier) => tier.id === strategyEntry?.tier_id
+											)}
+											<div class="purchase-row" class:editing={editingPurchaseId === purchase.id}>
+												{#if editingPurchaseId === purchase.id}
+													<select bind:value={editedParticipantId} aria-label="Vincitore"
+														>{#each auction.participants as option (option.id)}<option
+																value={option.id}>{option.name}</option
+															>{/each}</select
+													>
+													<input
+														bind:value={editedPrice}
+														type="number"
+														min="1"
+														aria-label="Prezzo"
+													/>
+													<button
 														class="text-button"
-														onclick={() => beginEdit(purchase, participant)}>Modifica</button
-													><button
-														class="text-button danger"
-														onclick={() => deletePurchase(purchase)}>Elimina</button
-													>{/if}
-											{/if}
-										</div>
-									{/each}
-								</div>
-							{/if}
-						{/each}
-					</div>
-				</article>
-			{/each}
-		</div>
+														onclick={() => savePurchase(purchase.id)}
+														disabled={saving}>Salva</button
+													><button class="text-button" onclick={() => (editingPurchaseId = '')}
+														>Annulla</button
+													>
+												{:else}
+													<span class="role-badge">{purchase.role}</span><span class="purchase-name"
+														><strong>{purchase.player_name}</strong><small
+															>{purchase.team}
+															<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
+														></span
+													><strong class="purchase-price">{purchase.price}</strong>
+													{#if purchaseTier}
+														<span class="purchase-tier">
+															<TierBadge
+																name={purchaseTier.name}
+																color={purchaseTier.color}
+																compact
+															/>
+														</span>
+													{:else}
+														<span class="purchase-tier-spacer" aria-hidden="true"></span>
+													{/if}
+													{#if auction.status === 'live'}<button
+															class="text-button"
+															onclick={() => beginEdit(purchase, participant)}>Modifica</button
+														><button
+															class="text-button danger"
+															onclick={() => deletePurchase(purchase)}>Elimina</button
+														>{/if}
+												{/if}
+											</div>
+										{/each}
+									</div>
+								{/if}
+							{/each}
+						</div>
+					</article>
+				{/each}
+			</div>
+		{/if}
 	</section>
 
 	{#if strategies.length > 0}
@@ -512,49 +552,63 @@
 								Fissa per l'asta
 							</button>
 						{/if}
+						<button
+							type="button"
+							class="text-button"
+							onclick={() => (strategyVisible = !strategyVisible)}
+						>
+							{strategyVisible ? 'Nascondi' : 'Mostra'}
+						</button>
 					</div>
 				{/snippet}
 			</SectionHeading>
-			{#if strategy}
-				<div class="strategy-roles">
+			{#if strategy && strategyVisible}
+				<div class="strategy-role-tabs" aria-label="Ruolo strategia">
 					{#each roles as role (role)}
-						<div class="strategy-role">
-							<h3>{roleLabels[role]}</h3>
-							{#each [...strategy.tiers].sort((a, b) => a.position - b.position) as tier (tier.id)}
-								{@const tierEntries = strategy.entries.filter(
-									(entry) => entry.role === role && entry.tier_id === tier.id
-								)}
-								{@const availableCount = tierEntries.filter(
-									(entry) => !purchasedIds.has(entry.player_id)
-								).length}
-								<div class="tier">
-									<div class="tier-heading">
-										<TierBadge name={tier.name} color={tier.color} compact />
-										<span class="tier-availability">{availableCount}/{tierEntries.length}</span>
-									</div>
-									{#if tierEntries.length > 0}
-										<div class="tier-players">
-											{#each tierEntries as entry (entry.player_id)}
-												<TierPlayerCard
-													name={entry.name}
-													team={entry.team}
-													mantraRoles={entry.mantra_roles}
-													maximumPricePercentage={entry.maximum_price_percentage}
-													maximumPriceCredits={entry.maximum_price_percentage != null
-														? percentageToCredits(
-																entry.maximum_price_percentage,
-																auction.initial_credits
-															)
-														: null}
-													note={entry.note}
-													purchased={purchasedIds.has(entry.player_id)}
-													compact
-												/>
-											{/each}
-										</div>
-									{/if}
+						<button
+							type="button"
+							class:active={strategyRole === role}
+							onclick={() => (strategyRole = role)}
+						>
+							{roleLabels[role]}
+						</button>
+					{/each}
+				</div>
+				<div class="strategy-roles">
+					{#each strategyRoleTiers as { tier, entries, availableCount } (tier.id)}
+						<div class="tier">
+							<div class="tier-heading">
+								<TierBadge name={tier.name} color={tier.color} compact />
+								<span class="tier-availability">{availableCount}/{entries.length}</span>
+							</div>
+							{#if entries.length > 0}
+								<div class="tier-players">
+									{#each entries as entry (entry.player_id)}
+										<button
+											type="button"
+											class="tier-player-button"
+											disabled={auction.status !== 'live' || purchasedIds.has(entry.player_id)}
+											onclick={() => callPlayerFromStrategy(entry.player_id)}
+										>
+											<TierPlayerCard
+												name={entry.name}
+												team={entry.team}
+												mantraRoles={entry.mantra_roles}
+												maximumPricePercentage={entry.maximum_price_percentage}
+												maximumPriceCredits={entry.maximum_price_percentage != null
+													? percentageToCredits(
+															entry.maximum_price_percentage,
+															auction.initial_credits
+														)
+													: null}
+												note={entry.note}
+												purchased={purchasedIds.has(entry.player_id)}
+												compact
+											/>
+										</button>
+									{/each}
 								</div>
-							{/each}
+							{/if}
 						</div>
 					{/each}
 				</div>
@@ -983,17 +1037,21 @@
 	.text-button.danger {
 		color: var(--error-text);
 	}
+	.strategy-role-tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+	}
 	.strategy-roles {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
+		grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+		align-items: stretch;
 		gap: 0.7rem;
 		margin-top: 1rem;
 	}
-	.strategy-role h3 {
-		font-size: 0.9rem;
-	}
 	.tier {
-		margin-bottom: 0.4rem;
+		display: flex;
+		flex-direction: column;
 		border: 1px solid var(--border);
 		border-radius: 0.45rem;
 		background: var(--surface);
@@ -1013,8 +1071,30 @@
 	}
 	.tier-players {
 		display: grid;
+		align-content: start;
 		gap: 0.35rem;
 		padding: 0 0.45rem 0.45rem;
+		flex: 1;
+	}
+	.tier-player-button {
+		display: block;
+		width: 100%;
+		padding: 0;
+		border: 0;
+		border-radius: 0.38rem;
+		background: none;
+		font: inherit;
+		color: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+	.tier-player-button:disabled {
+		cursor: default;
+	}
+	.tier-player-button:not(:disabled):hover,
+	.tier-player-button:not(:disabled):focus-visible {
+		outline: 2px solid var(--primary-text);
+		outline-offset: 1px;
 	}
 	.catalog-section {
 		margin-top: 3rem;
@@ -1070,14 +1150,16 @@
 		gap: 0.35rem;
 	}
 	.catalog-role-tabs button,
-	.catalog-mantra-chips button {
+	.catalog-mantra-chips button,
+	.strategy-role-tabs button {
 		min-height: 2.2rem;
 		border-color: var(--border-strong);
 		background: var(--input-bg);
 		color: var(--text);
 	}
 	.catalog-role-tabs button.active,
-	.catalog-mantra-chips button.active {
+	.catalog-mantra-chips button.active,
+	.strategy-role-tabs button.active {
 		border-color: var(--primary);
 		background: var(--primary);
 		color: var(--on-primary);
@@ -1164,8 +1246,7 @@
 		text-transform: uppercase;
 	}
 	@media (max-width: 950px) {
-		.call-panel form,
-		.strategy-roles {
+		.call-panel form {
 			grid-template-columns: 1fr 1fr;
 		}
 		.search-results {
@@ -1182,7 +1263,6 @@
 		}
 		.call-panel form,
 		.called-player-strategy,
-		.strategy-roles,
 		.search-results {
 			grid-template-columns: 1fr;
 		}

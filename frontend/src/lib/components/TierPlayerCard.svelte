@@ -23,12 +23,12 @@
 		compact?: boolean;
 	} = $props();
 
-	let maximumPriceLabel = $derived.by(() => {
+	let maximumPriceText = $derived.by(() => {
 		if (maximumPricePercentage === null) return '';
 		const percentageText = `${maximumPricePercentage}%`;
 		return maximumPriceCredits === null
-			? ` · max ${percentageText}`
-			: ` · max ${maximumPriceCredits} cr (${percentageText})`;
+			? `max ${percentageText}`
+			: `max ${maximumPriceCredits} cr (${percentageText})`;
 	});
 </script>
 
@@ -36,7 +36,10 @@
 	<span class="name-row"
 		><strong>{name}</strong><MantraRoleBadges roles={mantraRoles} compact /></span
 	>
-	<small>{team}{maximumPriceLabel}{note ? ` · ${note}` : ''}</small>
+	<small
+		>{team}{note ? ` · ${note}` : ''}{#if maximumPriceText}
+			· <span class="max-price">{maximumPriceText}</span>{/if}</small
+	>
 </article>
 
 <style>
@@ -79,5 +82,16 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.3rem;
+	}
+
+	.name-row strong {
+		font-size: 1.15em;
+	}
+
+	.max-price {
+		color: var(--primary-text);
+		font-weight: 600;
+		text-decoration: overline;
+		text-decoration-color: var(--primary-text);
 	}
 </style>
