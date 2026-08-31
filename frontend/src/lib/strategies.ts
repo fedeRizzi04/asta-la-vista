@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiDownload, apiRequest, type DownloadedFile } from './api';
 import type { Role } from './players';
 
 export type StrategySummary = {
@@ -70,6 +70,10 @@ export function importStrategy(
 		`/api/strategies/import?name=${encodeURIComponent(name)}&confirm_unmatched=${confirmUnmatched}`,
 		{ method: 'POST', body: data }
 	);
+}
+
+export function exportStrategy(strategyId: string): Promise<DownloadedFile> {
+	return apiDownload(`/api/strategies/${strategyId}/export`);
 }
 
 export function duplicateStrategy(strategyId: string, name: string): Promise<EntityId> {

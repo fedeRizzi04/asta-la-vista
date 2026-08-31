@@ -148,6 +148,8 @@ class TierImportRow:
     fascia: str = ""
     note: str = ""
     maximum_price_percentage: float | None = None
+    # Colour of the tier named in `fascia`; empty when the source has none.
+    colore: str = ""
 
 
 @dataclass(frozen=True)

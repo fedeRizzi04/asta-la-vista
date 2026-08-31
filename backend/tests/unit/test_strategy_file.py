@@ -1,6 +1,10 @@
 import pytest
 
-from asta_la_vista.adapters.strategy_import_file import parse_strategy_import_file
+from asta_la_vista.adapters.strategy_file import (
+    StrategyExportRow,
+    parse_strategy_import_file,
+    render_strategy_export_file,
+)
 from asta_la_vista.domain.commands import TierImportRow
 from asta_la_vista.exceptions import ValidationError
 
@@ -56,3 +60,41 @@ def test_rejects_an_invalid_maximum_price_percentage():
         parse_strategy_import_file(
             b"Nome,Fascia,MaxPrezzo%,Note\nSvilar,Top,invalid,\n", "fasce.csv"
         )
+
+
+def test_the_color_column_is_optional():
+    content = b"Nome,Fascia,MaxPrezzo%,Note\nSvilar,Top,,\n"
+
+    rows = parse_strategy_import_file(content, "fasce.csv")
+
+    assert rows == (TierImportRow("Svilar", "Top", "", None, ""),)
+
+
+def test_reads_the_color_column_when_present_whatever_its_position():
+    content = b"Colore,Nome,Fascia,MaxPrezzo%,Note\n#EF4444,Svilar,Top,,\n"
+
+    rows = parse_strategy_import_file(content, "fasce.csv")
+
+    assert rows == (TierImportRow("Svilar", "Top", "", None, "#ef4444"),)
+
+
+def test_rejects_a_color_that_is_not_hexadecimal():
+    content = b"Nome,Fascia,Colore,MaxPrezzo%,Note\nSvilar,Top,rosso,,\n"
+
+    with pytest.raises(ValidationError, match="Colore"):
+        parse_strategy_import_file(content, "fasce.csv")
+
+
+def test_renders_an_import_compatible_utf8_csv_with_escaped_values():
+    content = render_strategy_export_file(
+        (
+            StrategyExportRow("Martínez, L.", "Top", "#ef4444", None, 'Rigorista, detto "Toro"'),
+            StrategyExportRow("Svilar", "", None, 3.2, "Da monitorare"),
+        )
+    )
+
+    assert content.startswith(b"\xef\xbb\xbf")
+    assert parse_strategy_import_file(content, "strategia.csv") == (
+        TierImportRow("Martínez, L.", "Top", 'Rigorista, detto "Toro"', None, "#ef4444"),
+        TierImportRow("Svilar", "", "Da monitorare", 3.2, ""),
+    )

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { ApiError } from '$lib/api';
+	import { ApiError, saveFile } from '$lib/api';
 	import FilePicker from '$lib/components/FilePicker.svelte';
 	import Message from '$lib/components/Message.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
@@ -11,6 +11,7 @@
 		createStrategy,
 		deleteStrategy,
 		duplicateStrategy,
+		exportStrategy,
 		getStrategies,
 		importStrategy,
 		type ImportSummary,
@@ -105,6 +106,14 @@
 		}
 	}
 
+	async function downloadStrategy(strategy: StrategySummary): Promise<void> {
+		try {
+			saveFile(await exportStrategy(strategy.id));
+		} catch (caught) {
+			pushErrorToast(caught);
+		}
+	}
+
 	async function removeStrategy(strategy: StrategySummary): Promise<void> {
 		const confirmed = await confirmDialog({
 			title: 'Elimina strategia',
@@ -172,8 +181,11 @@
 		</div>
 		<p class="hint">
 			Il file deve contenere le colonne <code>Nome,Fascia,MaxPrezzo%,Note</code>. Fascia, prezzo
-			massimo e nota sono facoltativi. Se un nome non corrisponde a nessun calciatore del Listone ti
-			verrà chiesto se vuoi procedere comunque, ignorando quel calciatore.
+			massimo e nota sono facoltativi. Puoi aggiungere anche una colonna facoltativa
+			<code>Colore</code> con il colore della fascia in esadecimale (per esempio
+			<code>#ef4444</code>): è quello che trovi nei file esportati da qui. Se un nome non
+			corrisponde a nessun calciatore del Listone ti verrà chiesto se vuoi procedere comunque,
+			ignorando quel calciatore.
 		</p>
 	</form>
 </section>
@@ -208,6 +220,14 @@
 						</p>
 					</div>
 					<div class="actions">
+						<button
+							class="secondary"
+							type="button"
+							onclick={() => downloadStrategy(strategy)}
+							disabled={saving}
+						>
+							Esporta
+						</button>
 						<button
 							class="secondary"
 							type="button"

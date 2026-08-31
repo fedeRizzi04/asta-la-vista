@@ -274,6 +274,52 @@ def test_strategy_import_flow(client):
         3.2,
     )
 
+    top_tier = strategy["tiers"][0]
+    client.patch(
+        f"/api/strategies/{body['strategy_id']}/tiers/{top_tier['id']}",
+        json={"name": top_tier["name"], "color": "#ef4444"},
+    )
+
+    exported = client.get(f"/api/strategies/{body['strategy_id']}/export")
+    assert exported.status_code == 200
+    assert exported.mimetype == "text/csv"
+    assert "attachment" in exported.headers["Content-Disposition"]
+    assert "Fasce_importate.csv" in exported.headers["Content-Disposition"]
+
+    imported_copy = client.post(
+        "/api/strategies/import?name=Copia",
+        data={"file": (io.BytesIO(exported.data), "export.csv")},
+    )
+    assert imported_copy.status_code == 201
+    copied_strategy = client.get(
+        f"/api/strategies/{imported_copy.get_json()['strategy_id']}"
+    ).get_json()
+    assert [(tier["name"], tier["color"]) for tier in copied_strategy["tiers"]] == [
+        ("Top", "#ef4444")
+    ]
+    copied_tiers = {tier["id"]: tier["name"] for tier in copied_strategy["tiers"]}
+    copied_entries = {
+        entry["name"]: (
+            copied_tiers.get(entry["tier_id"]),
+            entry["note"],
+            entry["maximum_price_percentage"],
+        )
+        for entry in copied_strategy["entries"]
+    }
+    assert copied_entries == {
+        "Martinez L.": ("Top", "Rigorista", 5.8),
+        "Svilar": (None, "Da monitorare", 3.2),
+    }
+
+
+def test_a_strategy_without_players_cannot_be_exported(client):
+    strategy_id = client.post("/api/strategies", json={"name": "Vuota"}).get_json()["id"]
+
+    response = client.get(f"/api/strategies/{strategy_id}/export")
+
+    assert response.status_code == 422
+    assert response.get_json()["message"] == "A strategy without players cannot be exported"
+
 
 def test_strategy_import_requires_confirmation_when_a_player_is_not_found(client):
     client.post(
@@ -338,4 +384,17 @@ def test_openapi_contract_exposes_the_main_resources(client):
     paths = response.get_json()["paths"]
     assert "/api/players" in paths
     assert "/api/strategies/{strategy_id}" in paths
+    assert "/api/strategies/{strategy_id}/export" in paths
     assert "/api/auctions/{auction_id}/purchases" in paths
+
+
+def test_reusing_a_strategy_name_returns_a_readable_error(client):
+    client.post("/api/strategies", json={"name": "Prova"})
+
+    response = client.post("/api/strategies", json={"name": "prova"})
+
+    assert response.status_code == 422
+    assert response.get_json() == {
+        "code": "validation_error",
+        "message": 'A strategy named "Prova" already exists',
+    }

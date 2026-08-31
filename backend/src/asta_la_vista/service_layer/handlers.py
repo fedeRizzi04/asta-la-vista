@@ -157,6 +157,7 @@ def set_auction_strategy(cmd: commands.SetAuctionStrategy, uow: AbstractUnitOfWo
 
 def create_strategy(cmd: commands.CreateStrategy, uow: AbstractUnitOfWork) -> str:
     with uow:
+        _ensure_strategy_name_is_free(uow, cmd.name)
         strategy = model.Strategy(cmd.name)
         uow.strategies.add(strategy)
         strategy_id = strategy.uuid
@@ -167,6 +168,7 @@ def create_strategy(cmd: commands.CreateStrategy, uow: AbstractUnitOfWork) -> st
 def rename_strategy(cmd: commands.RenameStrategy, uow: AbstractUnitOfWork):
     with uow:
         strategy = _strategy(uow, cmd.strategy_id)
+        _ensure_strategy_name_is_free(uow, cmd.name, keeping=strategy.uuid)
         strategy.rename(cmd.name)
         uow.commit()
 
@@ -229,6 +231,7 @@ def import_strategy(
     if not cmd.rows:
         raise ValidationError("The tier list is empty")
     with uow:
+        _ensure_strategy_name_is_free(uow, cmd.name)
         players_by_name = {player.name.casefold(): player for player in uow.players.list_all()}
         missing = sorted(
             {row.name for row in cmd.rows if row.name.casefold() not in players_by_name}
@@ -256,7 +259,8 @@ def import_strategy(
                 continue
             tier_id = tier_ids.get(row.fascia)
             if tier_id is None:
-                tier_id = strategy.add_tier(row.fascia)
+                # The row that first mentions a tier also decides its colour.
+                tier_id = strategy.add_tier(row.fascia, row.colore or None)
                 tier_ids[row.fascia] = tier_id
             strategy.update_player(
                 player.external_id, player.role, tier_id, row.note, row.maximum_price_percentage
@@ -276,6 +280,7 @@ def import_strategy(
 def duplicate_strategy(cmd: commands.DuplicateStrategy, uow: AbstractUnitOfWork) -> str:
     with uow:
         strategy = _strategy(uow, cmd.strategy_id)
+        _ensure_strategy_name_is_free(uow, cmd.name)
         duplicate = strategy.duplicate(cmd.name)
         uow.strategies.add(duplicate)
         duplicate_id = duplicate.uuid
@@ -288,6 +293,13 @@ def _auction(uow: AbstractUnitOfWork, auction_id: str) -> model.Auction:
     if auction is None:
         raise NotFoundError("Auction not found")
     return auction
+
+
+def _ensure_strategy_name_is_free(uow: AbstractUnitOfWork, name: str, keeping: str | None = None):
+    """Strategy names are unique, so reject a clash before the database does."""
+    existing = uow.strategies.get_by_name(name)
+    if existing is not None and existing.uuid != keeping:
+        raise ValidationError(f'A strategy named "{existing.name}" already exists')
 
 
 def _strategy(uow: AbstractUnitOfWork, strategy_id: str) -> model.Strategy:

@@ -105,3 +105,15 @@ def test_database_rejects_two_active_purchases_of_the_same_player(session_factor
                     cancelled=False,
                 )
             )
+
+
+def test_strategy_repository_finds_a_strategy_by_name_ignoring_case(session_factory):
+    with session_factory() as session:
+        session.add(Strategy("Prova", uuid="strategy-1"))
+        session.commit()
+
+    with session_factory() as session:
+        strategies = repository.StrategyRepository(session)
+
+        assert strategies.get_by_name("  pRoVa ").uuid == "strategy-1"
+        assert strategies.get_by_name("Altra") is None

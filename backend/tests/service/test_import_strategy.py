@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from asta_la_vista import bootstrap
 from asta_la_vista.domain import commands
 from asta_la_vista.domain.model import Player, Role
-from asta_la_vista.exceptions import ConfirmationRequiredError
+from asta_la_vista.exceptions import ConfirmationRequiredError, ValidationError
 from asta_la_vista.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -137,3 +137,15 @@ def test_row_with_neither_fascia_nor_note_is_skipped(session_factory):
     with uow:
         strategy = uow.strategies.get(summary["strategy_id"])
         assert strategy.entries == []
+
+
+def test_import_rejects_a_name_already_taken_by_another_strategy(session_factory):
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    bus = bootstrap.bootstrap(uow)
+    with uow:
+        uow.players.add(Player("1", "Lautaro", "Inter", Role.FORWARD))
+        uow.commit()
+    bus.handle(commands.CreateStrategy("Prova"))
+
+    with pytest.raises(ValidationError, match='A strategy named "Prova" already exists'):
+        bus.handle(commands.ImportStrategy("Prova", (commands.TierImportRow("Lautaro", "Top"),)))

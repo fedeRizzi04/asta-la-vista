@@ -128,3 +128,29 @@ def test_strategy_can_be_deleted(session_factory):
 
     with uow:
         assert uow.strategies.get(strategy_id) is None
+
+
+def test_strategy_names_must_be_unique(session_factory):
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    bus = bootstrap.bootstrap(uow)
+    strategy_id = bus.handle(commands.CreateStrategy("Prova"))
+
+    with pytest.raises(ValidationError, match='A strategy named "Prova" already exists'):
+        bus.handle(commands.CreateStrategy("prova"))
+    with pytest.raises(ValidationError, match='A strategy named "Prova" already exists'):
+        bus.handle(commands.DuplicateStrategy(strategy_id, "Prova"))
+
+    other_id = bus.handle(commands.CreateStrategy("Seconda"))
+    with pytest.raises(ValidationError, match='A strategy named "Prova" already exists'):
+        bus.handle(commands.RenameStrategy(other_id, "Prova"))
+
+
+def test_a_strategy_can_be_renamed_to_a_different_casing_of_its_own_name(session_factory):
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    bus = bootstrap.bootstrap(uow)
+    strategy_id = bus.handle(commands.CreateStrategy("Prova"))
+
+    bus.handle(commands.RenameStrategy(strategy_id, "PROVA"))
+
+    with uow:
+        assert uow.strategies.get(strategy_id).name == "PROVA"

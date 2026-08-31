@@ -1,3 +1,4 @@
+from asta_la_vista.adapters.strategy_file import StrategyExport, StrategyExportRow
 from asta_la_vista.domain.model import Auction, Player, Role, RosterSlots, Strategy
 from asta_la_vista.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from asta_la_vista.views import auctions, players, strategies
@@ -59,6 +60,40 @@ def test_strategy_detail_contains_player_team_status_tiers_and_notes(session_fac
             "maximum_price_percentage": None,
         }
     ]
+
+
+def test_strategy_export_orders_tiers_and_keeps_note_only_entries(session_factory):
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    with uow:
+        first_player = Player("1", "Zaccagni", "Lazio", Role.MIDFIELDER)
+        second_player = Player("2", "Martinez", "Inter", Role.FORWARD)
+        note_only_player = Player("3", "Svilar", "Roma", Role.GOALKEEPER)
+        strategy = Strategy("Main", uuid="strategy-1")
+        second_tier_id = strategy.add_tier("Seconda", "#123456", uuid="tier-2")
+        first_tier_id = strategy.add_tier("Prima", uuid="tier-1")
+        strategy.reorder_tiers([first_tier_id, second_tier_id])
+        strategy.update_player(first_player.external_id, first_player.role, second_tier_id, "", 4.0)
+        strategy.update_player(
+            second_player.external_id, second_player.role, first_tier_id, "Rigorista", 8.5
+        )
+        strategy.update_player(
+            note_only_player.external_id, note_only_player.role, None, "Da monitorare", None
+        )
+        for player in (first_player, second_player, note_only_player):
+            uow.players.add(player)
+        uow.strategies.add(strategy)
+        uow.commit()
+
+    exported = strategies.strategy_export(uow, "strategy-1")
+
+    assert exported == StrategyExport(
+        "Main",
+        (
+            StrategyExportRow("Martinez", "Prima", None, 8.5, "Rigorista"),
+            StrategyExportRow("Zaccagni", "Seconda", "#123456", 4.0, ""),
+            StrategyExportRow("Svilar", "", None, None, "Da monitorare"),
+        ),
+    )
 
 
 def test_auction_detail_calculates_rosters_credits_slots_and_maximum_bid(session_factory):

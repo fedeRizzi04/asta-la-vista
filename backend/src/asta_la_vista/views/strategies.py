@@ -1,5 +1,6 @@
 from sqlalchemy import text
 
+from asta_la_vista.adapters.strategy_file import StrategyExport, StrategyExportRow
 from asta_la_vista.exceptions import NotFoundError
 from asta_la_vista.service_layer.unit_of_work import AbstractUnitOfWork
 from asta_la_vista.views.players import split_mantra_roles
@@ -82,3 +83,43 @@ def strategy_detail(uow: AbstractUnitOfWork, strategy_id: str) -> dict:
                 for row in entries
             ],
         }
+
+
+def strategy_export(uow: AbstractUnitOfWork, strategy_id: str) -> StrategyExport:
+    with uow:
+        strategy_name = uow.session.execute(
+            text("SELECT name FROM strategy WHERE uuid = :strategy_id"),
+            {"strategy_id": strategy_id},
+        ).scalar_one_or_none()
+        if strategy_name is None:
+            raise NotFoundError("Strategy not found")
+        rows = uow.session.execute(
+            text("""
+                SELECT p.name AS player_name, COALESCE(t.name, '') AS tier_name,
+                       t.color AS tier_color, e.maximum_price_percentage, e.note
+                FROM strategy_entry e
+                JOIN player p ON p.external_id = e.player_id
+                LEFT JOIN tier t ON t.uuid = e.tier_id
+                WHERE e.strategy_id = :strategy_id
+                ORDER BY CASE WHEN t.position IS NULL THEN 1 ELSE 0 END,
+                         t.position, p.name COLLATE NOCASE
+            """),
+            {"strategy_id": strategy_id},
+        ).mappings()
+        return StrategyExport(
+            name=strategy_name,
+            rows=tuple(
+                StrategyExportRow(
+                    player_name=row["player_name"],
+                    tier_name=row["tier_name"],
+                    tier_color=row["tier_color"],
+                    maximum_price_percentage=(
+                        float(row["maximum_price_percentage"])
+                        if row["maximum_price_percentage"] is not None
+                        else None
+                    ),
+                    note=row["note"],
+                )
+                for row in rows
+            ),
+        )

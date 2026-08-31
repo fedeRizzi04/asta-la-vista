@@ -1,7 +1,11 @@
-from flask import request
+from flask import make_response, request
 from flask.views import MethodView
+from werkzeug.utils import secure_filename
 
-from asta_la_vista.adapters.strategy_import_file import parse_strategy_import_file
+from asta_la_vista.adapters.strategy_file import (
+    parse_strategy_import_file,
+    render_strategy_export_file,
+)
 from asta_la_vista.domain import commands
 from asta_la_vista.entrypoints.flask_app import bus, uow
 from asta_la_vista.exceptions import ValidationError
@@ -63,6 +67,19 @@ class StrategyResource(MethodView):
     @blueprint.response(204)
     def delete(self, strategy_id: str):
         bus().handle(commands.DeleteStrategy(strategy_id))
+
+
+@blueprint.route("/strategies/<string:strategy_id>/export")
+class StrategyExportResource(MethodView):
+    def get(self, strategy_id: str):
+        exported_strategy = strategies.strategy_export(uow(), strategy_id)
+        if not exported_strategy.rows:
+            raise ValidationError("A strategy without players cannot be exported")
+        response = make_response(render_strategy_export_file(exported_strategy.rows))
+        filename = secure_filename(exported_strategy.name) or "strategy"
+        response.headers["Content-Disposition"] = f'attachment; filename="{filename}.csv"'
+        response.mimetype = "text/csv"
+        return response
 
 
 @blueprint.route("/strategies/<string:strategy_id>/duplicate")

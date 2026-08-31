@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from asta_la_vista.domain import model
@@ -41,6 +41,9 @@ class AbstractStrategyRepository(ABC):
 
     @abstractmethod
     def get(self, uuid: str) -> model.Strategy | None: ...
+
+    @abstractmethod
+    def get_by_name(self, name: str) -> model.Strategy | None: ...
 
     @abstractmethod
     def list_containing_player(self, player_id: str) -> list[model.Strategy]: ...
@@ -92,6 +95,14 @@ class StrategyRepository:
 
     def get(self, uuid: str) -> model.Strategy | None:
         return self.session.get(model.Strategy, uuid)
+
+    def get_by_name(self, name: str) -> model.Strategy | None:
+        # Names are compared case-insensitively, the same way tier names are
+        # compared inside a strategy.
+        statement = select(model.Strategy).where(
+            func.lower(model.Strategy.name) == name.strip().lower()
+        )
+        return self.session.scalars(statement).first()
 
     def list_containing_player(self, player_id: str) -> list[model.Strategy]:
         statement = (
@@ -168,6 +179,9 @@ class TrackingStrategyRepository:
 
     def get(self, uuid: str) -> model.Strategy | None:
         return self._track(self._repository.get(uuid))
+
+    def get_by_name(self, name: str) -> model.Strategy | None:
+        return self._track(self._repository.get_by_name(name))
 
     def list_containing_player(self, player_id: str) -> list[model.Strategy]:
         strategies = self._repository.list_containing_player(player_id)
