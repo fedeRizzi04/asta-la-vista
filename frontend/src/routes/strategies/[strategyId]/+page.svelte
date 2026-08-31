@@ -13,6 +13,7 @@
 	import { dragReorder } from '$lib/actions/dragReorder';
 	import { slidingIndicator } from '$lib/actions/slidingIndicator.svelte';
 	import { getPlayers, type Player, type Role } from '$lib/players';
+	import { matchesSearch } from '$lib/search';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		addTier,
@@ -71,10 +72,7 @@
 	let visiblePlayers = $derived(
 		players.filter(
 			(player) =>
-				player.role === selectedRole &&
-				(!playerSearch.trim() ||
-					player.name.toLowerCase().includes(playerSearch.trim().toLowerCase()) ||
-					player.team.toLowerCase().includes(playerSearch.trim().toLowerCase()))
+				player.role === selectedRole && matchesSearch(playerSearch, player.name, player.team)
 		)
 	);
 

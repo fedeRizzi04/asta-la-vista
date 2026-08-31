@@ -25,6 +25,7 @@
 	} from '$lib/auctions';
 	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
 	import { getPlayers, type Player, type Role } from '$lib/players';
+	import { matchesSearch, nameMatchRank } from '$lib/search';
 	import {
 		byMaxPercentageDesc,
 		getStrategies,
@@ -55,6 +56,8 @@
 	let editingPurchaseId = $state('');
 	let editedParticipantId = $state('');
 	let editedPrice = $state(1);
+	let registryOpen = $state(false);
+	let registrySearch = $state('');
 	let strategyRole = $state<Role>('P');
 	let catalogRole = $state<Role>('P');
 	let catalogMantraRoles = $state<string[]>([]);
@@ -81,19 +84,31 @@
 			});
 	});
 	let matchingPlayers = $derived.by(() => {
-		const query = playerSearch.trim().toLowerCase();
 		return players
 			.filter(
 				(player) =>
 					player.active &&
 					!purchasedIds.has(player.id) &&
-					(!query ||
-						player.name.toLowerCase().includes(query) ||
-						player.team.toLowerCase().includes(query))
+					matchesSearch(playerSearch, player.name, player.team)
 			)
-			.sort((first, second) => matchRank(first, query) - matchRank(second, query))
+			.sort(
+				(first, second) =>
+					nameMatchRank(first.name, playerSearch) - nameMatchRank(second.name, playerSearch)
+			)
 			.slice(0, 20);
 	});
+	/** All purchases across every participant, newest first, for the purchase registry. */
+	let allPurchases = $derived.by(() => {
+		if (!auction) return [];
+		return auction.participants
+			.flatMap((participant) =>
+				participant.purchases.map((purchase) => ({ purchase, participant }))
+			)
+			.sort((first, second) => (first.purchase.created_at < second.purchase.created_at ? 1 : -1));
+	});
+	let filteredRegistryPurchases = $derived(
+		allPurchases.filter(({ purchase }) => matchesSearch(registrySearch, purchase.player_name))
+	);
 	let selectedPlayer = $derived(players.find((player) => player.id === selectedPlayerId));
 	let selectedStrategyEntry = $derived(
 		strategy?.entries.find((entry) => entry.player_id === selectedPlayerId)
@@ -208,15 +223,6 @@
 		playerSearch = player.name;
 	}
 
-	/** Ranks how closely a player matches the search query: name prefix first, then name/team substring. */
-	function matchRank(player: Player, query: string): number {
-		if (!query) return 0;
-		const name = player.name.toLowerCase();
-		if (name.startsWith(query)) return 0;
-		if (name.includes(query)) return 1;
-		return 2;
-	}
-
 	function selectTopMatch(): void {
 		const [topMatch] = matchingPlayers;
 		if (topMatch) selectPlayer(topMatch);
@@ -246,6 +252,22 @@
 
 	function tierPosition(playerId: string): number {
 		return tierForPlayer(playerId)?.position ?? Number.POSITIVE_INFINITY;
+	}
+
+	function openRegistry(): void {
+		registryOpen = true;
+	}
+
+	function closeRegistry(): void {
+		registryOpen = false;
+		registrySearch = '';
+		editingPurchaseId = '';
+	}
+
+	function handleRegistryKeydown(event: KeyboardEvent): void {
+		if (!registryOpen || event.key !== 'Escape') return;
+		event.preventDefault();
+		closeRegistry();
 	}
 
 	function beginEdit(purchase: Purchase, participant: Participant): void {
@@ -303,6 +325,7 @@
 </script>
 
 <svelte:head><title>{auction?.name ?? 'Asta'} | Asta la Vista</title></svelte:head>
+<svelte:window onkeydown={handleRegistryKeydown} />
 
 <a class="back-link" href={resolve('/auctions')}>Torna alle aste</a>
 
@@ -356,6 +379,11 @@
 			</ul>
 		</section>
 	{:else if auction.status === 'live'}
+		<div class="registry-trigger-row">
+			<button type="button" class="registry-trigger" use:press onclick={openRegistry}>
+				Apri registro acquisti{allPurchases.length > 0 ? ` (${allPurchases.length})` : ''}
+			</button>
+		</div>
 		<section class="call-panel panel">
 			<SectionHeading eyebrow="Calciatore chiamato" title="Registra l'acquisto">
 				{#snippet trailing()}
@@ -472,51 +500,23 @@
 											{@const purchaseTier = strategy?.tiers.find(
 												(tier) => tier.id === strategyEntry?.tier_id
 											)}
-											<div class="purchase-row" class:editing={editingPurchaseId === purchase.id}>
-												{#if editingPurchaseId === purchase.id}
-													<select bind:value={editedParticipantId} aria-label="Vincitore"
-														>{#each auction.participants as option (option.id)}<option
-																value={option.id}>{option.name}</option
-															>{/each}</select
-													>
-													<input
-														bind:value={editedPrice}
-														type="number"
-														min="1"
-														aria-label="Prezzo"
-													/>
-													<button
-														class="text-button"
-														onclick={() => savePurchase(purchase.id)}
-														disabled={saving}>Salva</button
-													><button class="text-button" onclick={() => (editingPurchaseId = '')}
-														>Annulla</button
-													>
+											<div class="purchase-row">
+												<span class="role-badge">{purchase.role}</span><span class="purchase-name"
+													><strong>{purchase.player_name}</strong><small
+														>{purchase.team}
+														<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
+													></span
+												><strong class="purchase-price">{purchase.price}</strong>
+												{#if purchaseTier}
+													<span class="purchase-tier">
+														<TierBadge
+															name={purchaseTier.name}
+															color={purchaseTier.color}
+															compact
+														/>
+													</span>
 												{:else}
-													<span class="role-badge">{purchase.role}</span><span class="purchase-name"
-														><strong>{purchase.player_name}</strong><small
-															>{purchase.team}
-															<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
-														></span
-													><strong class="purchase-price">{purchase.price}</strong>
-													{#if purchaseTier}
-														<span class="purchase-tier">
-															<TierBadge
-																name={purchaseTier.name}
-																color={purchaseTier.color}
-																compact
-															/>
-														</span>
-													{:else}
-														<span class="purchase-tier-spacer" aria-hidden="true"></span>
-													{/if}
-													{#if auction.status === 'live'}<button
-															class="text-button"
-															onclick={() => beginEdit(purchase, participant)}>Modifica</button
-														><button
-															class="text-button danger"
-															onclick={() => deletePurchase(purchase)}>Elimina</button
-														>{/if}
+													<span class="purchase-tier-spacer" aria-hidden="true"></span>
 												{/if}
 											</div>
 										{/each}
@@ -700,6 +700,89 @@
 				</div>
 			</details>
 		</section>
+	{/if}
+
+	{#if registryOpen}
+		<div class="dialog-overlay" onclick={closeRegistry} role="presentation">
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
+			<div
+				class="registry-dialog"
+				role="dialog"
+				tabindex="-1"
+				aria-modal="true"
+				aria-labelledby="registry-title"
+				onclick={(event) => event.stopPropagation()}
+			>
+				<header class="registry-header">
+					<h2 id="registry-title">Registro acquisti</h2>
+					<button type="button" class="text-button" use:press onclick={closeRegistry}>Chiudi</button
+					>
+				</header>
+				<label class="registry-search"
+					><span>Cerca calciatore</span><input
+						bind:value={registrySearch}
+						type="search"
+						placeholder="Nome del calciatore"
+					/></label
+				>
+				{#if allPurchases.length === 0}
+					<p class="registry-empty">Nessun acquisto registrato.</p>
+				{:else if filteredRegistryPurchases.length === 0}
+					<p class="registry-empty">Nessun calciatore corrisponde alla ricerca.</p>
+				{:else}
+					<div class="registry-list">
+						{#each filteredRegistryPurchases as { purchase, participant } (purchase.id)}
+							{@const strategyEntry = strategy?.entries.find(
+								(entry) => entry.player_id === purchase.player_id
+							)}
+							{@const purchaseTier = strategy?.tiers.find(
+								(tier) => tier.id === strategyEntry?.tier_id
+							)}
+							<div
+								class="purchase-row registry-row"
+								class:editing={editingPurchaseId === purchase.id}
+							>
+								{#if editingPurchaseId === purchase.id}
+									<select bind:value={editedParticipantId} aria-label="Vincitore"
+										>{#each auction.participants as option (option.id)}<option value={option.id}
+												>{option.name}</option
+											>{/each}</select
+									>
+									<input bind:value={editedPrice} type="number" min="1" aria-label="Prezzo" />
+									<button
+										class="text-button"
+										onclick={() => savePurchase(purchase.id)}
+										disabled={saving}>Salva</button
+									><button class="text-button" onclick={() => (editingPurchaseId = '')}
+										>Annulla</button
+									>
+								{:else}
+									<span class="role-badge">{purchase.role}</span><span class="purchase-name"
+										><strong>{purchase.player_name}</strong><small
+											>{purchase.team}
+											<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
+										></span
+									><strong class="purchase-price">{purchase.price}</strong>
+									{#if purchaseTier}
+										<span class="purchase-tier">
+											<TierBadge name={purchaseTier.name} color={purchaseTier.color} compact />
+										</span>
+									{:else}
+										<span class="purchase-tier-spacer" aria-hidden="true"></span>
+									{/if}
+									<span class="registry-participant">{participant.name}</span>
+									<button class="text-button" onclick={() => beginEdit(purchase, participant)}
+										>Modifica</button
+									><button class="text-button danger" onclick={() => deletePurchase(purchase)}
+										>Elimina</button
+									>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		</div>
 	{/if}
 {/if}
 
@@ -960,7 +1043,7 @@
 	}
 	.purchase-row {
 		display: grid;
-		grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem minmax(4.5rem, 8rem) auto auto;
+		grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem minmax(4.5rem, 8rem);
 		align-items: center;
 		gap: 0.45rem;
 		min-height: 2.25rem;
@@ -972,6 +1055,17 @@
 	}
 	.purchase-row.editing {
 		grid-template-columns: minmax(100px, 1fr) 4rem auto auto;
+	}
+	.purchase-row.registry-row:not(.editing) {
+		grid-template-columns:
+			1.5rem minmax(60px, 1fr) 2.5rem minmax(4.5rem, 7rem) minmax(70px, 8rem) auto
+			auto;
+	}
+	.registry-participant {
+		overflow: hidden;
+		font-weight: 650;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.purchase-row input,
 	.purchase-row select {
@@ -1008,8 +1102,8 @@
 	   (e.g. many participants forcing extra grid columns) — reflow the badge onto its own row
 	   whenever the card itself is tight, not just when the whole page is. */
 	@container team-card (max-width: 380px) {
-		.purchase-row {
-			grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem auto auto;
+		.purchase-row:not(.registry-row) {
+			grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem;
 		}
 		.purchase-tier {
 			grid-row: 2;
@@ -1227,6 +1321,130 @@
 		background: var(--muted-bg);
 		font-size: 0.58rem;
 		text-transform: uppercase;
+	}
+	.registry-trigger-row {
+		margin-bottom: 0.6rem;
+	}
+	.registry-trigger {
+		all: unset;
+		color: var(--muted);
+		font-size: 0.74rem;
+		font-weight: 650;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+		cursor: pointer;
+	}
+	.registry-trigger:hover,
+	.registry-trigger:focus-visible {
+		color: var(--text);
+	}
+	.dialog-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 1100;
+		display: grid;
+		place-items: center;
+		padding: 1.5rem;
+		background: var(--overlay);
+		animation: overlay-in 220ms cubic-bezier(0.19, 1, 0.22, 1);
+	}
+	.registry-dialog {
+		display: grid;
+		gap: 0.9rem;
+		width: min(760px, 100%);
+		max-height: min(80vh, 720px);
+		padding: 1.5rem;
+		border: 1px solid var(--border);
+		border-radius: 0.9rem;
+		background: color-mix(in srgb, var(--surface) 96%, transparent);
+		backdrop-filter: blur(24px) saturate(160%);
+		box-shadow:
+			0 1px 0 rgb(255 255 255 / 6%) inset,
+			0 24px 60px -12px rgb(0 0 0 / 32%);
+		overflow: hidden;
+		animation: dialog-in 260ms cubic-bezier(0.19, 1, 0.22, 1);
+	}
+	.registry-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+	.registry-header h2 {
+		margin: 0;
+		font-size: 1.15rem;
+	}
+	.registry-search {
+		display: block;
+	}
+	.registry-search span {
+		display: block;
+		margin-bottom: 0.35rem;
+		font-size: 0.74rem;
+		font-weight: 700;
+	}
+	.registry-search input {
+		width: 100%;
+		height: 2.4rem;
+		padding: 0 0.65rem;
+		border: 1px solid var(--border-strong);
+		border-radius: 0.4rem;
+		background: var(--input-bg);
+		color: inherit;
+		font: inherit;
+	}
+	.registry-empty {
+		margin: 0;
+		color: var(--subdued);
+		font-size: 0.85rem;
+	}
+	.registry-list {
+		display: grid;
+		align-content: start;
+		gap: 0;
+		overflow-y: auto;
+		overflow-x: auto;
+		border: 1px solid var(--border);
+		border-radius: 0.5rem;
+	}
+	.registry-row {
+		min-width: 34rem;
+		padding: 0 0.6rem;
+	}
+	.registry-list .registry-row:first-child {
+		border-top: 0;
+	}
+	@keyframes overlay-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	@keyframes dialog-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px) scale(0.96);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.dialog-overlay,
+		.registry-dialog {
+			animation: fade-in 160ms ease;
+		}
+		@keyframes fade-in {
+			from {
+				opacity: 0;
+			}
+			to {
+				opacity: 1;
+			}
+		}
 	}
 	@media (max-width: 950px) {
 		.call-panel form {
