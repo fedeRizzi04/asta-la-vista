@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
+	import CollapsibleSection from '$lib/components/CollapsibleSection.svelte';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
@@ -53,8 +54,6 @@
 	let editingPurchaseId = $state('');
 	let editedParticipantId = $state('');
 	let editedPrice = $state(1);
-	let teamsVisible = $state(true);
-	let strategyVisible = $state(true);
 	let strategyRole = $state<Role>('P');
 	let catalogRole = $state<Role>('P');
 	let catalogMantraRoles = $state<string[]>([]);
@@ -435,14 +434,11 @@
 	{/if}
 
 	<section class="teams-section">
-		<SectionHeading eyebrow="Situazione squadre" title="Crediti, slot e rose">
-			{#snippet trailing()}
-				<button type="button" class="text-button" onclick={() => (teamsVisible = !teamsVisible)}>
-					{teamsVisible ? 'Nascondi' : 'Mostra'}
-				</button>
-			{/snippet}
-		</SectionHeading>
-		{#if teamsVisible}
+		<CollapsibleSection
+			storageKey={`auction:${auction.id}:teams`}
+			eyebrow="Situazione squadre"
+			title="Crediti, slot e rose"
+		>
 			<div class="team-grid">
 				{#each auction.participants as participant (participant.id)}
 					<article class="team-card">
@@ -530,12 +526,16 @@
 					</article>
 				{/each}
 			</div>
-		{/if}
+		</CollapsibleSection>
 	</section>
 
 	{#if strategies.length > 0}
 		<section class="strategy-section">
-			<SectionHeading eyebrow="Strategia" title={strategy?.name ?? 'Nessuna strategia selezionata'}>
+			<CollapsibleSection
+				storageKey={`auction:${auction.id}:strategy`}
+				eyebrow="Strategia"
+				title={strategy?.name ?? 'Nessuna strategia selezionata'}
+			>
 				{#snippet trailing()}
 					<div class="strategy-picker">
 						<label>
@@ -552,67 +552,60 @@
 								Fissa per l'asta
 							</button>
 						{/if}
-						<button
-							type="button"
-							class="text-button"
-							onclick={() => (strategyVisible = !strategyVisible)}
-						>
-							{strategyVisible ? 'Nascondi' : 'Mostra'}
-						</button>
 					</div>
 				{/snippet}
-			</SectionHeading>
-			{#if strategy && strategyVisible}
-				<div class="strategy-role-tabs" aria-label="Ruolo strategia">
-					{#each roles as role (role)}
-						<button
-							type="button"
-							class:active={strategyRole === role}
-							onclick={() => (strategyRole = role)}
-						>
-							{roleLabels[role]}
-						</button>
-					{/each}
-				</div>
-				<div class="strategy-roles">
-					{#each strategyRoleTiers as { tier, entries, availableCount } (tier.id)}
-						<div class="tier">
-							<div class="tier-heading">
-								<TierBadge name={tier.name} color={tier.color} compact />
-								<span class="tier-availability">{availableCount}/{entries.length}</span>
-							</div>
-							{#if entries.length > 0}
-								<div class="tier-players">
-									{#each entries as entry (entry.player_id)}
-										<button
-											type="button"
-											class="tier-player-button"
-											disabled={auction.status !== 'live' || purchasedIds.has(entry.player_id)}
-											onclick={() => callPlayerFromStrategy(entry.player_id)}
-										>
-											<TierPlayerCard
-												name={entry.name}
-												team={entry.team}
-												mantraRoles={entry.mantra_roles}
-												maximumPricePercentage={entry.maximum_price_percentage}
-												maximumPriceCredits={entry.maximum_price_percentage != null
-													? percentageToCredits(
-															entry.maximum_price_percentage,
-															auction.initial_credits
-														)
-													: null}
-												note={entry.note}
-												purchased={purchasedIds.has(entry.player_id)}
-												compact
-											/>
-										</button>
-									{/each}
+				{#if strategy}
+					<div class="strategy-role-tabs" aria-label="Ruolo strategia">
+						{#each roles as role (role)}
+							<button
+								type="button"
+								class:active={strategyRole === role}
+								onclick={() => (strategyRole = role)}
+							>
+								{roleLabels[role]}
+							</button>
+						{/each}
+					</div>
+					<div class="strategy-roles">
+						{#each strategyRoleTiers as { tier, entries, availableCount } (tier.id)}
+							<div class="tier">
+								<div class="tier-heading">
+									<TierBadge name={tier.name} color={tier.color} compact />
+									<span class="tier-availability">{availableCount}/{entries.length}</span>
 								</div>
-							{/if}
-						</div>
-					{/each}
-				</div>
-			{/if}
+								{#if entries.length > 0}
+									<div class="tier-players">
+										{#each entries as entry (entry.player_id)}
+											<button
+												type="button"
+												class="tier-player-button"
+												disabled={auction.status !== 'live' || purchasedIds.has(entry.player_id)}
+												onclick={() => callPlayerFromStrategy(entry.player_id)}
+											>
+												<TierPlayerCard
+													name={entry.name}
+													team={entry.team}
+													mantraRoles={entry.mantra_roles}
+													maximumPricePercentage={entry.maximum_price_percentage}
+													maximumPriceCredits={entry.maximum_price_percentage != null
+														? percentageToCredits(
+																entry.maximum_price_percentage,
+																auction.initial_credits
+															)
+														: null}
+													note={entry.note}
+													purchased={purchasedIds.has(entry.player_id)}
+													compact
+												/>
+											</button>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</CollapsibleSection>
 		</section>
 	{/if}
 
@@ -1025,17 +1018,6 @@
 		.purchase-tier-spacer {
 			display: none;
 		}
-	}
-	.text-button {
-		min-height: auto;
-		padding: 0.2rem;
-		border: 0;
-		background: transparent;
-		color: var(--primary-text);
-		font-size: 0.7rem;
-	}
-	.text-button.danger {
-		color: var(--error-text);
 	}
 	.strategy-role-tabs {
 		display: flex;

@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { onDestroy, onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
+	import CollapsibleSection from '$lib/components/CollapsibleSection.svelte';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
@@ -329,6 +330,86 @@
 {#if loading}
 	<div class="empty-state">Caricamento della strategia…</div>
 {:else if strategy}
+	<section class="panel">
+		<CollapsibleSection
+			storageKey={`strategy:${strategy.id}:global-tiers`}
+			title="Fasce globali"
+			subtitle="La stessa sequenza viene utilizzata per tutti i ruoli."
+		>
+			{#snippet trailing()}
+				<form class="tier-form" onsubmit={submitTier}>
+					<input
+						bind:value={newTierName}
+						placeholder="Nome fascia"
+						aria-label="Nome nuova fascia"
+					/>
+					<input bind:value={newTierColor} type="color" aria-label="Colore nuova fascia" />
+					<button type="submit" use:press disabled={!newTierName.trim() || saving}>Aggiungi</button>
+				</form>
+			{/snippet}
+
+			{#if orderedTiers.length === 0}
+				<div class="compact-empty">Non hai ancora creato nessuna fascia.</div>
+			{:else}
+				<div
+					class="tier-list"
+					use:dragReorder={{
+						ids: () => orderedTiers.map((tier) => tier.id),
+						onCommit: commitTierOrder,
+						disabled: () => saving
+					}}
+				>
+					{#each orderedTiers as tier (tier.id)}
+						<div
+							class="tier-row"
+							data-drag-id={tier.id}
+							style:--tier-color={tier.color ?? 'var(--tier-default)'}
+						>
+							<button
+								type="button"
+								class="drag-handle"
+								data-drag-handle
+								use:press
+								aria-label={`Trascina per riordinare “${tier.name}”, o usa le frecce su/giù`}
+							>
+								⠿
+							</button>
+							<span class="color-marker"></span>
+							<input
+								bind:value={tier.name}
+								oninput={() => scheduleTierSave(tier.id)}
+								onblur={() => flushTierSave(tier.id)}
+								aria-label="Nome fascia"
+							/>
+							<input
+								type="color"
+								value={tier.color ?? '#d8ded9'}
+								oninput={(event) => {
+									tier.color = event.currentTarget.value;
+									scheduleTierSave(tier.id);
+								}}
+								onchange={() => flushTierSave(tier.id)}
+								aria-label="Colore fascia"
+							/>
+							<div class="tier-actions">
+								<span class="save-status" class:visible={tierSaved[tier.id]} role="status"
+									>{tierSaved[tier.id] ? 'Salvato' : ''}</span
+								>
+								<button
+									type="button"
+									class="danger"
+									use:press
+									onclick={() => deleteTier(tier)}
+									disabled={saving}>Elimina</button
+								>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</CollapsibleSection>
+	</section>
+
 	<div class="role-tabs" role="tablist" aria-label="Ruoli" bind:this={roleTabsEl}>
 		{#each roles as role (role)}
 			<button
@@ -346,115 +427,38 @@
 		<span class="tab-indicator" use:slidingIndicator={activeRoleTabEl} aria-hidden="true"></span>
 	</div>
 
-	<section class="panel">
-		<SectionHeading
-			title="Fasce globali"
-			subtitle="La stessa sequenza viene utilizzata per tutti i ruoli."
-		>
-			{#snippet trailing()}
-				<form class="tier-form" onsubmit={submitTier}>
-					<input
-						bind:value={newTierName}
-						placeholder="Nome fascia"
-						aria-label="Nome nuova fascia"
-					/>
-					<input bind:value={newTierColor} type="color" aria-label="Colore nuova fascia" />
-					<button type="submit" use:press disabled={!newTierName.trim() || saving}>Aggiungi</button>
-				</form>
-			{/snippet}
-		</SectionHeading>
-
-		{#if orderedTiers.length === 0}
-			<div class="compact-empty">Non hai ancora creato nessuna fascia.</div>
-		{:else}
-			<div
-				class="tier-list"
-				use:dragReorder={{
-					ids: () => orderedTiers.map((tier) => tier.id),
-					onCommit: commitTierOrder,
-					disabled: () => saving
-				}}
-			>
-				{#each orderedTiers as tier (tier.id)}
-					<div
-						class="tier-row"
-						data-drag-id={tier.id}
-						style:--tier-color={tier.color ?? 'var(--tier-default)'}
-					>
-						<button
-							type="button"
-							class="drag-handle"
-							data-drag-handle
-							use:press
-							aria-label={`Trascina per riordinare “${tier.name}”, o usa le frecce su/giù`}
-						>
-							⠿
-						</button>
-						<span class="color-marker"></span>
-						<input
-							bind:value={tier.name}
-							oninput={() => scheduleTierSave(tier.id)}
-							onblur={() => flushTierSave(tier.id)}
-							aria-label="Nome fascia"
-						/>
-						<input
-							type="color"
-							value={tier.color ?? '#d8ded9'}
-							oninput={(event) => {
-								tier.color = event.currentTarget.value;
-								scheduleTierSave(tier.id);
-							}}
-							onchange={() => flushTierSave(tier.id)}
-							aria-label="Colore fascia"
-						/>
-						<div class="tier-actions">
-							<span class="save-status" class:visible={tierSaved[tier.id]} role="status"
-								>{tierSaved[tier.id] ? 'Salvato' : ''}</span
-							>
-							<button
-								type="button"
-								class="danger"
-								use:press
-								onclick={() => deleteTier(tier)}
-								disabled={saving}>Elimina</button
-							>
-						</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</section>
-
 	<section class="panel role-tier-panel">
-		<SectionHeading
+		<CollapsibleSection
+			storageKey={`strategy:${strategy.id}:role-tiers`}
 			title={`Fasce per ${roleLabels[selectedRole].toLowerCase()}`}
 			subtitle="Vista raggruppata dei calciatori già assegnati."
-		/>
-		{#if orderedTiers.length === 0}
-			<div class="compact-empty">Crea almeno una fascia per organizzare i calciatori.</div>
-		{:else}
-			<div class="tier-board">
-				{#each orderedTiers as tier (tier.id)}
-					<div class="tier-column" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
-						<h3><TierBadge name={tier.name} color={tier.color} /></h3>
-						<div>
-							{#each entriesForTier(tier.id) as entry (entry.player.id)}
-								<TierPlayerCard
-									name={entry.player.name}
-									team={entry.player.team}
-									mantraRoles={entry.player.mantra_roles}
-									maximumPricePercentage={entry.draft.maximumPricePercentage ?? null}
-									note={entry.draft.note}
-									inactive={!entry.player.active}
-								/>
-							{:else}
-								<p class="empty-tier">Nessun calciatore</p>
-							{/each}
+		>
+			{#if orderedTiers.length === 0}
+				<div class="compact-empty">Crea almeno una fascia per organizzare i calciatori.</div>
+			{:else}
+				<div class="tier-board">
+					{#each orderedTiers as tier (tier.id)}
+						<div class="tier-column" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
+							<h3><TierBadge name={tier.name} color={tier.color} /></h3>
+							<div>
+								{#each entriesForTier(tier.id) as entry (entry.player.id)}
+									<TierPlayerCard
+										name={entry.player.name}
+										team={entry.player.team}
+										mantraRoles={entry.player.mantra_roles}
+										maximumPricePercentage={entry.draft.maximumPricePercentage ?? null}
+										note={entry.draft.note}
+										inactive={!entry.player.active}
+									/>
+								{:else}
+									<p class="empty-tier">Nessun calciatore</p>
+								{/each}
+							</div>
 						</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
+					{/each}
+				</div>
+			{/if}
+		</CollapsibleSection>
 	</section>
 
 	<section class="panel players-panel">
@@ -656,11 +660,18 @@
 		}
 	}
 
+	/* Pinned below the app header once the page scrolls past it (plain CSS sticky, no
+	   scroll-listener bookkeeping), so the role you're editing stays reachable without
+	   scrolling back up — the tier/player panels below all depend on it. */
 	.role-tabs {
-		position: relative;
+		position: sticky;
+		top: var(--header-height, 4.5rem);
+		z-index: 80;
 		display: flex;
 		gap: 0.4rem;
-		margin-top: 3rem;
+		margin-top: 1.75rem;
+		padding-top: 0.5rem;
+		background: var(--page-bg);
 		border-bottom: 1px solid var(--border);
 	}
 
@@ -677,6 +688,10 @@
 
 	.panel {
 		margin-top: 1.5rem;
+	}
+
+	.detail-heading + .panel {
+		margin-top: 3rem;
 	}
 
 	.tier-form input:not([type='color']) {

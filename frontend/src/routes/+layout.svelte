@@ -14,6 +14,7 @@
 	let scrolled = $state(false);
 	let navEl = $state<HTMLElement>();
 	let activeNavEl = $state<HTMLElement>();
+	let headerEl = $state<HTMLElement>();
 
 	const navigation: { href: '/' | '/players' | '/strategies' | '/auctions'; label: string }[] = [
 		{ href: '/', label: 'Home' },
@@ -40,7 +41,24 @@
 		}
 		onScroll();
 		window.addEventListener('scroll', onScroll, { passive: true });
-		return () => window.removeEventListener('scroll', onScroll);
+
+		// Exposed as --header-height so sticky elements further down a page (e.g. the
+		// strategy screen's role tabs) can pin themselves just below the header without
+		// hard-coding its height, which changes between the desktop and mobile layouts.
+		function updateHeaderHeight(): void {
+			document.documentElement.style.setProperty(
+				'--header-height',
+				`${headerEl?.offsetHeight ?? 0}px`
+			);
+		}
+		updateHeaderHeight();
+		const headerObserver = new ResizeObserver(updateHeaderHeight);
+		if (headerEl) headerObserver.observe(headerEl);
+
+		return () => {
+			window.removeEventListener('scroll', onScroll);
+			headerObserver.disconnect();
+		};
 	});
 
 	function toggleTheme(): void {
@@ -60,7 +78,7 @@
 	/>
 </svelte:head>
 
-<header class="app-header" class:is-scrolled={scrolled}>
+<header class="app-header" class:is-scrolled={scrolled} bind:this={headerEl}>
 	<a class="brand" href={resolve('/')} aria-label="Asta la Vista, home" use:press>Asta la Vista</a>
 	<div class="header-actions">
 		<nav aria-label="Navigazione principale" bind:this={navEl}>
