@@ -154,3 +154,14 @@ export function updateStrategyEntry(
 export function percentageToCredits(percentage: number, budget: number): number {
 	return Math.round((percentage / 100) * budget);
 }
+
+/**
+ * Comparator for sorting items with a maximum-price percentage highest-first, treating
+ * unset percentages as lowest priority. `getPercentage` picks the field out of whatever
+ * shape the caller has (a strategy entry, a board draft, …).
+ */
+export function byMaxPercentageDesc<T>(
+	getPercentage: (item: T) => number | null | undefined
+): (first: T, second: T) => number {
+	return (first, second) => (getPercentage(second) ?? -1) - (getPercentage(first) ?? -1);
+}

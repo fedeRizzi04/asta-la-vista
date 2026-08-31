@@ -26,6 +26,7 @@
 	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
 	import { getPlayers, type Player, type Role } from '$lib/players';
 	import {
+		byMaxPercentageDesc,
 		getStrategies,
 		getStrategy,
 		percentageToCredits,
@@ -71,10 +72,7 @@
 			.map((tier) => {
 				const entries = currentStrategy.entries
 					.filter((entry) => entry.role === strategyRole && entry.tier_id === tier.id)
-					.sort(
-						(first, second) =>
-							(second.maximum_price_percentage ?? -1) - (first.maximum_price_percentage ?? -1)
-					);
+					.sort(byMaxPercentageDesc((entry) => entry.maximum_price_percentage));
 				return {
 					tier,
 					entries,

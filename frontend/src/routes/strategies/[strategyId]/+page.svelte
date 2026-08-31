@@ -16,6 +16,7 @@
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		addTier,
+		byMaxPercentageDesc,
 		getStrategy,
 		removeTier,
 		renameStrategy,
@@ -81,10 +82,7 @@
 		return players
 			.filter((player) => player.role === selectedRole && entryDrafts[player.id]?.tierId === tierId)
 			.map((player) => ({ player, draft: entryDrafts[player.id] }))
-			.sort(
-				(first, second) =>
-					(second.draft.maximumPricePercentage ?? -1) - (first.draft.maximumPricePercentage ?? -1)
-			);
+			.sort(byMaxPercentageDesc((entry) => entry.draft.maximumPricePercentage));
 	}
 
 	onMount(loadData);
