@@ -1327,16 +1327,19 @@
 	}
 	.registry-trigger {
 		all: unset;
-		color: var(--muted);
-		font-size: 0.74rem;
-		font-weight: 650;
-		text-decoration: underline;
-		text-underline-offset: 2px;
+		padding: 0.4rem 0.8rem;
+		border: 1px solid var(--primary);
+		border-radius: 999px;
+		background: var(--primary);
+		color: var(--on-primary);
+		font-size: 0.8rem;
+		font-weight: 700;
 		cursor: pointer;
 	}
 	.registry-trigger:hover,
 	.registry-trigger:focus-visible {
-		color: var(--text);
+		background: var(--primary-text);
+		border-color: var(--primary-text);
 	}
 	.dialog-overlay {
 		position: fixed;
