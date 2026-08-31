@@ -5,6 +5,7 @@ from flask_smorest import Api
 from werkzeug.utils import safe_join
 
 from asta_la_vista import bootstrap, config
+from asta_la_vista.adapters import orm
 from asta_la_vista.service_layer.messagebus import MessageBus
 from asta_la_vista.service_layer.unit_of_work import AbstractUnitOfWork
 
@@ -13,6 +14,7 @@ def create_app(
     test_config: dict[str, object] | None = None,
     message_bus_factory: bootstrap.MessageBusFactory | None = None,
 ) -> Flask:
+    orm.start_mappers()
     app = Flask(__name__, instance_relative_config=True, static_folder=None)
     app.config.from_mapping(test_config if test_config is not None else config.load_settings())
     config.ensure_instance_directory(app.instance_path)

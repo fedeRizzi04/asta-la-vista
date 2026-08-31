@@ -6,7 +6,6 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Session, sessionmaker
 
 from asta_la_vista import config
-from asta_la_vista.adapters import orm
 from asta_la_vista.service_layer import handlers
 from asta_la_vista.service_layer.messagebus import MessageBus
 from asta_la_vista.service_layer.unit_of_work import AbstractUnitOfWork, SqlAlchemyUnitOfWork
@@ -15,7 +14,6 @@ MessageBusFactory = Callable[[], MessageBus]
 
 
 def bootstrap(uow: AbstractUnitOfWork | None = None) -> MessageBus:
-    orm.start_mappers()
     uow = uow or _default_uow()
     dependencies = {"uow": uow}
 
