@@ -69,9 +69,12 @@
 		return [...currentStrategy.tiers]
 			.sort((first, second) => first.position - second.position)
 			.map((tier) => {
-				const entries = currentStrategy.entries.filter(
-					(entry) => entry.role === strategyRole && entry.tier_id === tier.id
-				);
+				const entries = currentStrategy.entries
+					.filter((entry) => entry.role === strategyRole && entry.tier_id === tier.id)
+					.sort(
+						(first, second) =>
+							(second.maximum_price_percentage ?? -1) - (first.maximum_price_percentage ?? -1)
+					);
 				return {
 					tier,
 					entries,
