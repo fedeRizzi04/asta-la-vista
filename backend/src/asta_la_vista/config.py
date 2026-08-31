@@ -4,11 +4,14 @@ from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy.engine import make_url
 
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+ENV_FILE = BACKEND_ROOT / ".env"
+
 
 def load_settings() -> dict[str, object]:
-    load_dotenv()
+    load_dotenv(ENV_FILE)
     return {
-        "DATABASE_URI": _required("DATABASE_URI"),
+        "DATABASE_URI": _prepare_database_uri(_required("DATABASE_URI")),
         "APP_HOST": _required("APP_HOST"),
         "APP_PORT": int(_required("APP_PORT")),
         "FRONTEND_DIST": os.getenv("FRONTEND_DIST"),
@@ -21,22 +24,22 @@ def load_settings() -> dict[str, object]:
     }
 
 
-def ensure_instance_directory(app_instance_path: str):
-    Path(app_instance_path).mkdir(parents=True, exist_ok=True)
-
-
 def database_uri() -> str:
-    load_dotenv()
-    uri = _required("DATABASE_URI")
-    _ensure_database_directory(uri)
-    return uri
+    load_dotenv(ENV_FILE)
+    return _prepare_database_uri(_required("DATABASE_URI"))
 
 
-def _ensure_database_directory(uri: str) -> None:
+def _prepare_database_uri(uri: str) -> str:
     url = make_url(uri)
     if url.get_backend_name() != "sqlite" or url.database in {None, "", ":memory:"}:
-        return
-    Path(url.database).expanduser().parent.mkdir(parents=True, exist_ok=True)
+        return uri
+
+    database_path = Path(url.database).expanduser()
+    if not database_path.is_absolute():
+        database_path = BACKEND_ROOT / database_path
+    database_path = database_path.resolve()
+    database_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    return url.set(database=str(database_path)).render_as_string(hide_password=False)
 
 
 def _required(name: str) -> str:

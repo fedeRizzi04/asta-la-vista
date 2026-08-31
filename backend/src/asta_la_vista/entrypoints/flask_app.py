@@ -15,9 +15,8 @@ def create_app(
     message_bus_factory: bootstrap.MessageBusFactory | None = None,
 ) -> Flask:
     orm.start_mappers()
-    app = Flask(__name__, instance_relative_config=True, static_folder=None)
+    app = Flask(__name__, static_folder=None)
     app.config.from_mapping(test_config if test_config is not None else config.load_settings())
-    config.ensure_instance_directory(app.instance_path)
     api = Api(app)
     app.extensions["bus_factory"] = message_bus_factory or bootstrap.bootstrap_factory()
 

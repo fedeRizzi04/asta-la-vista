@@ -2,6 +2,8 @@ import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
+const backendUrl = process.env.VITE_BACKEND_URL ?? 'http://127.0.0.1:5000';
+
 export default defineConfig({
 	plugins: [
 		sveltekit({
@@ -15,7 +17,7 @@ export default defineConfig({
 	],
 	server: {
 		proxy: {
-			'/api': 'http://127.0.0.1:5000'
+			'/api': backendUrl
 		}
 	}
 });

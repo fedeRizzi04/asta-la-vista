@@ -35,15 +35,15 @@ COPY backend/ ./
 RUN uv sync --locked --no-dev
 
 COPY --from=frontend-build /build/frontend/build /app/frontend
-COPY bin/docker-start /usr/local/bin/docker-start
+COPY --chmod=755 bin/docker-start /usr/local/bin/docker-start
 
-RUN chmod +x /usr/local/bin/docker-start \
-    && groupadd --system app \
-    && useradd --system --gid app app \
-    && mkdir -p /data \
-    && chown app:app /data
+ARG APP_UID=999
+ARG APP_GID=999
+RUN groupadd --system --gid "${APP_GID}" app \
+    && useradd --system --uid "${APP_UID}" --gid app --no-log-init app \
+    && install -d -m 0700 -o app -g app /data
 
-USER app
+USER app:app
 
 EXPOSE 5000
 

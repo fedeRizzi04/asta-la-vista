@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
+umask 077
 
 project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 backend_dir="$project_root/backend"
@@ -52,7 +53,7 @@ require_command uv "Segui le istruzioni su https://docs.astral.sh/uv/."
 require_command npm "Installa Node.js 24 o successivo."
 
 if [[ ! -f "$backend_dir/.env" ]]; then
-  cp "$backend_dir/.env.example" "$backend_dir/.env"
+  install -m 600 "$backend_dir/.env.example" "$backend_dir/.env"
   echo "Creata la configurazione backend da .env.example."
 fi
 
@@ -63,27 +64,49 @@ echo "Preparazione del backend..."
   uv run alembic upgrade head
 )
 
-if [[ ! -d "$frontend_dir/node_modules" ]]; then
-  echo "Installazione delle dipendenze frontend..."
+frontend_dependency_fingerprint="$(
+  cd "$frontend_dir"
+  cksum package.json package-lock.json
+)"
+frontend_dependency_marker="$frontend_dir/node_modules/.asta-la-vista-dependencies"
+
+if [[ ! -f "$frontend_dependency_marker" ]] || \
+  [[ "$(<"$frontend_dependency_marker")" != "$frontend_dependency_fingerprint" ]]; then
+  echo "Sincronizzazione delle dipendenze frontend..."
   (
     cd "$frontend_dir"
-    npm install
+    npm ci
+    printf '%s\n' "$frontend_dependency_fingerprint" >"$frontend_dependency_marker"
   )
 fi
 
+backend_runtime="$(
+  cd "$backend_dir"
+  uv run python -c \
+    'from asta_la_vista.config import load_settings; settings = load_settings(); print("{}\t{}".format(settings["APP_HOST"], settings["APP_PORT"]))'
+)"
+IFS=$'\t' read -r backend_host backend_port <<<"$backend_runtime"
+backend_proxy_host="$backend_host"
+if [[ "$backend_proxy_host" == "0.0.0.0" || "$backend_proxy_host" == "::" ]]; then
+  backend_proxy_host="127.0.0.1"
+fi
+backend_url="http://$backend_proxy_host:$backend_port"
+
 trap stop_application EXIT INT TERM
 
-echo "Avvio del backend su http://127.0.0.1:5000..."
+echo "Avvio del backend su http://$backend_host:$backend_port..."
 (
   cd "$backend_dir"
-  uv run flask --app asta_la_vista.entrypoints.flask_app:create_app run --host 127.0.0.1
+  uv run flask --app asta_la_vista.entrypoints.flask_app:create_app run \
+    --host "$backend_host" \
+    --port "$backend_port"
 ) &
 backend_pid=$!
 
 echo "Avvio del frontend su http://127.0.0.1:5173..."
 (
   cd "$frontend_dir"
-  npm run dev -- --host 127.0.0.1
+  VITE_BACKEND_URL="$backend_url" npm run dev -- --host 127.0.0.1
 ) &
 frontend_pid=$!
 

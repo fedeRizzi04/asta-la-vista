@@ -90,7 +90,10 @@ principale con:
 ./bin/start
 ```
 
-Lo script applica le migrazioni, installa le dipendenze mancanti e avvia backend e frontend.
+Lo script applica le migrazioni, riallinea le dipendenze al lockfile quando questo cambia e avvia
+backend e frontend. Le impostazioni `APP_HOST` e `APP_PORT` in `backend/.env` vengono usate anche
+dal server locale e dal proxy del frontend. Non eseguire lo script con `sudo`: configurazione e
+database devono appartenere all'utente locale.
 
 #### Avvio manuale del backend
 

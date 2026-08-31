@@ -4,6 +4,7 @@
 backend/.env
 backend/.venv
 backend/instance
+backend/src/instance
 backend/.pytest_cache
 backend/.ruff_cache
 frontend/node_modules
