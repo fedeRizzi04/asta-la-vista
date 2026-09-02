@@ -8,9 +8,9 @@ export type ToastItem = {
 
 let nextId = 1;
 
-/** Errors stay until dismissed; success toasts clear themselves after a few seconds. */
-const AUTO_DISMISS_MS: Record<ToastKind, number | undefined> = {
-	error: undefined,
+/** How long each toast kind stays on screen before it auto-dismisses. Change here only. */
+const AUTO_DISMISS_MS: Record<ToastKind, number> = {
+	error: 10000,
 	success: 5000
 };
 
