@@ -1353,6 +1353,7 @@
 	}
 	.registry-dialog {
 		display: grid;
+		grid-template-rows: auto auto minmax(0, 1fr);
 		gap: 0.9rem;
 		width: min(760px, 100%);
 		max-height: min(80vh, 720px);
@@ -1405,6 +1406,7 @@
 		display: grid;
 		align-content: start;
 		gap: 0;
+		min-height: 0;
 		overflow-y: auto;
 		overflow-x: auto;
 		border: 1px solid var(--border);
