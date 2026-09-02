@@ -38,6 +38,9 @@
 	--tier-default: #d8ded9;
 	--tier-badge-bg: #f1f3f0;
 	--tier-badge-border: #cbd2cc;
+	--scrollbar-track: #e8ebe7;
+	--scrollbar-thumb: #a8b1aa;
+	--scrollbar-thumb-hover: #7f8b83;
 	--danger: #9c3b3b;
 	--danger-hover: #7f2f2f;
 	--on-danger: #ffffff;
@@ -104,6 +107,9 @@
 	--tier-default: #4c5561;
 	--tier-badge-bg: #343b44;
 	--tier-badge-border: #444c56;
+	--scrollbar-track: #262b32;
+	--scrollbar-thumb: #59636e;
+	--scrollbar-thumb-hover: #768390;
 	--danger: #c93c37;
 	--danger-hover: #e5534b;
 	--on-danger: #ffffff;
@@ -112,6 +118,42 @@
 
 * {
 	box-sizing: border-box;
+	scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+	scrollbar-width: auto;
+}
+
+*::-webkit-scrollbar {
+	width: 0.85rem;
+	height: 0.85rem;
+}
+
+*::-webkit-scrollbar-track {
+	border-radius: 999px;
+	background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-button {
+	display: none;
+	width: 0;
+	height: 0;
+}
+
+*::-webkit-scrollbar-thumb {
+	min-width: 2.75rem;
+	min-height: 2.75rem;
+	border: 0.2rem solid var(--scrollbar-track);
+	border-radius: 999px;
+	background: var(--scrollbar-thumb);
+	background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+	background: var(--scrollbar-thumb-hover);
+	background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+	background: transparent;
 }
 
 body {

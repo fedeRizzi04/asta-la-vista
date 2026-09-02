@@ -4,6 +4,7 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import CollapsibleSection from '$lib/components/CollapsibleSection.svelte';
+	import HorizontalScroller from '$lib/components/HorizontalScroller.svelte';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
@@ -432,27 +433,29 @@
 			{#if orderedTiers.length === 0}
 				<div class="compact-empty">Crea almeno una fascia per organizzare i calciatori.</div>
 			{:else}
-				<div class="tier-board">
-					{#each orderedTiers as tier (tier.id)}
-						<div class="tier-column" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
-							<h3><TierBadge name={tier.name} color={tier.color} /></h3>
-							<div>
-								{#each entriesForTier(tier.id) as entry (entry.player.id)}
-									<TierPlayerCard
-										name={entry.player.name}
-										team={entry.player.team}
-										mantraRoles={entry.player.mantra_roles}
-										maximumPricePercentage={entry.draft.maximumPricePercentage ?? null}
-										note={entry.draft.note}
-										inactive={!entry.player.active}
-									/>
-								{:else}
-									<p class="empty-tier">Nessun calciatore</p>
-								{/each}
+				<HorizontalScroller ariaLabel={`Fasce per ${roleLabels[selectedRole].toLowerCase()}`}>
+					<div class="tier-board">
+						{#each orderedTiers as tier (tier.id)}
+							<div class="tier-column" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
+								<h3><TierBadge name={tier.name} color={tier.color} /></h3>
+								<div>
+									{#each entriesForTier(tier.id) as entry (entry.player.id)}
+										<TierPlayerCard
+											name={entry.player.name}
+											team={entry.player.team}
+											mantraRoles={entry.player.mantra_roles}
+											maximumPricePercentage={entry.draft.maximumPricePercentage ?? null}
+											note={entry.draft.note}
+											inactive={!entry.player.active}
+										/>
+									{:else}
+										<p class="empty-tier">Nessun calciatore</p>
+									{/each}
+								</div>
 							</div>
-						</div>
-					{/each}
-				</div>
+						{/each}
+					</div>
+				</HorizontalScroller>
 			{/if}
 		</CollapsibleSection>
 	</section>
@@ -768,14 +771,16 @@
 	}
 
 	.tier-board {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		display: flex;
+		align-items: stretch;
 		gap: 0.75rem;
+		width: max-content;
+		min-width: 100%;
 		margin-top: 1rem;
 	}
 
 	.tier-column {
-		min-width: 0;
+		flex: 0 0 min(17.5rem, calc(100vw - 4rem));
 		border: 1px solid var(--border);
 		border-top: 0.35rem solid var(--tier-color);
 		border-radius: 0.45rem;

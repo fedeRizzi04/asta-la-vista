@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import CollapsibleSection from '$lib/components/CollapsibleSection.svelte';
+	import HorizontalScroller from '$lib/components/HorizontalScroller.svelte';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
@@ -468,65 +469,67 @@
 			eyebrow="Situazione squadre"
 			title="Crediti, slot e rose"
 		>
-			<div class="team-grid">
-				{#each auction.participants as participant (participant.id)}
-					<article class="team-card">
-						<header>
-							<h3>{participant.name}</h3>
-							<div><strong>{participant.credits_remaining}</strong><span>crediti</span></div>
-						</header>
-						<div class="maximum-bid">
-							Puntata massima <strong>{participant.maximum_bid}</strong>
-						</div>
-						<div class="slots">
-							{#each roles as role (role)}<span
-									class:full={participant.slots[role].filled === participant.slots[role].total}
-									><strong>{role}</strong>
-									{participant.slots[role].filled}/{participant.slots[role].total}</span
-								>{/each}
-						</div>
-						<div class="roster">
-							{#if participant.purchases.length === 0}<p>Nessun acquisto.</p>{/if}
-							{#each roles as role (role)}
-								{@const rolePurchases = participant.purchases
-									.filter((purchase) => purchase.role === role)
-									.sort((first, second) => (first.created_at < second.created_at ? -1 : 1))}
-								{#if rolePurchases.length > 0}
-									<div class="purchase-group" data-role={role} aria-label={roleLabels[role]}>
-										{#each rolePurchases as purchase (purchase.id)}
-											{@const strategyEntry = strategy?.entries.find(
-												(entry) => entry.player_id === purchase.player_id
-											)}
-											{@const purchaseTier = strategy?.tiers.find(
-												(tier) => tier.id === strategyEntry?.tier_id
-											)}
-											<div class="purchase-row">
-												<span class="role-badge">{purchase.role}</span><span class="purchase-name"
-													><strong>{purchase.player_name}</strong><small
-														>{purchase.team}
-														<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
-													></span
-												><strong class="purchase-price">{purchase.price}</strong>
-												{#if purchaseTier}
-													<span class="purchase-tier">
-														<TierBadge
-															name={purchaseTier.name}
-															color={purchaseTier.color}
-															compact
-														/>
-													</span>
-												{:else}
-													<span class="purchase-tier-spacer" aria-hidden="true"></span>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								{/if}
-							{/each}
-						</div>
-					</article>
-				{/each}
-			</div>
+			<HorizontalScroller ariaLabel="Rose dei partecipanti">
+				<div class="team-grid">
+					{#each auction.participants as participant (participant.id)}
+						<article class="team-card">
+							<header>
+								<h3>{participant.name}</h3>
+								<div><strong>{participant.credits_remaining}</strong><span>crediti</span></div>
+							</header>
+							<div class="maximum-bid">
+								Puntata massima <strong>{participant.maximum_bid}</strong>
+							</div>
+							<div class="slots">
+								{#each roles as role (role)}<span
+										class:full={participant.slots[role].filled === participant.slots[role].total}
+										><strong>{role}</strong>
+										{participant.slots[role].filled}/{participant.slots[role].total}</span
+									>{/each}
+							</div>
+							<div class="roster">
+								{#if participant.purchases.length === 0}<p>Nessun acquisto.</p>{/if}
+								{#each roles as role (role)}
+									{@const rolePurchases = participant.purchases
+										.filter((purchase) => purchase.role === role)
+										.sort((first, second) => (first.created_at < second.created_at ? -1 : 1))}
+									{#if rolePurchases.length > 0}
+										<div class="purchase-group" data-role={role} aria-label={roleLabels[role]}>
+											{#each rolePurchases as purchase (purchase.id)}
+												{@const strategyEntry = strategy?.entries.find(
+													(entry) => entry.player_id === purchase.player_id
+												)}
+												{@const purchaseTier = strategy?.tiers.find(
+													(tier) => tier.id === strategyEntry?.tier_id
+												)}
+												<div class="purchase-row">
+													<span class="role-badge">{purchase.role}</span><span class="purchase-name"
+														><strong>{purchase.player_name}</strong><small
+															>{purchase.team}
+															<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
+														></span
+													><strong class="purchase-price">{purchase.price}</strong>
+													{#if purchaseTier}
+														<span class="purchase-tier">
+															<TierBadge
+																name={purchaseTier.name}
+																color={purchaseTier.color}
+																compact
+															/>
+														</span>
+													{:else}
+														<span class="purchase-tier-spacer" aria-hidden="true"></span>
+													{/if}
+												</div>
+											{/each}
+										</div>
+									{/if}
+								{/each}
+							</div>
+						</article>
+					{/each}
+				</div>
+			</HorizontalScroller>
 		</CollapsibleSection>
 	</section>
 
@@ -567,44 +570,46 @@
 							</button>
 						{/each}
 					</div>
-					<div class="strategy-roles">
-						{#each strategyRoleTiers as { tier, entries, availableCount } (tier.id)}
-							<div class="tier">
-								<div class="tier-heading">
-									<TierBadge name={tier.name} color={tier.color} compact />
-									<span class="tier-availability">{availableCount}/{entries.length}</span>
-								</div>
-								{#if entries.length > 0}
-									<div class="tier-players">
-										{#each entries as entry (entry.player_id)}
-											<button
-												type="button"
-												class="tier-player-button"
-												disabled={auction.status !== 'live' || purchasedIds.has(entry.player_id)}
-												onclick={() => callPlayerFromStrategy(entry.player_id)}
-											>
-												<TierPlayerCard
-													name={entry.name}
-													team={entry.team}
-													mantraRoles={entry.mantra_roles}
-													maximumPricePercentage={entry.maximum_price_percentage}
-													maximumPriceCredits={entry.maximum_price_percentage != null
-														? percentageToCredits(
-																entry.maximum_price_percentage,
-																auction.initial_credits
-															)
-														: null}
-													note={entry.note}
-													purchased={purchasedIds.has(entry.player_id)}
-													compact
-												/>
-											</button>
-										{/each}
+					<HorizontalScroller ariaLabel={`Fasce della strategia per ${roleLabels[strategyRole]}`}>
+						<div class="strategy-roles">
+							{#each strategyRoleTiers as { tier, entries, availableCount } (tier.id)}
+								<div class="tier">
+									<div class="tier-heading">
+										<TierBadge name={tier.name} color={tier.color} compact />
+										<span class="tier-availability">{availableCount}/{entries.length}</span>
 									</div>
-								{/if}
-							</div>
-						{/each}
-					</div>
+									{#if entries.length > 0}
+										<div class="tier-players">
+											{#each entries as entry (entry.player_id)}
+												<button
+													type="button"
+													class="tier-player-button"
+													disabled={auction.status !== 'live' || purchasedIds.has(entry.player_id)}
+													onclick={() => callPlayerFromStrategy(entry.player_id)}
+												>
+													<TierPlayerCard
+														name={entry.name}
+														team={entry.team}
+														mantraRoles={entry.mantra_roles}
+														maximumPricePercentage={entry.maximum_price_percentage}
+														maximumPriceCredits={entry.maximum_price_percentage != null
+															? percentageToCredits(
+																	entry.maximum_price_percentage,
+																	auction.initial_credits
+																)
+															: null}
+														note={entry.note}
+														purchased={purchasedIds.has(entry.player_id)}
+														compact
+													/>
+												</button>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</HorizontalScroller>
 				{/if}
 			</CollapsibleSection>
 		</section>
@@ -981,12 +986,15 @@
 		min-width: 9rem;
 	}
 	.team-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		display: flex;
+		align-items: stretch;
 		gap: 0.8rem;
+		width: max-content;
+		min-width: 100%;
 		margin-top: 1rem;
 	}
 	.team-card {
+		flex: 0 0 min(22.5rem, calc(100vw - 4rem));
 		padding: 1rem;
 	}
 	.team-card h3 {
@@ -1120,15 +1128,17 @@
 		gap: 0.35rem;
 	}
 	.strategy-roles {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+		display: flex;
 		align-items: stretch;
 		gap: 0.7rem;
+		width: max-content;
+		min-width: 100%;
 		margin-top: 1rem;
 	}
 	.tier {
 		display: flex;
 		flex-direction: column;
+		flex: 0 0 min(17.5rem, calc(100vw - 4rem));
 		border: 1px solid var(--border);
 		border-radius: 0.45rem;
 		background: var(--surface);
@@ -1470,9 +1480,6 @@
 		.call-panel form,
 		.called-player-strategy,
 		.search-results {
-			grid-template-columns: 1fr;
-		}
-		.team-grid {
 			grid-template-columns: 1fr;
 		}
 		.catalog-toolbar {
