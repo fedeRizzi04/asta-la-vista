@@ -12,15 +12,15 @@
 	} = $props();
 
 	const EDGE_TOLERANCE = 2;
-	const WHEEL_LINE_DISTANCE = 8;
-	const MINIMUM_BUTTON_STEP = 40;
-	const MAXIMUM_BUTTON_STEP = 96;
-	const BUTTON_STEP_RATIO = 0.09;
+	const BUTTON_STEP_RATIO = 0.9;
+	/** Pointer movement, in px, before a mouse press counts as a drag rather than a click. */
+	const DRAG_THRESHOLD = 6;
 
 	let viewport = $state<HTMLDivElement>();
 	let content = $state<HTMLDivElement>();
 	let canScrollBackward = $state(false);
 	let canScrollForward = $state(false);
+	let dragging = $state(false);
 
 	function maximumScroll(): number {
 		return viewport ? Math.max(0, viewport.scrollWidth - viewport.clientWidth) : 0;
@@ -36,12 +36,8 @@
 	function scrollByPage(direction: -1 | 1): void {
 		if (!viewport) return;
 		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		const distance = Math.min(
-			MAXIMUM_BUTTON_STEP,
-			Math.max(MINIMUM_BUTTON_STEP, viewport.clientWidth * BUTTON_STEP_RATIO)
-		);
 		viewport.scrollBy({
-			left: direction * distance,
+			left: direction * viewport.clientWidth * BUTTON_STEP_RATIO,
 			behavior: reducedMotion ? 'auto' : 'smooth'
 		});
 	}
@@ -50,43 +46,77 @@
 		if (!viewport || !content) return;
 
 		const currentViewport = viewport;
+		const currentContent = content;
 		const observer = new ResizeObserver(updateControls);
 		observer.observe(currentViewport);
-		observer.observe(content);
+		observer.observe(currentContent);
 
-		function handleWheel(event: WheelEvent): void {
-			// Native horizontal trackpad gestures already carry deltaX. Translate only the
-			// dominant vertical wheel axis, and release it back to the page at either edge.
-			if (event.ctrlKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-			const maximum = maximumScroll();
-			if (maximum <= EDGE_TOLERANCE) return;
+		// Mouse-only click-and-drag scrolling. Touch/pen keep the native `touch-action: pan-x`
+		// swipe below; a real scrollbar drag never reaches these listeners since it's chrome
+		// painted around `currentViewport`, outside `currentContent`'s box.
+		let dragPointerId: number | null = null;
+		let dragStartX = 0;
+		let dragStartScrollLeft = 0;
+		let isDragGesture = false;
+		let suppressNextClick = false;
 
-			const multiplier =
-				event.deltaMode === WheelEvent.DOM_DELTA_LINE
-					? WHEEL_LINE_DISTANCE
-					: event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-						? currentViewport.clientWidth
-						: 1;
-			const distance = event.deltaY * multiplier;
-			const canMove =
-				(distance < 0 && currentViewport.scrollLeft > EDGE_TOLERANCE) ||
-				(distance > 0 && currentViewport.scrollLeft < maximum - EDGE_TOLERANCE);
-			if (!canMove) return;
-
-			event.preventDefault();
-			currentViewport.scrollLeft = Math.max(
-				0,
-				Math.min(maximum, currentViewport.scrollLeft + distance)
-			);
+		function handlePointerDown(event: PointerEvent): void {
+			if (event.pointerType !== 'mouse' || event.button !== 0) return;
+			dragPointerId = event.pointerId;
+			dragStartX = event.clientX;
+			dragStartScrollLeft = currentViewport.scrollLeft;
+			isDragGesture = false;
 		}
 
-		currentViewport.addEventListener('wheel', handleWheel, { passive: false });
+		function handlePointerMove(event: PointerEvent): void {
+			if (dragPointerId === null || event.pointerId !== dragPointerId) return;
+			const delta = event.clientX - dragStartX;
+			if (!isDragGesture) {
+				if (Math.abs(delta) < DRAG_THRESHOLD) return;
+				isDragGesture = true;
+				dragging = true;
+				currentContent.setPointerCapture(dragPointerId);
+			}
+			event.preventDefault();
+			currentViewport.scrollLeft = dragStartScrollLeft - delta;
+		}
+
+		function endDrag(event: PointerEvent): void {
+			if (dragPointerId === null || event.pointerId !== dragPointerId) return;
+			if (isDragGesture) {
+				// The pointerup after a drag would otherwise still fire a click on whatever
+				// element ended up under the cursor (e.g. a strategy tier's "call player"
+				// button) — swallow exactly that one click.
+				suppressNextClick = true;
+				currentContent.releasePointerCapture(dragPointerId);
+			}
+			dragPointerId = null;
+			isDragGesture = false;
+			dragging = false;
+		}
+
+		function handleClickCapture(event: MouseEvent): void {
+			if (!suppressNextClick) return;
+			suppressNextClick = false;
+			event.preventDefault();
+			event.stopPropagation();
+		}
+
+		currentContent.addEventListener('pointerdown', handlePointerDown);
+		currentContent.addEventListener('pointermove', handlePointerMove);
+		currentContent.addEventListener('pointerup', endDrag);
+		currentContent.addEventListener('pointercancel', endDrag);
+		currentContent.addEventListener('click', handleClickCapture, { capture: true });
 		currentViewport.addEventListener('scroll', updateControls, { passive: true });
 		updateControls();
 
 		return () => {
 			observer.disconnect();
-			currentViewport.removeEventListener('wheel', handleWheel);
+			currentContent.removeEventListener('pointerdown', handlePointerDown);
+			currentContent.removeEventListener('pointermove', handlePointerMove);
+			currentContent.removeEventListener('pointerup', endDrag);
+			currentContent.removeEventListener('pointercancel', endDrag);
+			currentContent.removeEventListener('click', handleClickCapture, { capture: true });
 			currentViewport.removeEventListener('scroll', updateControls);
 		};
 	});
@@ -104,7 +134,7 @@
 		<span aria-hidden="true">‹</span>
 	</button>
 	<div class="rail-viewport" bind:this={viewport} role="region" aria-label={ariaLabel}>
-		<div class="rail-content" bind:this={content}>{@render children()}</div>
+		<div class="rail-content" class:dragging bind:this={content}>{@render children()}</div>
 	</div>
 	<button
 		type="button"
@@ -136,6 +166,17 @@
 	.rail-content {
 		width: max-content;
 		min-width: 100%;
+	}
+
+	@media (pointer: fine) {
+		.rail-content {
+			cursor: grab;
+		}
+
+		.rail-content.dragging {
+			cursor: grabbing;
+			user-select: none;
+		}
 	}
 
 	.rail-button {
