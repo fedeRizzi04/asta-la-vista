@@ -17,6 +17,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest",
+    "pytest-cov",
     "ruff",
 ]
 
@@ -29,6 +30,13 @@ packages = ["src/asta_la_vista"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/asta_la_vista"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = ["raise NotImplementedError"]
 
 [tool.ruff]
 line-length = 100

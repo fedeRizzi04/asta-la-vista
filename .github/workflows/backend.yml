@@ -29,7 +29,23 @@ jobs:
         run: uv sync --locked --all-groups
 
       - name: Run tests
-        run: uv run pytest
+        shell: bash
+        run: uv run pytest --cov --cov-report=term-missing | tee pytest-coverage.txt
+
+      - name: Build coverage report
+        id: coverage
+        if: always()
+        uses: MishaKav/pytest-coverage-comment@432ac90e8d345c93e1d90ee0838b35913abc9c9b # v1.12.2
+        with:
+          pytest-coverage-path: backend/pytest-coverage.txt
+          coverage-path-prefix: backend/
+          hide-comment: true
+
+      - name: Publish coverage summary
+        if: always()
+        env:
+          COVERAGE_HTML: ${{ steps.coverage.outputs.coverageHtml }}
+        run: echo "$COVERAGE_HTML" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run lint checks
         run: uv run ruff check .

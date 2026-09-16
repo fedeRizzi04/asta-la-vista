@@ -14,7 +14,9 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .coverage
+coverage.xml
 htmlcov/
+pytest-coverage.txt
 .venv/
 
 # Local configuration and data
