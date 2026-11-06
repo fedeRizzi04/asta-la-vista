@@ -53,7 +53,7 @@ def _run(args: argparse.Namespace, data_dir: Path) -> int:
         log.info("Already running at %s", running)
         if not args.headless:
             # Typically right after downloading an update with the old version still open.
-            running_version = instance.running_version(running)
+            running_version = instance.running_version(data_dir)
             if running_version not in (None, __version__):
                 _show_error(
                     f"È ancora aperta la versione {running_version} di {APP_NAME}.\n\n"

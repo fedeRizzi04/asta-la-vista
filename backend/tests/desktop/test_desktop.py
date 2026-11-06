@@ -80,14 +80,17 @@ def test_bind_socket_falls_back_to_a_free_port_when_the_preferred_one_is_taken()
         sock.close()
 
 
-def test_running_url_is_none_without_a_live_instance(tmp_path):
+def test_instance_file_without_a_live_instance(tmp_path):
     assert instance.running_url(tmp_path) is None
+    assert instance.running_version(tmp_path) is None
 
     instance.write(tmp_path, 9)  # nothing listens on the discard port
     assert instance.running_url(tmp_path) is None
+    assert instance.running_version(tmp_path) == __version__
 
     (tmp_path / instance.INSTANCE_FILE).write_text("not json")
     assert instance.running_url(tmp_path) is None
+    assert instance.running_version(tmp_path) is None
 
 
 def test_background_server_serves_the_app_and_is_found_as_running_instance(tmp_path):
@@ -107,7 +110,6 @@ def test_background_server_serves_the_app_and_is_found_as_running_instance(tmp_p
             time.sleep(0.05)
 
         assert instance.running_url(tmp_path) == background.url
-        assert instance.running_version(background.url) == __version__
     finally:
         background.stop()
         instance.clear(tmp_path)
