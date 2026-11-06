@@ -63,8 +63,8 @@ Download the latest version from the
 - **Windows**: `AstaLaVista-<version>-windows.exe`
 - **macOS (Apple Silicon)**: `AstaLaVista-<version>-macos.zip`
 
-The app starts a small local server on your computer and opens Asta la Vista in your default
-browser. Nothing is sent over the internet: your data stays on your computer.
+The app opens in its own window, served by a small local server that runs on your computer.
+Nothing is sent over the internet: your data stays on your computer.
 
 The app is free and is not signed with a paid Apple or Microsoft developer certificate, so your
 computer warns you the first time you open it. This is expected. You only need to allow it once.
@@ -79,6 +79,11 @@ computer warns you the first time you open it. This is expected. You only need t
    **Run anyway**.
 
 Opening the app takes a few seconds, because Windows unpacks the program each time it starts.
+
+The window uses Microsoft Edge WebView2, which is already part of Windows 11 and of an updated
+Windows 10. If your PC lacks it, the app tells you so: install it from
+[Microsoft's WebView2 page](https://developer.microsoft.com/microsoft-edge/webview2/) and open
+the app again.
 
 #### macOS
 
@@ -97,16 +102,14 @@ xattr -dr com.apple.quarantine "/Applications/Asta la Vista.app"
 
 #### Using the app
 
-- Asta la Vista has **no window of its own**: it opens in a browser tab. Closing the tab does
-  **not** stop it.
-- To open it again or to quit it, use its icon: in the **menu bar** at the top of the screen on
-  macOS, or in the **system tray** (next to the clock) on Windows. You may need to click the
-  **^** arrow to see it there.
-  - **Apri Asta la Vista** opens the app in the browser.
-  - **Apri cartella dati** opens the folder that holds your data.
-  - **Esci** quits the app.
-- On Windows, opening the app again while it is already running just opens a new tab. On macOS,
-  use the menu bar icon.
+- Asta la Vista opens in **its own window**. Closing the window quits the app; it asks you
+  first, because an auction may be in progress.
+- **File → Apri cartella dati** opens the folder that holds your data. On macOS the menu is in
+  the menu bar at the top of the screen; on Windows it is at the top of the window.
+- Opening the app again while it is already running brings its window to the front. If the copy
+  that is running is an older version, for example right after you downloaded an update, the
+  app tells you to close it first.
+- Downloads, such as the final report, ask you where to save the file.
 - The version you are running is shown at the bottom of every page.
 
 #### Your data
@@ -122,7 +125,11 @@ The folder contains:
 
 - `asta-la-vista.sqlite3`: the database;
 - `asta-la-vista.log`: a log file, useful when reporting a problem;
-- `instance.json` and `instance.lock`: small files that stop the app from being started twice.
+- `instance.json` and `instance.lock`: small files that stop the app from being started twice;
+- on Windows, `webview`: what the window remembers, such as the theme you chose.
+
+On macOS, the window keeps what it remembers in the system's own folders instead: see
+[Uninstalling](#desktop-app-1).
 
 To back up your data, quit the app and copy the folder.
 
@@ -133,8 +140,8 @@ download page. If you close the banner, it stays hidden until the next version c
 find out, the app asks GitHub for the latest release at most every few hours. Nothing about you
 or your auctions is sent, and when you are offline the app simply skips the check.
 
-To update, download the new version and replace the old app with it. Your data is kept: the new
-version updates the database automatically the first time it starts. What changed in each
+To update, quit the app, download the new version and replace the old app with it. Your data is
+kept: the new version updates the database automatically the first time it starts. What changed in each
 version is listed in the [changelog](CHANGELOG.md).
 
 ### Docker
@@ -241,8 +248,10 @@ The result is in `dist/desktop/`. On macOS, open it with
 ./bin/smoke-test-desktop "dist/desktop/Asta la Vista.app/Contents/MacOS/AstaLaVista"
 ```
 
-The smoke test starts the app with a temporary data folder, checks the API and the frontend,
-stops the app and deletes the temporary folder.
+The smoke test starts the app without its window (`--headless`) and with a temporary data
+folder, checks the API and the frontend, stops the app and deletes the temporary folder. It
+cannot see the window: for that, use the checklist in
+[Releasing a new version](#releasing-a-new-version).
 
 You can also run the desktop launcher without building it:
 
@@ -253,7 +262,54 @@ uv run --group desktop python -m asta_la_vista.entrypoints.desktop
 
 Both the build and this command use the same data folder as the downloaded app (see
 [Your data](#your-data)). To keep test data separate, set `ASTA_LA_VISTA_DATA_DIR` to another
-folder before starting it.
+folder before starting it. Add `--headless` to start only the server, without the window, until
+you press Ctrl+C.
+
+## Preparing the player list
+
+Before your first auction, Asta la Vista needs the list of players (the _listone_). You get it
+from fantacalcio.it and import it once. You can import it again whenever it changes.
+
+### Downloading the file
+
+1. Log in to fantacalcio.it, then open the
+   [quotations page](https://www.fantacalcio.it/quotazioni-fantacalcio). It shows the current
+   season by default; the season selector lets you pick another one.
+2. Click **Scarica**. This downloads the file, named like
+   `Quotazioni_Fantacalcio_Stagione_2026_27.xlsx`. Do not edit it.
+
+### Importing it
+
+1. Open the **Listone** section of the app.
+2. Choose the file and click **Importa**.
+3. A message tells you how many players were added, updated or deactivated, and how many changed
+   role. The counts per role are shown right below it, so you can check them at a glance.
+
+### Importing it again
+
+You can import a newer file at any time, for example when quotations or teams change after the
+transfer market. Players are matched by their `Id`, so nothing already set up is lost:
+
+- new players are added, and existing ones get their name, team, role and quotation updated;
+- players missing from the new file are **deactivated**, not deleted. They disappear from the
+  list, unless you tick **Mostra inattivi**;
+- if a player changed role, the strategies that contain them follow the new role;
+- if an auction is in progress, the app asks you to confirm before importing.
+
+### Using another file
+
+The app also accepts a _.csv_ file, or an _.xlsx_ file you built yourself, as long as it follows
+the same layout as the official one:
+
+- an _.xlsx_ file needs a sheet named `Tutti`;
+- the header row must have the columns `Id`, `R` (role: `P`, `D`, `C` or `A`), `Nome` and
+  `Squadra`. It can be among the first 10 rows, because the official file starts with a title;
+- `Qt.A` (the current quotation, a whole number) and `RM` (the Mantra roles, separated by `;`)
+  are optional;
+- a _.csv_ file must be UTF-8, with `,` or `;` as separator;
+- every `Id` must be unique, and no row can have an empty `Id`, `R`, `Nome` or `Squadra`.
+
+If something is wrong with the file, the app tells you what instead of importing part of it.
 
 ## Uninstalling
 
@@ -262,7 +318,7 @@ follow each of them.
 
 ### Desktop app
 
-1. **Quit the app**: click its icon in the menu bar or system tray, then **Esci**.
+1. **Quit the app**: close its window.
 2. **Delete the app**:
    - macOS: drag **Asta la Vista** from **Applications** to the Trash, then empty the Trash. Also
      delete the downloaded `.zip`.
@@ -270,11 +326,17 @@ follow each of them.
 3. **Delete your data** (database, log and instance files). This cannot be undone, so back up
    the folder first if you might want your auctions later.
    - macOS: in Finder, choose **Go → Go to Folder…**, type
-     `~/Library/Application Support`, and move the **Asta la Vista** folder to the Trash. Or, in
-     the Terminal:
+     `~/Library/Application Support`, and move the **Asta la Vista** folder to the Trash. Then
+     do the same for what the window remembers: the `io.github.federizzi04.astalavista` folder
+     in `~/Library/WebKit` and in `~/Library/Caches`, and the
+     `io.github.federizzi04.astalavista.plist` file in `~/Library/Preferences`. Or, in the
+     Terminal:
 
      ```bash
-     rm -rf ~/Library/Application\ Support/Asta\ la\ Vista
+     rm -rf ~/Library/Application\ Support/Asta\ la\ Vista \
+       ~/Library/WebKit/io.github.federizzi04.astalavista \
+       ~/Library/Caches/io.github.federizzi04.astalavista \
+       ~/Library/Preferences/io.github.federizzi04.astalavista.plist
      ```
 
    - Windows: press **Win + R**, type `%APPDATA%`, press Enter, and delete the
@@ -284,19 +346,21 @@ follow each of them.
      Remove-Item -Recurse -Force "$env:APPDATA\Asta la Vista"
      ```
 
-Asta la Vista writes nothing else on your computer, with two small exceptions:
-
-- your browser remembers the theme you chose for the site `127.0.0.1`; clearing your browser's
-  site data removes it;
-- if the Windows app ever crashed, Windows may have left a folder named `_MEI` followed by
-  numbers in `%TEMP%`; you can delete it.
+Asta la Vista writes nothing else on your computer, with one small exception: if the Windows
+app ever crashed, Windows may have left a folder named `_MEI` followed by numbers in `%TEMP%`;
+you can delete it.
 
 ### Built from source
 
 The local builds and the desktop launcher store their data in the same folder as the downloaded
 app, so start with steps 1 and 3 of [Desktop app](#desktop-app-1). If you set
 `ASTA_LA_VISTA_DATA_DIR`, delete that folder as well. If you copied the built `.app` into
-**Applications**, delete it there too.
+**Applications**, delete it there too. On macOS, the launcher started without building it keeps
+what its window remembers under the name `python` instead:
+
+```bash
+rm -rf ~/Library/WebKit/python ~/Library/Caches/python
+```
 
 Then, everything else lives inside the cloned repository:
 
@@ -359,18 +423,27 @@ The desktop app is built with [PyInstaller](https://pyinstaller.org/), which pac
 the backend, the migrations and the compiled frontend into a single executable. When it starts,
 it:
 
-1. makes sure it is the only copy running; if another copy is running, it opens the browser on
-   that copy and exits;
+1. makes sure it is the only copy running; if another copy is running, it brings that copy's
+   window to the front (and warns if that copy is an older version) and exits;
 2. applies any pending migrations to the database in your data folder;
-3. starts the server on port 47615, or on any free port if 47615 is taken;
-4. opens your browser and shows the menu bar or tray icon until you quit.
+3. starts the server in a background thread, on port 47615, or on any free port if 47615 is
+   taken;
+4. opens the window on that server and waits until you close it, then stops the server.
+
+The window comes from [pywebview](https://pywebview.flowrl.com/), which shows a web page with
+the engine the operating system already has: WKWebView (the engine of Safari) on macOS and
+WebView2 (the engine of Edge) on Windows. So the app does not bundle a browser, and the frontend
+is the same one that Docker and the development setup serve. The window keeps its storage
+between launches, which is how it remembers the theme and the closed update banner. That storage
+belongs to the address of the page, port included, which is why the server prefers the same port
+every time.
 
 The desktop app also turns on the update check (`UPDATE_CHECK`). `GET /api/version` then adds
 the latest release on GitHub to its answer, and the frontend shows the banner when that release
 is newer. GitHub is asked in the background, at most every 6 hours (every minute after a failure,
 such as being offline), and an API request waits for it at most 2 seconds. When the answer comes
 later, the page still gets it: it asks again after a few seconds, every 15 minutes, when you come
-back to the tab and when the computer goes back online. The code is in
+back to the window and when the computer goes back online. The code is in
 `backend/src/asta_la_vista/adapters/releases.py` and `frontend/src/lib/versionWatcher.ts`.
 
 The code is in `backend/src/asta_la_vista/entrypoints/desktop/`, and the build recipe is in
@@ -379,7 +452,8 @@ The code is in `backend/src/asta_la_vista/entrypoints/desktop/`, and the build r
 ## Application flow
 
 1. Open the Listone section and import the CSV or XLSX file with the players. The file from
-   [fantacalcio.it](https://www.fantacalcio.it/quotazioni-fantacalcio) works best.
+   [fantacalcio.it](https://www.fantacalcio.it/quotazioni-fantacalcio) works best: see
+   [Preparing the player list](#preparing-the-player-list).
 2. Create one or more strategies: define global tiers with their own order and colours, and
    assign players to the tiers for each role. For each player you can optionally add a note and
    a maximum spending percentage. During the auction, the percentage is converted into credits
@@ -409,6 +483,18 @@ git commit -am "release 0.2.0"
 git tag v0.2.0
 git push origin main v0.2.0
 ```
+
+Before tagging, build the app (`./bin/build-desktop`), open it with a separate data folder
+(`ASTA_LA_VISTA_DATA_DIR`) and check what the automatic tests cannot see:
+
+- the window opens on the app, and the theme you choose is still there after reopening it;
+- importing the listone works, and so do the strategy export and the final report download:
+  each asks where to save the file, and the app stays on screen;
+- **File → Apri cartella dati** opens the data folder;
+- opening the app a second time brings the window to the front;
+- closing the window asks for confirmation, then quits the app.
+
+Windows needs the same check, on the `.exe` built by the workflow below.
 
 Pushing the tag starts the [Release workflow](.github/workflows/release.yml). It:
 

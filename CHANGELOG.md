@@ -9,6 +9,20 @@ who use the app.
 
 ## [Unreleased]
 
+### Changed
+
+- The desktop app opens in its own window instead of a browser tab, and shows in the Dock on
+  macOS. Closing the window quits the app, after asking you to confirm.
+- The icon in the system tray (Windows) and in the menu bar (macOS) is gone: **Apri cartella
+  dati** is now in the window's **File** menu.
+- Opening the app while it is already running brings its window to the front. If the copy that
+  is running is an older version, the app tells you to close it first.
+- Downloads, such as the final report, ask you where to save the file.
+- The theme and the closed update banner were remembered by your browser: choose the theme again
+  once, and the window remembers it from then on.
+- On Windows, the window needs Microsoft Edge WebView2, which Windows 11 and an updated
+  Windows 10 already have. If it is missing, the app tells you where to get it.
+
 ## [0.2.0] - 2026-11-06
 
 ### Added

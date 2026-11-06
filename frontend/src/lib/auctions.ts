@@ -1,4 +1,4 @@
-import { apiRequest } from './api';
+import { apiDownload, apiRequest, type DownloadedFile } from './api';
 import type { Role } from './players';
 
 export type AuctionStatus = 'draft' | 'live' | 'completed';
@@ -125,6 +125,10 @@ export function amendPurchase(
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ participant_id: participantId, price })
 	});
+}
+
+export function exportAuctionReport(auctionId: string): Promise<DownloadedFile> {
+	return apiDownload(`/api/auctions/${auctionId}/report`);
 }
 
 export function cancelPurchase(auctionId: string, purchaseId: string): Promise<void> {

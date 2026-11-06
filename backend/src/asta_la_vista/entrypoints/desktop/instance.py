@@ -2,8 +2,9 @@
 
 The first launch takes an exclusive lock on ``instance.lock`` in the data folder, before touching
 the database, and keeps it until it quits; the operating system releases it even after a crash.
-Once its server answers, it writes the port to ``instance.json``. A later launch that cannot get
-the lock waits for that file to point at a live server and then just opens the browser on it.
+Once its server answers, it writes its port and version to ``instance.json``. A later launch that
+cannot get the lock waits for that file to point at a live server and then leaves it to that
+instance.
 """
 
 import json
@@ -11,7 +12,9 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
-from typing import IO
+from typing import IO, Any
+
+from asta_la_vista import __version__
 
 INSTANCE_FILE = "instance.json"
 LOCK_FILE = "instance.lock"
@@ -38,7 +41,8 @@ def acquire_lock(data_dir: Path) -> InstanceLock | None:
 
 
 def write(data_dir: Path, port: int) -> None:
-    (data_dir / INSTANCE_FILE).write_text(json.dumps({"port": port}), encoding="utf-8")
+    content = {"port": port, "version": __version__}
+    (data_dir / INSTANCE_FILE).write_text(json.dumps(content), encoding="utf-8")
 
 
 def clear(data_dir: Path) -> None:
@@ -48,11 +52,23 @@ def clear(data_dir: Path) -> None:
 def running_url(data_dir: Path) -> str | None:
     """URL of an already running instance, or None."""
     try:
-        port = int(json.loads((data_dir / INSTANCE_FILE).read_text(encoding="utf-8"))["port"])
+        port = int(_read(data_dir)["port"])
     except (OSError, ValueError, KeyError, TypeError):
         return None
     url = f"http://127.0.0.1:{port}"
     return url if is_healthy(url) else None
+
+
+def running_version(data_dir: Path) -> str | None:
+    """Version of the running instance, read from its file: no request, so never slowed down."""
+    try:
+        return str(_read(data_dir)["version"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def _read(data_dir: Path) -> Any:
+    return json.loads((data_dir / INSTANCE_FILE).read_text(encoding="utf-8"))
 
 
 def wait_for_running_url(data_dir: Path, timeout: float) -> str | None:

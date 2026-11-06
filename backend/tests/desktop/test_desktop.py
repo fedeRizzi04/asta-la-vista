@@ -6,16 +6,19 @@ import socket
 import subprocess
 import sys
 import time
+import types
 import urllib.request
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
 
+from asta_la_vista import __version__
+
 pytest.importorskip("waitress", reason="needs the desktop dependency group")
 
 from asta_la_vista.entrypoints.desktop import app as desktop_app  # noqa: E402
-from asta_la_vista.entrypoints.desktop import icon, instance, paths, server  # noqa: E402
+from asta_la_vista.entrypoints.desktop import icon, instance, paths, server, window  # noqa: E402
 
 
 def test_data_dir_can_be_overridden(tmp_path, monkeypatch):
@@ -77,14 +80,17 @@ def test_bind_socket_falls_back_to_a_free_port_when_the_preferred_one_is_taken()
         sock.close()
 
 
-def test_running_url_is_none_without_a_live_instance(tmp_path):
+def test_instance_file_without_a_live_instance(tmp_path):
     assert instance.running_url(tmp_path) is None
+    assert instance.running_version(tmp_path) is None
 
     instance.write(tmp_path, 9)  # nothing listens on the discard port
     assert instance.running_url(tmp_path) is None
+    assert instance.running_version(tmp_path) == __version__
 
     (tmp_path / instance.INSTANCE_FILE).write_text("not json")
     assert instance.running_url(tmp_path) is None
+    assert instance.running_version(tmp_path) is None
 
 
 def test_background_server_serves_the_app_and_is_found_as_running_instance(tmp_path):
@@ -156,6 +162,72 @@ def test_restart_gets_the_same_port_while_old_connections_are_in_time_wait():
         sock.close()
 
 
+@pytest.fixture
+def fake_webview(monkeypatch):
+    """Stands in for pywebview, which needs a desktop session: records what the app asks of it."""
+    fake = types.SimpleNamespace(settings={}, created=[], started=[])
+    fake.create_window = lambda *args, **kwargs: fake.created.append((args, kwargs))
+    fake.start = lambda *args, **kwargs: fake.started.append((args, kwargs))
+    menu = types.SimpleNamespace(
+        Menu=lambda title, items: (title, items),
+        MenuAction=lambda title, function: (title, function),
+    )
+    monkeypatch.setitem(sys.modules, "webview", fake)
+    monkeypatch.setitem(sys.modules, "webview.menu", menu)
+    return fake
+
+
+def test_window_keeps_storage_allows_downloads_and_asks_before_closing(tmp_path, fake_webview):
+    window.run("http://127.0.0.1:47615", tmp_path)
+
+    ((args, options),) = fake_webview.created
+    assert args == (paths.APP_NAME, "http://127.0.0.1:47615")
+    assert options["confirm_close"] is True
+    ((menu_title, [(item_title, _open)]),) = options["menu"]
+    assert (menu_title, item_title) == ("File", "Apri cartella dati")
+    assert fake_webview.settings["ALLOW_DOWNLOADS"] is True
+    ((_args, start_options),) = fake_webview.started
+    assert start_options["private_mode"] is False
+    assert start_options["storage_path"] == str(tmp_path / "webview")
+    assert (
+        start_options["localization"]["global.quitConfirmation"] == "Vuoi chiudere Asta la Vista?"
+    )
+
+
+def test_window_refuses_the_internet_explorer_fallback_on_windows(
+    tmp_path, monkeypatch, fake_webview
+):
+    monkeypatch.setattr(window.sys, "platform", "win32")
+    platforms = types.ModuleType("webview.platforms")
+    platforms.winforms = types.SimpleNamespace(renderer="mshtml")
+    monkeypatch.setitem(sys.modules, "webview.platforms", platforms)
+    monkeypatch.setitem(sys.modules, "webview.platforms.winforms", platforms.winforms)
+
+    with pytest.raises(window.MissingWebEngine):
+        window.run("http://127.0.0.1:47615", tmp_path)
+
+    assert fake_webview.created == []
+
+
+@pytest.mark.parametrize(("minimised", "expected_calls"), [(True, 3), (False, 2)])
+def test_second_launch_brings_the_window_forward_on_windows(monkeypatch, minimised, expected_calls):
+    calls = []
+    user32 = types.SimpleNamespace(
+        FindWindowW=lambda _class, title: calls.append(("find", title)) or 42,
+        IsIconic=lambda handle: minimised,
+        ShowWindow=lambda handle, command: calls.append(("restore", handle, command)),
+        SetForegroundWindow=lambda handle: calls.append(("front", handle)),
+    )
+    monkeypatch.setattr(window.sys, "platform", "win32")
+    monkeypatch.setattr("ctypes.windll", types.SimpleNamespace(user32=user32), raising=False)
+
+    window.bring_to_front()
+
+    assert calls[0] == ("find", paths.APP_NAME)
+    assert calls[-1] == ("front", 42)
+    assert len(calls) == expected_calls  # a maximised window is not restored to its old size
+
+
 def _launch(data_dir: Path, frontend: Path) -> subprocess.Popen:
     environment = {
         **os.environ,
@@ -165,7 +237,7 @@ def _launch(data_dir: Path, frontend: Path) -> subprocess.Popen:
     for name in ("DATABASE_URI", "APP_HOST", "APP_PORT"):
         environment.pop(name, None)
     return subprocess.Popen(
-        [sys.executable, "-m", "asta_la_vista.entrypoints.desktop", "--no-browser", "--no-tray"],
+        [sys.executable, "-m", "asta_la_vista.entrypoints.desktop", "--headless"],
         env=environment,
     )
 
@@ -192,7 +264,7 @@ def test_simultaneous_launches_start_a_single_server(tmp_path, frontend):
     data_dir = tmp_path / "data"  # fresh: both launches would otherwise race on migrations
     first, second = _launch(data_dir, frontend), _launch(data_dir, frontend)
     try:
-        # Either launch may win the lock: the loser opens the browser on the winner and exits.
+        # Either launch may win the lock: the loser finds the winner running and exits.
         deadline = time.monotonic() + 30
         while first.poll() is None and second.poll() is None:
             assert time.monotonic() < deadline, "neither launch handed over to the other"

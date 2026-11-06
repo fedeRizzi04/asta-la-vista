@@ -1,4 +1,4 @@
-"""Desktop entry point: prepares the data folder, starts the server, opens the browser."""
+"""Desktop entry point: prepares the data folder, starts the server, opens the app window."""
 
 import argparse
 import logging
@@ -7,11 +7,11 @@ import signal
 import subprocess
 import sys
 import time
-import webbrowser
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from asta_la_vista.entrypoints.desktop import instance, paths
+from asta_la_vista import __version__
+from asta_la_vista.entrypoints.desktop import instance, paths, window
 from asta_la_vista.entrypoints.desktop.paths import APP_NAME
 from asta_la_vista.entrypoints.desktop.server import PREFERRED_PORT
 
@@ -32,11 +32,13 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         return _run(args, data_dir)
-    except Exception:
+    except Exception as error:
         log.exception("Asta la Vista could not start")
-        if paths.is_frozen() and not args.no_tray:
+        if paths.is_frozen() and not args.headless:
             _show_error(
-                f"Non è stato possibile avviare {APP_NAME}.\n\n"
+                str(error)
+                if isinstance(error, window.MissingWebEngine)
+                else f"Non è stato possibile avviare {APP_NAME}.\n\n"
                 f"I dettagli sono nel file di log:\n{data_dir / LOG_FILE}"
             )
         return 1
@@ -48,9 +50,16 @@ def _run(args: argparse.Namespace, data_dir: Path) -> int:
         running = instance.wait_for_running_url(data_dir, timeout=SECOND_LAUNCH_TIMEOUT)
         if running is None:
             raise RuntimeError("Another launch holds the instance lock but its server is not up")
-        log.info("Already running at %s, opening the browser", running)
-        if not args.no_browser:
-            webbrowser.open(running)
+        log.info("Already running at %s", running)
+        if not args.headless:
+            # Typically right after downloading an update with the old version still open.
+            running_version = instance.running_version(data_dir)
+            if running_version not in (None, __version__):
+                _show_error(
+                    f"È ancora aperta la versione {running_version} di {APP_NAME}.\n\n"
+                    f"Chiudila e riapri l'app per usare la versione {__version__}."
+                )
+            window.bring_to_front()
         return 0
     try:
         return _serve(args, data_dir)
@@ -75,17 +84,10 @@ def _serve(args: argparse.Namespace, data_dir: Path) -> int:
         instance.write(data_dir, server.port)
         log.info("Serving on %s", server.url)
 
-        def open_app() -> None:
-            webbrowser.open(server.url)
-
-        if not args.no_browser:
-            open_app()
-        if args.no_tray:
+        if args.headless:
             _wait_for_termination()
         else:
-            from asta_la_vista.entrypoints.desktop import tray
-
-            tray.run(open_app, data_dir)
+            window.run(server.url, data_dir)
     finally:
         instance.clear(data_dir)
         server.stop()
@@ -115,11 +117,10 @@ def configure_environment(data_dir: Path) -> None:
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="asta-la-vista", description=f"Avvia {APP_NAME}.")
     parser.add_argument("--port", type=int, default=PREFERRED_PORT, help="porta preferita")
-    parser.add_argument("--no-browser", action="store_true", help="non aprire il browser")
     parser.add_argument(
-        "--no-tray",
+        "--headless",
         action="store_true",
-        help="niente icona di sistema: resta in esecuzione fino a Ctrl+C (per test e CI)",
+        help="nessuna finestra: resta in esecuzione fino a Ctrl+C (per test e CI)",
     )
     # macOS may append a "-psn_..." argument when launching an app bundle; ignore unknown ones.
     args, _unknown = parser.parse_known_args(argv)

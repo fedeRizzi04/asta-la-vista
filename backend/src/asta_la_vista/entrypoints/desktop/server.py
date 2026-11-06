@@ -9,9 +9,9 @@ from waitress import wasyncore
 from waitress.server import create_server
 
 HOST = "127.0.0.1"
-# A fixed, uncommon port keeps the browser origin stable between launches, so what the browser
-# remembers (theme, dismissed notices) survives a restart. 5000 is avoided on purpose: macOS uses
-# it for AirPlay Receiver.
+# A fixed, uncommon port keeps the page origin stable between launches, so what the window's web
+# view remembers (theme, dismissed notices) survives a restart: localStorage belongs to the
+# origin, port included. 5000 is avoided on purpose: macOS uses it for AirPlay Receiver.
 PREFERRED_PORT = 47615
 
 
