@@ -316,6 +316,16 @@ main {
 	padding: 4.5rem 0;
 }
 
+.app-footer {
+	width: min(1180px, calc(100% - 3rem));
+	min-height: 1.25rem;
+	margin: 0 auto;
+	padding: 0 0 1.5rem;
+	color: var(--subdued);
+	font-size: 0.8rem;
+	text-align: right;
+}
+
 .page-heading {
 	max-width: 760px;
 }
@@ -463,6 +473,10 @@ main {
 	main {
 		width: min(100% - 2rem, 1180px);
 		padding: 3rem 0;
+	}
+
+	.app-footer {
+		width: min(100% - 2rem, 1180px);
 	}
 
 	.feature-grid {

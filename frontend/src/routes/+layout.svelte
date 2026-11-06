@@ -7,6 +7,7 @@
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import { press } from '$lib/actions/press';
 	import { slidingIndicator } from '$lib/actions/slidingIndicator.svelte';
+	import { getVersion } from '$lib/system';
 	import '../app.css';
 
 	let { children } = $props();
@@ -15,6 +16,7 @@
 	let navEl = $state<HTMLElement>();
 	let activeNavEl = $state<HTMLElement>();
 	let headerEl = $state<HTMLElement>();
+	let appVersion = $state<string>();
 
 	const navigation: { href: '/' | '/players' | '/strategies' | '/auctions'; label: string }[] = [
 		{ href: '/', label: 'Home' },
@@ -35,6 +37,12 @@
 
 	onMount(() => {
 		theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+
+		getVersion()
+			.then(({ version }) => (appVersion = version))
+			.catch(() => {
+				// The version is informative only: a failure must not disturb the page.
+			});
 
 		function onScroll(): void {
 			scrolled = window.scrollY > 4;
@@ -110,6 +118,12 @@
 <main>
 	{@render children()}
 </main>
+
+<footer class="app-footer">
+	{#if appVersion}
+		<span>Asta la Vista v{appVersion}</span>
+	{/if}
+</footer>
 
 <ToastStack />
 <DialogHost />

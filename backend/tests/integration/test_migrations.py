@@ -116,3 +116,19 @@ def test_global_tier_migration_merges_matching_role_tiers(tmp_path, monkeypatch)
         column["name"] for column in sa.inspect(engine).get_columns("strategy_entry")
     }
     engine.dispose()
+
+
+def test_upgrade_database_works_without_alembic_ini_or_backend_cwd(tmp_path, monkeypatch):
+    from asta_la_vista.adapters.migrations import upgrade_database
+
+    database_path = tmp_path / "data" / "app.sqlite3"
+    database_uri = f"sqlite:///{database_path}"
+    monkeypatch.setenv("DATABASE_URI", database_uri)
+    monkeypatch.chdir(tmp_path)
+
+    upgrade_database()
+    upgrade_database()  # running it again on an up-to-date database is a no-op
+
+    engine = sa.create_engine(database_uri)
+    assert "auction" in sa.inspect(engine).get_table_names()
+    engine.dispose()

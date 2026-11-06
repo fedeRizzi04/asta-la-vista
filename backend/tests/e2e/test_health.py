@@ -43,3 +43,22 @@ def test_message_bus_is_scoped_to_a_request():
         assert bus() is second_bus
 
     assert message_bus_factory.call_count == 2
+
+
+def test_version_endpoint_returns_installed_package_version():
+    from importlib.metadata import version
+
+    app = create_app(
+        {
+            "TESTING": True,
+            "API_TITLE": "Test API",
+            "API_VERSION": "v1",
+            "OPENAPI_VERSION": "3.1.0",
+        },
+        message_bus_factory=lambda: Mock(spec=MessageBus),
+    )
+
+    response = app.test_client().get("/api/version")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"version": version("asta-la-vista")}

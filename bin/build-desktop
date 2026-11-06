@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Builds the desktop app for the current operating system into dist/desktop/.
+#
+#   ./bin/build-desktop                  build the frontend, then the executable
+#   ./bin/build-desktop --skip-frontend  reuse an existing frontend/build
+
+set -Eeuo pipefail
+
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+# Git Bash on Windows: use C:/... paths, which both bash and native Windows programs understand.
+if command -v cygpath >/dev/null 2>&1; then
+  project_root="$(cygpath -m "$project_root")"
+fi
+skip_frontend=false
+
+case "${1:-}" in
+  "") ;;
+  --skip-frontend) skip_frontend=true ;;
+  -h | --help)
+    sed -n '2,5p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+  *)
+    echo "Unknown option: $1" >&2
+    exit 2
+    ;;
+esac
+
+command -v uv >/dev/null 2>&1 || { echo "uv not found: https://docs.astral.sh/uv/" >&2; exit 1; }
+
+if [[ "$skip_frontend" == false ]]; then
+  command -v npm >/dev/null 2>&1 || { echo "npm not found: install Node.js 24+." >&2; exit 1; }
+  echo "Building the frontend..."
+  (cd "$project_root/frontend" && npm ci && npm run build)
+fi
+
+echo "Building the desktop executable..."
+cd "$project_root/backend"
+uv sync --locked --group desktop
+uv run --locked --group desktop pyinstaller \
+  --noconfirm \
+  --clean \
+  --distpath "$project_root/dist/desktop" \
+  --workpath "$project_root/build/pyinstaller" \
+  "$project_root/desktop/asta-la-vista.spec"
+
+echo "Done: $project_root/dist/desktop"
