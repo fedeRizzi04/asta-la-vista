@@ -39,7 +39,10 @@ Name: "it"; MessagesFile: "compiler:Languages\Italian.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [InstallDelete]
-; An update replaces the bundled libraries entirely, so no file of the old version is left behind.
+; An update replaces the bundled libraries entirely, so no file of the old version is left behind
+; (two copies of the app's metadata would make it report either version). This runs before the
+; copy and a cancelled update does not restore it, but neither would it restore overwritten files:
+; running the installer again repairs the app either way, and the data folder is not involved.
 Type: filesandordirs; Name: "{app}\_internal"
 
 [Files]

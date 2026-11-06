@@ -144,7 +144,9 @@ or your auctions is sent, and when you are offline the app simply skips the chec
 
 To update, quit the app and install the new version: on Windows, run its installer, which
 replaces the old version where it is; on macOS, replace the old app in **Applications**. Your
-data is kept: the new version updates the database automatically the first time it starts. What changed in each
+data is kept: the new version updates the database automatically the first time it starts. If
+an update on Windows is interrupted, for example cancelled while copying files, and the app no
+longer opens, run the installer again: your data is not affected. What changed in each
 version is listed in the [changelog](CHANGELOG.md).
 
 ### Docker

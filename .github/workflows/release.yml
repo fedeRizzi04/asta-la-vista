@@ -133,7 +133,8 @@ jobs:
   release:
     name: Publish the release
     needs: [version, build]
-    if: github.ref_type == 'tag'
+    # Not on a manual run, even one started on a tag (`gh workflow run --ref v1.2.3`).
+    if: github.event_name == 'push' && github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
       contents: write
