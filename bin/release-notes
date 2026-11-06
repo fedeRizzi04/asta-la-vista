@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Print the CHANGELOG.md section of one version: the notes of its GitHub Release.
+#
+#   ./bin/release-notes 0.2.0
+#
+# Fails when the version has no section, or an empty one, so a release cannot go out without
+# its changelog entry.
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <version>" >&2
+  exit 2
+fi
+version="$1"
+changelog="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/CHANGELOG.md"
+
+# Lines after "## [<version>]" up to the next "## " heading or the link list at the bottom.
+notes="$(awk -v heading="## [$version]" '
+  index($0, heading) == 1 { inside = 1; next }
+  inside && (/^## / || /^\[.*\]: /) { exit }
+  inside { print }
+' "$changelog" | sed -e '/./,$!d')" # drop leading blank lines; $(...) drops trailing ones
+
+if [[ -z "$notes" ]]; then
+  echo "CHANGELOG.md has no notes for version $version: add a \"## [$version] - <date>\" section." >&2
+  exit 1
+fi
+printf '%s\n' "$notes"
