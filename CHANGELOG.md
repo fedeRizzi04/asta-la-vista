@@ -9,6 +9,8 @@ who use the app.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-06
+
 ### Changed
 
 - The desktop app opens in its own window instead of a browser tab, and shows in the Dock on
@@ -53,6 +55,7 @@ First release, with a desktop app that needs neither Docker nor Python.
   - a final HTML report that opens in any browser;
   - a dark theme.
 
-[Unreleased]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fedeRizzi04/asta-la-vista/releases/tag/v0.1.0
