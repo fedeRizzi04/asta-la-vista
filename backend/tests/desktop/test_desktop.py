@@ -192,8 +192,13 @@ def test_simultaneous_launches_start_a_single_server(tmp_path, frontend):
     data_dir = tmp_path / "data"  # fresh: both launches would otherwise race on migrations
     first, second = _launch(data_dir, frontend), _launch(data_dir, frontend)
     try:
-        assert second.wait(timeout=30) == 0 or first.wait(timeout=30) == 0
-        survivor = first if first.poll() is None else second
+        # Either launch may win the lock: the loser opens the browser on the winner and exits.
+        deadline = time.monotonic() + 30
+        while first.poll() is None and second.poll() is None:
+            assert time.monotonic() < deadline, "neither launch handed over to the other"
+            time.sleep(0.1)
+        loser, survivor = (first, second) if first.poll() is not None else (second, first)
+        assert loser.returncode == 0
         assert survivor.poll() is None, "exactly one launch keeps serving"
         port = _wait_for_port(survivor, data_dir)
         assert instance.is_healthy(f"http://127.0.0.1:{port}")
