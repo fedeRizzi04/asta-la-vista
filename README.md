@@ -75,9 +75,8 @@ computer warns you the first time you open it. This is expected. You only need t
    Keep → Show more → Keep anyway**).
 2. Double-click it. If you see **"Windows protected your PC"**, click **More info**, then
    **Run anyway**.
-3. The installer asks where to install the app (by default in your user folder, so no
-   administrator password is needed) and whether to add an icon to the desktop. At the end it
-   can open the app.
+3. The installer puts the app in your user folder, so no administrator password is needed, and
+   asks whether to add an icon to the desktop. At the end it can open the app.
 
 From then on, open **Asta la Vista** from the Start menu, like any other app. You can delete
 the downloaded installer.

@@ -9,6 +9,12 @@ who use the app.
 
 ## [Unreleased]
 
+### Fixed
+
+- The Windows installer no longer asks where to put the app: choosing a folder such as Program
+  Files stopped the installation with "Errore 5: Accesso negato". The app now always goes in
+  your user folder, and you can still pin its icon wherever you like.
+
 ## [0.4.0] - 2026-11-06
 
 ### Changed
