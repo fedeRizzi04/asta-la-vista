@@ -204,6 +204,25 @@ def test_window_refuses_the_internet_explorer_fallback_on_windows(
     assert fake_webview.created == []
 
 
+@pytest.mark.parametrize(("minimised", "expected_calls"), [(True, 3), (False, 2)])
+def test_second_launch_brings_the_window_forward_on_windows(monkeypatch, minimised, expected_calls):
+    calls = []
+    user32 = types.SimpleNamespace(
+        FindWindowW=lambda _class, title: calls.append(("find", title)) or 42,
+        IsIconic=lambda handle: minimised,
+        ShowWindow=lambda handle, command: calls.append(("restore", handle, command)),
+        SetForegroundWindow=lambda handle: calls.append(("front", handle)),
+    )
+    monkeypatch.setattr(window.sys, "platform", "win32")
+    monkeypatch.setattr("ctypes.windll", types.SimpleNamespace(user32=user32), raising=False)
+
+    window.bring_to_front()
+
+    assert calls[0] == ("find", paths.APP_NAME)
+    assert calls[-1] == ("front", 42)
+    assert len(calls) == expected_calls  # a maximised window is not restored to its old size
+
+
 def _launch(data_dir: Path, frontend: Path) -> subprocess.Popen:
     environment = {
         **os.environ,

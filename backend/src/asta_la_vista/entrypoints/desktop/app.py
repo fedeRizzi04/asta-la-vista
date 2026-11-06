@@ -50,6 +50,8 @@ def _run(args: argparse.Namespace, data_dir: Path) -> int:
         if running is None:
             raise RuntimeError("Another launch holds the instance lock but its server is not up")
         log.info("Already running at %s", running)
+        if not args.headless:
+            window.bring_to_front()
         return 0
     try:
         return _serve(args, data_dir)

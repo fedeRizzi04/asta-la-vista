@@ -14,6 +14,7 @@ from asta_la_vista.entrypoints.desktop.paths import APP_NAME
 
 WIDTH, HEIGHT = 1280, 820
 MIN_WIDTH, MIN_HEIGHT = 900, 600
+SW_RESTORE = 9  # Windows ShowWindow command
 
 # pywebview's own texts: the closing confirmation, file dialogs and the macOS menus.
 LOCALIZATION = {
@@ -74,6 +75,24 @@ def run(url: str, data_dir: Path) -> None:
         storage_path=str(data_dir / "webview"),
         localization=LOCALIZATION,
     )
+
+
+def bring_to_front() -> None:
+    """Show the window of the copy already running, for a second double-click on Windows.
+
+    macOS needs nothing: it never starts a second copy of an open app, it activates the first.
+    """
+    if sys.platform != "win32":
+        return
+    import ctypes
+
+    user32 = ctypes.windll.user32  # type: ignore[attr-defined]
+    handle = user32.FindWindowW(None, APP_NAME)  # pywebview keeps the title, whatever the page
+    if not handle:
+        return
+    if user32.IsIconic(handle):  # minimised; restoring a visible window would un-maximise it
+        user32.ShowWindow(handle, SW_RESTORE)
+    user32.SetForegroundWindow(handle)
 
 
 def _require_modern_engine() -> None:
