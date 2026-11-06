@@ -15,12 +15,15 @@ const MIN_GAP_MS = 60_000;
 export function watchVersion(onVersion: (version: AppVersion) => void): () => void {
 	let lastRequestAt = 0;
 	let retryTimer: ReturnType<typeof setTimeout> | undefined;
+	let stopped = false;
 
 	function refresh(isRetry = false): void {
 		lastRequestAt = Date.now();
 		clearTimeout(retryTimer);
 		getVersion()
 			.then((version) => {
+				// A request still in flight when watching stops must not report or schedule anything.
+				if (stopped) return;
 				onVersion(version);
 				// No answer from GitHub yet: ask once more, when the server should have one.
 				if (version.latest_version === null && !isRetry) {
@@ -45,6 +48,7 @@ export function watchVersion(onVersion: (version: AppVersion) => void): () => vo
 	window.addEventListener('online', onOnline);
 
 	return () => {
+		stopped = true;
 		clearTimeout(retryTimer);
 		clearInterval(interval);
 		document.removeEventListener('visibilitychange', refreshIfVisibleAndStale);
