@@ -255,6 +255,52 @@ Both the build and this command use the same data folder as the downloaded app (
 [Your data](#your-data)). To keep test data separate, set `ASTA_LA_VISTA_DATA_DIR` to another
 folder before starting it.
 
+## Preparing the player list
+
+Before your first auction, Asta la Vista needs the list of players (the _listone_). You get it
+from fantacalcio.it and import it once. You can import it again whenever it changes.
+
+### Downloading the file
+
+1. Log in to fantacalcio.it, then open the
+   [quotations page](https://www.fantacalcio.it/quotazioni-fantacalcio). It shows the current
+   season by default; the season selector lets you pick another one.
+2. Click **Scarica**. This downloads the file, named like
+   `Quotazioni_Fantacalcio_Stagione_2026_27.xlsx`. Do not edit it.
+
+### Importing it
+
+1. Open the **Listone** section of the app.
+2. Choose the file and click **Importa**.
+3. A message tells you how many players were added, updated or deactivated, and how many changed
+   role. The counts per role are shown right below it, so you can check them at a glance.
+
+### Importing it again
+
+You can import a newer file at any time, for example when quotations or teams change after the
+transfer market. Players are matched by their `Id`, so nothing already set up is lost:
+
+- new players are added, and existing ones get their name, team, role and quotation updated;
+- players missing from the new file are **deactivated**, not deleted. They disappear from the
+  list, unless you tick **Mostra inattivi**;
+- if a player changed role, the strategies that contain them follow the new role;
+- if an auction is in progress, the app asks you to confirm before importing.
+
+### Using another file
+
+The app also accepts a _.csv_ file, or an _.xlsx_ file you built yourself, as long as it follows
+the same layout as the official one:
+
+- an _.xlsx_ file needs a sheet named `Tutti`;
+- the header row must have the columns `Id`, `R` (role: `P`, `D`, `C` or `A`), `Nome` and
+  `Squadra`. It can be among the first 10 rows, because the official file starts with a title;
+- `Qt.A` (the current quotation, a whole number) and `RM` (the Mantra roles, separated by `;`)
+  are optional;
+- a _.csv_ file must be UTF-8, with `,` or `;` as separator;
+- every `Id` must be unique, and no row can have an empty `Id`, `R`, `Nome` or `Squadra`.
+
+If something is wrong with the file, the app tells you what instead of importing part of it.
+
 ## Uninstalling
 
 Follow the section that matches how you used Asta la Vista. If you used more than one method,
@@ -379,7 +425,8 @@ The code is in `backend/src/asta_la_vista/entrypoints/desktop/`, and the build r
 ## Application flow
 
 1. Open the Listone section and import the CSV or XLSX file with the players. The file from
-   [fantacalcio.it](https://www.fantacalcio.it/quotazioni-fantacalcio) works best.
+   [fantacalcio.it](https://www.fantacalcio.it/quotazioni-fantacalcio) works best: see
+   [Preparing the player list](#preparing-the-player-list).
 2. Create one or more strategies: define global tiers with their own order and colours, and
    assign players to the tiers for each role. For each player you can optionally add a note and
    a maximum spending percentage. During the auction, the percentage is converted into credits
