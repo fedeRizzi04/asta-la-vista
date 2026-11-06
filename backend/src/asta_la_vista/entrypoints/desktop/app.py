@@ -17,6 +17,8 @@ from asta_la_vista.entrypoints.desktop.server import PREFERRED_PORT
 
 DATABASE_FILE = "asta-la-vista.sqlite3"
 LOG_FILE = "asta-la-vista.log"
+# How long a second launch waits for the first one to finish starting (migrations included).
+SECOND_LAUNCH_TIMEOUT = 60.0
 
 log = logging.getLogger("asta_la_vista.desktop")
 
@@ -41,13 +43,22 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _run(args: argparse.Namespace, data_dir: Path) -> int:
-    running = instance.running_url(data_dir)
-    if running:
+    lock = instance.acquire_lock(data_dir)
+    if lock is None:
+        running = instance.wait_for_running_url(data_dir, timeout=SECOND_LAUNCH_TIMEOUT)
+        if running is None:
+            raise RuntimeError("Another launch holds the instance lock but its server is not up")
         log.info("Already running at %s, opening the browser", running)
         if not args.no_browser:
             webbrowser.open(running)
         return 0
+    try:
+        return _serve(args, data_dir)
+    finally:
+        lock.release()
 
+
+def _serve(args: argparse.Namespace, data_dir: Path) -> int:
     configure_environment(data_dir)
 
     # Imported here, after the environment is set, because they read the configuration.

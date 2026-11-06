@@ -29,6 +29,10 @@ def _bind(port: int) -> socket.socket:
         if sys.platform == "win32":
             # Without this, Windows lets two processes bind the same port.
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        else:
+            # Lets a restart reuse the port while connections of the previous run are still in
+            # TIME_WAIT; a port with a live listener stays unavailable.
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind((HOST, port))
     except OSError:
         sock.close()

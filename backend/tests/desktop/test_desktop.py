@@ -1,3 +1,4 @@
+import http.client
 import json
 import os
 import signal
@@ -119,12 +120,43 @@ def test_icon_renders_requested_size():
     assert image.mode == "RGBA"
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="uses SIGTERM")
-def test_launcher_starts_migrates_serves_and_stops_cleanly(tmp_path):
-    data_dir = tmp_path / "data dir"
-    frontend = tmp_path / "frontend"
-    frontend.mkdir()
-    (frontend / "index.html").write_text("<h1>Asta la Vista</h1>")
+def test_instance_lock_is_exclusive_until_released(tmp_path):
+    first = instance.acquire_lock(tmp_path)
+    assert first is not None
+    assert instance.acquire_lock(tmp_path) is None
+
+    first.release()
+    second = instance.acquire_lock(tmp_path)
+    assert second is not None
+    second.release()
+
+
+def test_restart_gets_the_same_port_while_old_connections_are_in_time_wait():
+    from asta_la_vista.entrypoints.flask_app import create_app
+    from asta_la_vista.service_layer.messagebus import MessageBus
+
+    flask_app = create_app(
+        {"TESTING": True, "API_TITLE": "T", "API_VERSION": "v1", "OPENAPI_VERSION": "3.1.0"},
+        message_bus_factory=lambda: Mock(spec=MessageBus),
+    )
+    background = server.BackgroundServer(flask_app, server.bind_socket(0))
+    background.start()
+    # Like a browser: a keep-alive connection still open when the app quits, so the server
+    # closes it first and the port is left with connections in TIME_WAIT.
+    connection = http.client.HTTPConnection(server.HOST, background.port, timeout=5)
+    connection.request("GET", "/api/health")
+    connection.getresponse().read()
+    background.stop()
+    connection.close()
+
+    sock = server.bind_socket(background.port)
+    try:
+        assert sock.getsockname()[1] == background.port
+    finally:
+        sock.close()
+
+
+def _launch(data_dir: Path, frontend: Path) -> subprocess.Popen:
     environment = {
         **os.environ,
         paths.DATA_DIR_ENV: str(data_dir),
@@ -132,18 +164,56 @@ def test_launcher_starts_migrates_serves_and_stops_cleanly(tmp_path):
     }
     for name in ("DATABASE_URI", "APP_HOST", "APP_PORT"):
         environment.pop(name, None)
-
-    process = subprocess.Popen(
+    return subprocess.Popen(
         [sys.executable, "-m", "asta_la_vista.entrypoints.desktop", "--no-browser", "--no-tray"],
         env=environment,
     )
+
+
+def _wait_for_port(process: subprocess.Popen, data_dir: Path) -> int:
+    instance_file = data_dir / instance.INSTANCE_FILE
+    deadline = time.monotonic() + 20
+    while not instance_file.exists() and time.monotonic() < deadline:
+        assert process.poll() is None, "the launcher exited early"
+        time.sleep(0.1)
+    return json.loads(instance_file.read_text())["port"]
+
+
+@pytest.fixture
+def frontend(tmp_path):
+    folder = tmp_path / "frontend"
+    folder.mkdir()
+    (folder / "index.html").write_text("<h1>Asta la Vista</h1>")
+    return folder
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="uses SIGTERM")
+def test_simultaneous_launches_start_a_single_server(tmp_path, frontend):
+    data_dir = tmp_path / "data"  # fresh: both launches would otherwise race on migrations
+    first, second = _launch(data_dir, frontend), _launch(data_dir, frontend)
+    try:
+        assert second.wait(timeout=30) == 0 or first.wait(timeout=30) == 0
+        survivor = first if first.poll() is None else second
+        assert survivor.poll() is None, "exactly one launch keeps serving"
+        port = _wait_for_port(survivor, data_dir)
+        assert instance.is_healthy(f"http://127.0.0.1:{port}")
+
+        survivor.send_signal(signal.SIGTERM)
+        assert survivor.wait(timeout=10) == 0
+    finally:
+        for process in (first, second):
+            if process.poll() is None:
+                process.kill()
+    assert {first.returncode, second.returncode} == {0}
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="uses SIGTERM")
+def test_launcher_starts_migrates_serves_and_stops_cleanly(tmp_path, frontend):
+    data_dir = tmp_path / "data dir"
+    process = _launch(data_dir, frontend)
     try:
         instance_file = data_dir / instance.INSTANCE_FILE
-        deadline = time.monotonic() + 20
-        while not instance_file.exists() and time.monotonic() < deadline:
-            assert process.poll() is None, "the launcher exited early"
-            time.sleep(0.1)
-        port = json.loads(instance_file.read_text())["port"]
+        port = _wait_for_port(process, data_dir)
 
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/version") as response:
             assert "version" in json.load(response)
