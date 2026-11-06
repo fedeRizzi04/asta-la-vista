@@ -228,6 +228,27 @@ def test_second_launch_brings_the_window_forward_on_windows(monkeypatch, minimis
     assert len(calls) == expected_calls  # a maximised window is not restored to its old size
 
 
+@pytest.mark.parametrize(("running_version", "warned"), [("0.0.1", True), (__version__, False)])
+def test_second_launch_warns_when_an_older_version_is_still_open(
+    tmp_path, monkeypatch, running_version, warned
+):
+    first = instance.acquire_lock(tmp_path)
+    (tmp_path / instance.INSTANCE_FILE).write_text(
+        json.dumps({"port": 47615, "version": running_version})
+    )
+    monkeypatch.setattr(instance, "wait_for_running_url", lambda *_a, **_k: "http://x")
+    errors, fronts = [], []
+    monkeypatch.setattr(desktop_app, "_show_error", errors.append)
+    monkeypatch.setattr(window, "bring_to_front", lambda: fronts.append(True))
+    try:
+        assert desktop_app._run(desktop_app._parse_args([]), tmp_path) == 0
+    finally:
+        first.release()
+
+    assert [running_version in message for message in errors] == ([True] if warned else [])
+    assert fronts == [True]
+
+
 def _launch(data_dir: Path, frontend: Path) -> subprocess.Popen:
     environment = {
         **os.environ,
