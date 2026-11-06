@@ -9,6 +9,8 @@ who use the app.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-06
+
 ### Fixed
 
 - The Windows installer no longer asks where to put the app: choosing a folder such as Program
@@ -72,7 +74,8 @@ First release, with a desktop app that needs neither Docker nor Python.
   - a final HTML report that opens in any browser;
   - a dark theme.
 
-[Unreleased]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.1.0...v0.2.0
