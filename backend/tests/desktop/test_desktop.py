@@ -13,6 +13,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from asta_la_vista import __version__
+
 pytest.importorskip("waitress", reason="needs the desktop dependency group")
 
 from asta_la_vista.entrypoints.desktop import app as desktop_app  # noqa: E402
@@ -105,6 +107,7 @@ def test_background_server_serves_the_app_and_is_found_as_running_instance(tmp_p
             time.sleep(0.05)
 
         assert instance.running_url(tmp_path) == background.url
+        assert instance.running_version(background.url) == __version__
     finally:
         background.stop()
         instance.clear(tmp_path)

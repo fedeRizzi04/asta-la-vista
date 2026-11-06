@@ -73,6 +73,14 @@ def is_healthy(url: str, timeout: float = 1.0) -> bool:
         return False
 
 
+def running_version(url: str, timeout: float = 1.0) -> str | None:
+    try:
+        with urllib.request.urlopen(f"{url}/api/version", timeout=timeout) as response:
+            return json.load(response)["version"]
+    except (OSError, ValueError, KeyError):
+        return None
+
+
 if sys.platform == "win32":
     import msvcrt
 

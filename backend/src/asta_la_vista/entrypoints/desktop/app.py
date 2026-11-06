@@ -10,6 +10,7 @@ import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from asta_la_vista import __version__
 from asta_la_vista.entrypoints.desktop import instance, paths, window
 from asta_la_vista.entrypoints.desktop.paths import APP_NAME
 from asta_la_vista.entrypoints.desktop.server import PREFERRED_PORT
@@ -51,6 +52,13 @@ def _run(args: argparse.Namespace, data_dir: Path) -> int:
             raise RuntimeError("Another launch holds the instance lock but its server is not up")
         log.info("Already running at %s", running)
         if not args.headless:
+            # Typically right after downloading an update with the old version still open.
+            running_version = instance.running_version(running)
+            if running_version not in (None, __version__):
+                _show_error(
+                    f"È ancora aperta la versione {running_version} di {APP_NAME}.\n\n"
+                    f"Chiudila e riapri l'app per usare la versione {__version__}."
+                )
             window.bring_to_front()
         return 0
     try:
