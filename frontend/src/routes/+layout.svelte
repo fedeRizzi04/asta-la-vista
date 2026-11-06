@@ -5,9 +5,10 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import DialogHost from '$lib/components/DialogHost.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
+	import UpdateBanner from '$lib/components/UpdateBanner.svelte';
 	import { press } from '$lib/actions/press';
 	import { slidingIndicator } from '$lib/actions/slidingIndicator.svelte';
-	import { getVersion } from '$lib/system';
+	import { getVersion, type AppVersion } from '$lib/system';
 	import '../app.css';
 
 	let { children } = $props();
@@ -16,7 +17,7 @@
 	let navEl = $state<HTMLElement>();
 	let activeNavEl = $state<HTMLElement>();
 	let headerEl = $state<HTMLElement>();
-	let appVersion = $state<string>();
+	let appVersion = $state<AppVersion>();
 
 	const navigation: { href: '/' | '/players' | '/strategies' | '/auctions'; label: string }[] = [
 		{ href: '/', label: 'Home' },
@@ -39,7 +40,7 @@
 		theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 
 		getVersion()
-			.then(({ version }) => (appVersion = version))
+			.then((version) => (appVersion = version))
 			.catch(() => {
 				// The version is informative only: a failure must not disturb the page.
 			});
@@ -115,13 +116,17 @@
 	</div>
 </header>
 
+{#if appVersion}
+	<UpdateBanner {appVersion} />
+{/if}
+
 <main>
 	{@render children()}
 </main>
 
 <footer class="app-footer">
 	{#if appVersion}
-		<span>Asta la Vista v{appVersion}</span>
+		<span>Asta la Vista v{appVersion.version}</span>
 	{/if}
 </footer>
 

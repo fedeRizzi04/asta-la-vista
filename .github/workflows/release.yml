@@ -1,7 +1,8 @@
 name: Release
 
 # Pushing a tag such as v0.2.0 builds the desktop app for Windows and macOS, tests the builds and
-# publishes them in a GitHub Release. The tag must match the version in backend/pyproject.toml.
+# publishes them in a GitHub Release. The tag must match the version in backend/pyproject.toml,
+# and CHANGELOG.md must have a section for that version: it becomes the release notes.
 
 on:
   push:
@@ -36,6 +37,16 @@ jobs:
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Checked before the long builds, so a forgotten changelog entry fails in seconds.
+      - name: Check the changelog entry
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if ! ./bin/release-notes "$VERSION" > /dev/null; then
+            echo "::error::CHANGELOG.md has no section for version $VERSION"
+            exit 1
+          fi
 
   build:
     name: Build (${{ matrix.name }})
@@ -109,6 +120,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       - name: Download the packages
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -124,7 +138,8 @@ jobs:
           VERSION: ${{ needs.version.outputs.version }}
         run: |
           ls -l release
+          ./bin/release-notes "$VERSION" > "$RUNNER_TEMP/notes.md"
           gh release create "$TAG" release/* \
             --title "Asta la Vista $VERSION" \
-            --generate-notes \
+            --notes-file "$RUNNER_TEMP/notes.md" \
             --verify-tag
