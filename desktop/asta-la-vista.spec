@@ -40,7 +40,6 @@ hiddenimports = [
     # cannot see what they import.
     *collect_submodules("alembic", filter=lambda name: not name.startswith("alembic.testing")),
     "logging.config",
-    "pystray._darwin" if sys.platform == "darwin" else "pystray._win32",
 ]
 
 a = Analysis(

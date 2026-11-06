@@ -1,7 +1,7 @@
 """Draws the app icon (the favicon: a white "A" on a green rounded square) with Pillow.
 
-Drawing it in code avoids committing binary images: the tray uses it at runtime and the build
-script saves it as the PNG that PyInstaller turns into the ``.ico``/``.icns`` file icons.
+Drawing it in code avoids committing binary images: the build script saves it as the PNG that
+PyInstaller turns into the ``.ico``/``.icns`` icons of the executable, the window and the Dock.
 """
 
 from PIL import Image, ImageDraw

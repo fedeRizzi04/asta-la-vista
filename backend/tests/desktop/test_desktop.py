@@ -6,6 +6,7 @@ import socket
 import subprocess
 import sys
 import time
+import types
 import urllib.request
 from pathlib import Path
 from unittest.mock import Mock
@@ -15,7 +16,7 @@ import pytest
 pytest.importorskip("waitress", reason="needs the desktop dependency group")
 
 from asta_la_vista.entrypoints.desktop import app as desktop_app  # noqa: E402
-from asta_la_vista.entrypoints.desktop import icon, instance, paths, server  # noqa: E402
+from asta_la_vista.entrypoints.desktop import icon, instance, paths, server, window  # noqa: E402
 
 
 def test_data_dir_can_be_overridden(tmp_path, monkeypatch):
@@ -156,6 +157,53 @@ def test_restart_gets_the_same_port_while_old_connections_are_in_time_wait():
         sock.close()
 
 
+@pytest.fixture
+def fake_webview(monkeypatch):
+    """Stands in for pywebview, which needs a desktop session: records what the app asks of it."""
+    fake = types.SimpleNamespace(settings={}, created=[], started=[])
+    fake.create_window = lambda *args, **kwargs: fake.created.append((args, kwargs))
+    fake.start = lambda *args, **kwargs: fake.started.append((args, kwargs))
+    menu = types.SimpleNamespace(
+        Menu=lambda title, items: (title, items),
+        MenuAction=lambda title, function: (title, function),
+    )
+    monkeypatch.setitem(sys.modules, "webview", fake)
+    monkeypatch.setitem(sys.modules, "webview.menu", menu)
+    return fake
+
+
+def test_window_keeps_storage_allows_downloads_and_asks_before_closing(tmp_path, fake_webview):
+    window.run("http://127.0.0.1:47615", tmp_path)
+
+    ((args, options),) = fake_webview.created
+    assert args == (paths.APP_NAME, "http://127.0.0.1:47615")
+    assert options["confirm_close"] is True
+    ((menu_title, [(item_title, _open)]),) = options["menu"]
+    assert (menu_title, item_title) == ("File", "Apri cartella dati")
+    assert fake_webview.settings["ALLOW_DOWNLOADS"] is True
+    ((_args, start_options),) = fake_webview.started
+    assert start_options["private_mode"] is False
+    assert start_options["storage_path"] == str(tmp_path / "webview")
+    assert (
+        start_options["localization"]["global.quitConfirmation"] == "Vuoi chiudere Asta la Vista?"
+    )
+
+
+def test_window_refuses_the_internet_explorer_fallback_on_windows(
+    tmp_path, monkeypatch, fake_webview
+):
+    monkeypatch.setattr(window.sys, "platform", "win32")
+    platforms = types.ModuleType("webview.platforms")
+    platforms.winforms = types.SimpleNamespace(renderer="mshtml")
+    monkeypatch.setitem(sys.modules, "webview.platforms", platforms)
+    monkeypatch.setitem(sys.modules, "webview.platforms.winforms", platforms.winforms)
+
+    with pytest.raises(window.MissingWebEngine):
+        window.run("http://127.0.0.1:47615", tmp_path)
+
+    assert fake_webview.created == []
+
+
 def _launch(data_dir: Path, frontend: Path) -> subprocess.Popen:
     environment = {
         **os.environ,
@@ -165,7 +213,7 @@ def _launch(data_dir: Path, frontend: Path) -> subprocess.Popen:
     for name in ("DATABASE_URI", "APP_HOST", "APP_PORT"):
         environment.pop(name, None)
     return subprocess.Popen(
-        [sys.executable, "-m", "asta_la_vista.entrypoints.desktop", "--no-browser", "--no-tray"],
+        [sys.executable, "-m", "asta_la_vista.entrypoints.desktop", "--headless"],
         env=environment,
     )
 
@@ -192,7 +240,7 @@ def test_simultaneous_launches_start_a_single_server(tmp_path, frontend):
     data_dir = tmp_path / "data"  # fresh: both launches would otherwise race on migrations
     first, second = _launch(data_dir, frontend), _launch(data_dir, frontend)
     try:
-        # Either launch may win the lock: the loser opens the browser on the winner and exits.
+        # Either launch may win the lock: the loser finds the winner running and exits.
         deadline = time.monotonic() + 30
         while first.poll() is None and second.poll() is None:
             assert time.monotonic() < deadline, "neither launch handed over to the other"

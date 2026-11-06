@@ -3,7 +3,7 @@
 The first launch takes an exclusive lock on ``instance.lock`` in the data folder, before touching
 the database, and keeps it until it quits; the operating system releases it even after a crash.
 Once its server answers, it writes the port to ``instance.json``. A later launch that cannot get
-the lock waits for that file to point at a live server and then just opens the browser on it.
+the lock waits for that file to point at a live server and then leaves it to that instance.
 """
 
 import json
