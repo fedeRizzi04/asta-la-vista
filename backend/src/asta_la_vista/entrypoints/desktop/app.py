@@ -106,6 +106,7 @@ def configure_environment(data_dir: Path) -> None:
         "API_TITLE": "Asta la Vista API",
         "API_VERSION": "v1",
         "OPENAPI_VERSION": "3.1.0",
+        "UPDATE_CHECK": "true",  # tell the user when a new release is out on GitHub
     }
     for name, value in defaults.items():
         os.environ.setdefault(name, value)

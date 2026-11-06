@@ -18,6 +18,7 @@ def load_settings() -> dict[str, object]:
         "API_TITLE": _required("API_TITLE"),
         "API_VERSION": _required("API_VERSION"),
         "OPENAPI_VERSION": _required("OPENAPI_VERSION"),
+        "UPDATE_CHECK": _flag("UPDATE_CHECK"),
         "OPENAPI_URL_PREFIX": "/api/docs",
         "OPENAPI_SWAGGER_UI_PATH": "/swagger",
         "OPENAPI_SWAGGER_UI_URL": "https://cdn.jsdelivr.net/npm/swagger-ui-dist/",
@@ -40,6 +41,10 @@ def _prepare_database_uri(uri: str) -> str:
     database_path = database_path.resolve()
     database_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     return url.set(database=str(database_path)).render_as_string(hide_password=False)
+
+
+def _flag(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _required(name: str) -> str:

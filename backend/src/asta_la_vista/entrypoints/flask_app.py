@@ -6,6 +6,7 @@ from werkzeug.utils import safe_join
 
 from asta_la_vista import bootstrap, config
 from asta_la_vista.adapters import orm
+from asta_la_vista.adapters.releases import ReleaseChecker
 from asta_la_vista.service_layer.messagebus import MessageBus
 from asta_la_vista.service_layer.unit_of_work import AbstractUnitOfWork
 
@@ -19,6 +20,8 @@ def create_app(
     app.config.from_mapping(test_config if test_config is not None else config.load_settings())
     api = Api(app)
     app.extensions["bus_factory"] = message_bus_factory or bootstrap.bootstrap_factory()
+    if app.config.get("UPDATE_CHECK"):
+        app.extensions["release_checker"] = ReleaseChecker()
 
     from asta_la_vista.entrypoints.api.auctions import blueprint as auctions_blueprint
     from asta_la_vista.entrypoints.api.common import register_error_handlers
