@@ -4,6 +4,9 @@ services:
       context: .
     ports:
       - "127.0.0.1:${HOST_PORT:-5000}:5000"
+    environment:
+      # Set to true to show a banner when a new version is published on GitHub.
+      UPDATE_CHECK: ${UPDATE_CHECK:-false}
     volumes:
       - app-data:/data
 

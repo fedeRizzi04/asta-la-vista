@@ -128,8 +128,14 @@ To back up your data, quit the app and copy the folder.
 
 #### Updating
 
-Download the new version from the Releases page and replace the old app with it. Your data is
-kept: the new version updates the database automatically the first time it starts.
+When a new version is published, a banner at the top of the page tells you, with a link to its
+download page. If you close the banner, it stays hidden until the next version comes out. To
+find out, the app asks GitHub for the latest release at most every few hours. Nothing about you
+or your auctions is sent, and when you are offline the app simply skips the check.
+
+To update, download the new version and replace the old app with it. Your data is kept: the new
+version updates the database automatically the first time it starts. What changed in each
+version is listed in the [changelog](CHANGELOG.md).
 
 ### Docker
 
@@ -151,6 +157,12 @@ HOST_PORT=8080 docker compose up
 
 The SQLite database is stored in the Docker volume `app-data`, so auctions and strategies survive
 `docker compose down` and image rebuilds. To delete them too, see [Uninstalling](#docker-1).
+
+To be told when a new version is available, as the desktop app does, start it with:
+
+```bash
+UPDATE_CHECK=true docker compose up
+```
 
 ### From source
 
@@ -187,8 +199,9 @@ with:
 
 The script applies the migrations, re-syncs the dependencies whenever the lockfiles change, and
 starts the backend and the frontend. The `APP_HOST` and `APP_PORT` settings in `backend/.env`
-are used by both the local server and the frontend proxy. Do not run the script with `sudo`:
-the configuration and the database must belong to your user.
+are used by both the local server and the frontend proxy. Set `UPDATE_CHECK=true` in the same
+file to see the new-version banner. Do not run the script with `sudo`: the configuration and the
+database must belong to your user.
 
 #### Starting the backend manually
 
@@ -352,6 +365,11 @@ it:
 3. starts the server on port 47615, or on any free port if 47615 is taken;
 4. opens your browser and shows the menu bar or tray icon until you quit.
 
+The desktop app also turns on the update check (`UPDATE_CHECK`). `GET /api/version` then adds
+the latest release on GitHub to its answer, and the frontend shows the banner when that release
+is newer. GitHub is asked in the background, at most every 6 hours, and an API request waits for
+it at most 2 seconds. The code is in `backend/src/asta_la_vista/adapters/releases.py`.
+
 The code is in `backend/src/asta_la_vista/entrypoints/desktop/`, and the build recipe is in
 `desktop/asta-la-vista.spec`.
 
@@ -374,7 +392,13 @@ The code is in `backend/src/asta_la_vista/entrypoints/desktop/`, and the build r
 The version number lives in one place: `version` in `backend/pyproject.toml`. The app reads it
 at runtime and shows it in the page footer.
 
+While you work, describe each user-visible change under `## [Unreleased]` in
+[CHANGELOG.md](CHANGELOG.md). To release, turn that heading into the new version and date
+(for example `## [0.2.0] - 2026-11-20`), add an empty `## [Unreleased]` above it, update the
+links at the bottom of the file, then:
+
 ```bash
+./bin/release-notes 0.2.0  # preview the release notes
 cd backend
 uv version --bump minor   # or patch / major: updates pyproject.toml and uv.lock
 cd ..
@@ -385,10 +409,13 @@ git push origin main v0.2.0
 
 Pushing the tag starts the [Release workflow](.github/workflows/release.yml). It:
 
-1. checks that the tag matches the version in `pyproject.toml`;
+1. checks that the tag matches the version in `pyproject.toml`, and that `CHANGELOG.md` has a
+   section for it;
 2. builds the app on Windows and on macOS;
 3. smoke-tests each build;
-4. publishes a GitHub Release with both files and notes generated from the commits.
+4. publishes a GitHub Release with both files, using that `CHANGELOG.md` section as its notes.
+
+Once it is published, the desktop apps already installed show the new-version banner.
 
 The users' databases must survive every update, so:
 
