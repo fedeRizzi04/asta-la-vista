@@ -1,6 +1,6 @@
 # PyInstaller build recipe for the desktop app. Run it through ./bin/build-desktop.
 #
-# macOS  -> dist/desktop/Asta la Vista.app  (menu-bar app, no Dock icon)
+# macOS  -> dist/desktop/Asta la Vista.app
 # Windows -> dist/desktop/AstaLaVista.exe   (single file, no console window)
 #
 # ruff: noqa: F821  (Analysis, PYZ, EXE, COLLECT, BUNDLE and SPECPATH are provided by PyInstaller)
@@ -32,6 +32,8 @@ datas = [
     (str(BACKEND / "migrations"), "migrations"),
     *collect_data_files("asta_la_vista"),  # e.g. the HTML auction report template
     *collect_data_files("flask_smorest"),
+    # pywebview injects these into the page; its PyInstaller hook only collects the Windows DLLs.
+    *collect_data_files("webview", subdir="js"),
     *copy_metadata("asta-la-vista"),  # importlib.metadata.version() reads it at runtime
 ]
 
@@ -47,7 +49,8 @@ a = Analysis(
     pathex=[str(BACKEND / "src")],
     datas=datas,
     hiddenimports=hiddenimports,
-    excludes=["pytest", "tkinter"],
+    # Pillow only draws the icon at build time; openpyxl imports it just for pictures in sheets.
+    excludes=["pytest", "tkinter", "PIL"],
 )
 pyz = PYZ(a.pure)
 
@@ -70,7 +73,6 @@ if sys.platform == "darwin":
         info_plist={
             "CFBundleDisplayName": "Asta la Vista",
             "CFBundleShortVersionString": VERSION,
-            "LSUIElement": True,  # lives in the menu bar only, like the Windows tray icon
             "NSHighResolutionCapable": True,
         },
     )
