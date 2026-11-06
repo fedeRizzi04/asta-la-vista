@@ -24,6 +24,9 @@ AppPublisherURL=https://github.com/fedeRizzi04/asta-la-vista
 ; For a current-user install this is %LOCALAPPDATA%\Programs\Asta la Vista.
 DefaultDirName={autopf}\{#AppName}
 PrivilegesRequired=lowest
+; No folder choice: without administrator rights, a folder like Program Files cannot be written
+; ("Errore 5: Accesso negato"). Updates reuse the folder of the previous installation.
+DisableDirPage=yes
 DisableProgramGroupPage=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
