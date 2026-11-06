@@ -5,7 +5,7 @@
 #   ./bin/smoke-test-desktop <executable> [expected-version]
 #
 # macOS:   ./bin/smoke-test-desktop "dist/desktop/Asta la Vista.app/Contents/MacOS/AstaLaVista"
-# Windows: ./bin/smoke-test-desktop dist/desktop/AstaLaVista.exe   (from Git Bash)
+# Windows: ./bin/smoke-test-desktop dist/desktop/AstaLaVista/AstaLaVista.exe   (from Git Bash)
 
 set -Eeuo pipefail
 
@@ -16,7 +16,7 @@ fi
 
 executable="$1"
 expected_version="${2:-}"
-startup_timeout=120 # a single-file Windows .exe unpacks itself on every launch
+startup_timeout=120 # generous: CI machines can be slow on a first launch
 
 [[ -x "$executable" ]] || { echo "Not an executable: $executable" >&2; exit 1; }
 
@@ -34,7 +34,7 @@ fi
 stop_app() {
   [[ -n "$pid" ]] || return 0
   if [[ "$windows" == true ]]; then
-    # The .exe starts a child process: kill the whole tree through its Windows process id.
+    # Git Bash cannot signal a native program: kill it, children included, by its Windows id.
     local windows_pid
     windows_pid="$(cat "/proc/$pid/winpid" 2>/dev/null || true)"
     if [[ -n "$windows_pid" ]]; then

@@ -18,7 +18,7 @@ def is_frozen() -> bool:
 def resource_root() -> Path:
     """Folder holding ``frontend/`` and ``migrations/``.
 
-    PyInstaller unpacks bundled files into ``sys._MEIPASS``; from a checkout they live in the
+    PyInstaller puts bundled files in ``sys._MEIPASS``; from a checkout they live in the
     repository (the frontend only after ``npm run build``).
     """
     if is_frozen():

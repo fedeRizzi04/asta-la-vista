@@ -1,7 +1,9 @@
 # PyInstaller build recipe for the desktop app. Run it through ./bin/build-desktop.
 #
-# macOS  -> dist/desktop/Asta la Vista.app
-# Windows -> dist/desktop/AstaLaVista.exe   (single file, no console window)
+# macOS   -> dist/desktop/Asta la Vista.app
+# Windows -> dist/desktop/AstaLaVista/AstaLaVista.exe, the folder desktop/installer.iss packs
+#
+# Both are folders rather than a single file: a single-file app unpacks itself on every launch.
 #
 # ruff: noqa: F821  (Analysis, PYZ, EXE, COLLECT, BUNDLE and SPECPATH are provided by PyInstaller)
 
@@ -54,16 +56,17 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
+exe = EXE(
+    pyz,
+    a.scripts,
+    exclude_binaries=True,
+    name="AstaLaVista",
+    console=False,
+    icon=str(ICON),
+)
+app_dir = COLLECT(exe, a.binaries, a.datas, name="AstaLaVista")
+
 if sys.platform == "darwin":
-    exe = EXE(
-        pyz,
-        a.scripts,
-        exclude_binaries=True,
-        name="AstaLaVista",
-        console=False,
-        icon=str(ICON),
-    )
-    app_dir = COLLECT(exe, a.binaries, a.datas, name="AstaLaVista")
     BUNDLE(
         app_dir,
         name="Asta la Vista.app",
@@ -75,14 +78,4 @@ if sys.platform == "darwin":
             "CFBundleShortVersionString": VERSION,
             "NSHighResolutionCapable": True,
         },
-    )
-else:
-    EXE(
-        pyz,
-        a.scripts,
-        a.binaries,
-        a.datas,
-        name="AstaLaVista",
-        console=False,
-        icon=str(ICON),
     )

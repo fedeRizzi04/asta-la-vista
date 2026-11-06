@@ -3,11 +3,16 @@ name: Release
 # Pushing a tag such as v0.2.0 builds the desktop app for Windows and macOS, tests the builds and
 # publishes them in a GitHub Release. The tag must match the version in backend/pyproject.toml,
 # and CHANGELOG.md must have a section for that version: it becomes the release notes.
+#
+# Started by hand (Actions -> Release -> Run workflow, or `gh workflow run release.yml --ref
+# <branch>`), it only builds and tests: the packages are attached to the run, nothing is published.
+# That is how a build gets tried on Windows before it is released.
 
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -30,9 +35,10 @@ jobs:
         id: version
         env:
           TAG: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
         run: |
           version="$(python3 -c 'import tomllib; print(tomllib.load(open("backend/pyproject.toml", "rb"))["project"]["version"])')"
-          if [[ "$TAG" != "v$version" ]]; then
+          if [[ "$REF_TYPE" == tag && "$TAG" != "v$version" ]]; then
             echo "::error::Tag $TAG does not match version $version in backend/pyproject.toml"
             exit 1
           fi
@@ -40,6 +46,7 @@ jobs:
 
       # Checked before the long builds, so a forgotten changelog entry fails in seconds.
       - name: Check the changelog entry
+        if: github.ref_type == 'tag'
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -57,7 +64,7 @@ jobs:
         include:
           - name: windows
             os: windows-latest
-            executable: dist/desktop/AstaLaVista.exe
+            executable: dist/installed/AstaLaVista.exe # installed by the Windows package step
           - name: macos
             os: macos-latest # Apple Silicon
             executable: dist/desktop/Asta la Vista.app/Contents/MacOS/AstaLaVista
@@ -89,14 +96,24 @@ jobs:
       - name: Build the desktop app
         run: ./bin/build-desktop
 
-      - name: Smoke test the build
-        run: ./bin/smoke-test-desktop "${{ matrix.executable }}" "$VERSION"
-
       - name: Package (Windows)
         if: matrix.name == 'windows'
+        shell: pwsh
         run: |
-          mkdir -p release
-          cp dist/desktop/AstaLaVista.exe "release/AstaLaVista-$VERSION-windows.exe"
+          # Inno Setup comes with the runner image today; install it if a future image drops it.
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y }
+          & $iscc "/DVersion=$env:VERSION" desktop\installer.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force release | Out-Null
+          Move-Item dist\installer\*.exe release\
+          # Install it as a user would, so the smoke test below checks the installed copy.
+          $setup = Start-Process -Wait -PassThru "release\AstaLaVista-$env:VERSION-windows-setup.exe" `
+            -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/CURRENTUSER", "/DIR=$PWD\dist\installed"
+          if ($setup.ExitCode) { exit $setup.ExitCode }
+
+      - name: Smoke test the build
+        run: ./bin/smoke-test-desktop "${{ matrix.executable }}" "$VERSION"
 
       - name: Package (macOS)
         if: matrix.name == 'macos'
@@ -116,6 +133,8 @@ jobs:
   release:
     name: Publish the release
     needs: [version, build]
+    # Not on a manual run, even one started on a tag (`gh workflow run --ref v1.2.3`).
+    if: github.event_name == 'push' && github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
       contents: write
