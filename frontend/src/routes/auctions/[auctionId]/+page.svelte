@@ -8,6 +8,7 @@
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
+	import { saveFile } from '$lib/api';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { press } from '$lib/actions/press';
 	import { pushErrorToast } from '$lib/toast.svelte';
@@ -15,6 +16,7 @@
 		amendPurchase,
 		cancelPurchase,
 		completeAuction,
+		exportAuctionReport,
 		getAuction,
 		recordPurchase,
 		reopenAuction,
@@ -320,8 +322,14 @@
 		return auctionId;
 	}
 
-	function downloadReport(): void {
-		window.location.assign(`/api/auctions/${currentAuctionId()}/report`);
+	// Through fetch, like the strategy export: the app window has no Back button, so navigating
+	// to the report (HTML, which the window could display) must never replace the interface.
+	async function downloadReport(): Promise<void> {
+		try {
+			saveFile(await exportAuctionReport(currentAuctionId()));
+		} catch (caught) {
+			pushErrorToast(caught);
+		}
 	}
 </script>
 
