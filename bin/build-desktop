@@ -7,6 +7,10 @@
 set -Eeuo pipefail
 
 project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+# Git Bash on Windows: use C:/... paths, which both bash and native Windows programs understand.
+if command -v cygpath >/dev/null 2>&1; then
+  project_root="$(cygpath -m "$project_root")"
+fi
 skip_frontend=false
 
 case "${1:-}" in

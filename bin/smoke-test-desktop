@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# Starts a built desktop executable with a throwaway data folder, checks that it migrates the
+# database and serves the API and the frontend, then stops it.
+#
+#   ./bin/smoke-test-desktop <executable> [expected-version]
+#
+# macOS:   ./bin/smoke-test-desktop "dist/desktop/Asta la Vista.app/Contents/MacOS/AstaLaVista"
+# Windows: ./bin/smoke-test-desktop dist/desktop/AstaLaVista.exe   (from Git Bash)
+
+set -Eeuo pipefail
+
+if [[ $# -lt 1 || "$1" == "-h" || "$1" == "--help" ]]; then
+  sed -n '2,8p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  [[ $# -ge 1 ]] && exit 0 || exit 2
+fi
+
+executable="$1"
+expected_version="${2:-}"
+startup_timeout=120 # a single-file Windows .exe unpacks itself on every launch
+
+[[ -x "$executable" ]] || { echo "Not an executable: $executable" >&2; exit 1; }
+
+data_dir="$(mktemp -d)"
+pid=""
+
+case "$(uname -s)" in
+  MINGW* | MSYS* | CYGWIN*) windows=true ;;
+  *) windows=false ;;
+esac
+if [[ "$windows" == true ]]; then
+  data_dir="$(cygpath -m "$data_dir")" # the .exe is a native program: give it a C:/... path
+fi
+
+stop_app() {
+  [[ -n "$pid" ]] || return 0
+  if [[ "$windows" == true ]]; then
+    # The .exe starts a child process: kill the whole tree through its Windows process id.
+    local windows_pid
+    windows_pid="$(cat "/proc/$pid/winpid" 2>/dev/null || true)"
+    if [[ -n "$windows_pid" ]]; then
+      taskkill //F //T //PID "$windows_pid" >/dev/null 2>&1 || true
+    else
+      taskkill //F //T //IM "$(basename "$executable")" >/dev/null 2>&1 || true
+    fi
+  else
+    kill -TERM "$pid" 2>/dev/null || true
+  fi
+  wait "$pid" 2>/dev/null || true
+  pid=""
+}
+
+cleanup() {
+  local status=$?
+  stop_app
+  if [[ $status -ne 0 && -f "$data_dir/asta-la-vista.log" ]]; then
+    echo "--- asta-la-vista.log ---" >&2
+    cat "$data_dir/asta-la-vista.log" >&2
+  fi
+  rm -rf "$data_dir" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+fail() {
+  echo "Smoke test failed: $*" >&2
+  exit 1
+}
+
+echo "Starting $executable (data folder: $data_dir)..."
+ASTA_LA_VISTA_DATA_DIR="$data_dir" "$executable" --no-browser --no-tray &
+pid=$!
+
+# The app writes its port to instance.json once its server answers.
+url=""
+for ((second = 0; second < startup_timeout; second++)); do
+  kill -0 "$pid" 2>/dev/null || fail "the app exited during startup"
+  if [[ -f "$data_dir/instance.json" ]]; then
+    port="$(sed -E 's/.*"port": *([0-9]+).*/\1/' "$data_dir/instance.json")"
+    url="http://127.0.0.1:$port"
+    break
+  fi
+  sleep 1
+done
+[[ -n "$url" ]] || fail "no answer after ${startup_timeout}s"
+echo "Running on $url"
+
+health="$(curl -fsS "$url/api/health")" || fail "/api/health did not answer"
+[[ "$health" == *'"status"'*'"ok"'* ]] || fail "unexpected /api/health response: $health"
+
+version="$(curl -fsS "$url/api/version")" || fail "/api/version did not answer"
+echo "Version: $version"
+if [[ -n "$expected_version" && "$version" != *"\"$expected_version\""* ]]; then
+  fail "expected version $expected_version"
+fi
+
+curl -fsS "$url/api/players" >/dev/null || fail "/api/players did not answer (database not migrated?)"
+curl -fsS "$url/" | grep -qi "<html" || fail "the frontend is not served"
+[[ -f "$data_dir/asta-la-vista.sqlite3" ]] || fail "the database file was not created"
+
+stop_app
+if [[ "$windows" == false && -f "$data_dir/instance.json" ]]; then
+  fail "instance.json is still there: the app did not shut down cleanly"
+fi
+
+echo "Smoke test passed."

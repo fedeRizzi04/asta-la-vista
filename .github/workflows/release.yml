@@ -1,0 +1,130 @@
+name: Release
+
+# Pushing a tag such as v0.2.0 builds the desktop app for Windows and macOS, tests the builds and
+# publishes them in a GitHub Release. The tag must match the version in backend/pyproject.toml.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Check the version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Compare the tag with pyproject.toml
+        id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("backend/pyproject.toml", "rb"))["project"]["version"])')"
+          if [[ "$TAG" != "v$version" ]]; then
+            echo "::error::Tag $TAG does not match version $version in backend/pyproject.toml"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build (${{ matrix.name }})
+    needs: version
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            executable: dist/desktop/AstaLaVista.exe
+          - name: macos
+            os: macos-latest # Apple Silicon
+            executable: dist/desktop/Asta la Vista.app/Contents/MacOS/AstaLaVista
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.21"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Build the desktop app
+        run: ./bin/build-desktop
+
+      - name: Smoke test the build
+        run: ./bin/smoke-test-desktop "${{ matrix.executable }}" "$VERSION"
+
+      - name: Package (Windows)
+        if: matrix.name == 'windows'
+        run: |
+          mkdir -p release
+          cp dist/desktop/AstaLaVista.exe "release/AstaLaVista-$VERSION-windows.exe"
+
+      - name: Package (macOS)
+        if: matrix.name == 'macos'
+        run: |
+          mkdir -p release
+          # ditto keeps the bundle's symlinks, permissions and signature, unlike a plain zip.
+          ditto -c -k --keepParent "dist/desktop/Asta la Vista.app" \
+            "release/AstaLaVista-$VERSION-macos.zip"
+
+      - name: Upload the package
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-${{ matrix.name }}
+          path: release/
+          if-no-files-found: error
+
+  release:
+    name: Publish the release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the packages
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: desktop-*
+          path: release
+          merge-multiple: true
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          ls -l release
+          gh release create "$TAG" release/* \
+            --title "Asta la Vista $VERSION" \
+            --generate-notes \
+            --verify-tag
