@@ -8,7 +8,8 @@
 	import UpdateBanner from '$lib/components/UpdateBanner.svelte';
 	import { press } from '$lib/actions/press';
 	import { slidingIndicator } from '$lib/actions/slidingIndicator.svelte';
-	import { getVersion, type AppVersion } from '$lib/system';
+	import type { AppVersion } from '$lib/system';
+	import { watchVersion } from '$lib/versionWatcher';
 	import '../app.css';
 
 	let { children } = $props();
@@ -39,11 +40,7 @@
 	onMount(() => {
 		theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 
-		getVersion()
-			.then((version) => (appVersion = version))
-			.catch(() => {
-				// The version is informative only: a failure must not disturb the page.
-			});
+		const stopWatchingVersion = watchVersion((version) => (appVersion = version));
 
 		function onScroll(): void {
 			scrolled = window.scrollY > 4;
@@ -67,6 +64,7 @@
 		return () => {
 			window.removeEventListener('scroll', onScroll);
 			headerObserver.disconnect();
+			stopWatchingVersion();
 		};
 	});
 

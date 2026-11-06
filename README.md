@@ -367,8 +367,11 @@ it:
 
 The desktop app also turns on the update check (`UPDATE_CHECK`). `GET /api/version` then adds
 the latest release on GitHub to its answer, and the frontend shows the banner when that release
-is newer. GitHub is asked in the background, at most every 6 hours, and an API request waits for
-it at most 2 seconds. The code is in `backend/src/asta_la_vista/adapters/releases.py`.
+is newer. GitHub is asked in the background, at most every 6 hours (every minute after a failure,
+such as being offline), and an API request waits for it at most 2 seconds. When the answer comes
+later, the page still gets it: it asks again after a few seconds, every 15 minutes, when you come
+back to the tab and when the computer goes back online. The code is in
+`backend/src/asta_la_vista/adapters/releases.py` and `frontend/src/lib/versionWatcher.ts`.
 
 The code is in `backend/src/asta_la_vista/entrypoints/desktop/`, and the build recipe is in
 `desktop/asta-la-vista.spec`.

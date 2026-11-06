@@ -22,7 +22,9 @@ RELEASES_PAGE = f"https://github.com/{REPOSITORY}/releases/"
 REQUEST_TIMEOUT = 5.0
 # GitHub allows 60 anonymous API requests per hour and releases are rare: ask a few times a day.
 RECHECK_AFTER_SUCCESS = 6 * 60 * 60.0
-RECHECK_AFTER_FAILURE = 30 * 60.0
+# After a failure (usually: offline) retry soon, so a reconnection is noticed quickly. GitHub is
+# asked only when the page asks the server, at most every minute or so, well within the limit.
+RECHECK_AFTER_FAILURE = 60.0
 
 log = logging.getLogger(__name__)
 
