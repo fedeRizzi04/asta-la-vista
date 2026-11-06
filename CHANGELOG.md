@@ -9,6 +9,15 @@ who use the app.
 
 ## [Unreleased]
 
+### Changed
+
+- On Windows, the app now comes with an installer: it asks where to put the app, adds it to the
+  Start menu (and to the desktop, if you want), and lets you uninstall it from **Settings →
+  Apps**. To update, run the installer of the new version.
+- The app opens faster on Windows, because it is no longer unpacked at every launch.
+- If you used an earlier version on Windows, delete its `AstaLaVista-…-windows.exe` after
+  installing this one: your data stays where it is.
+
 ## [0.3.0] - 2026-11-06
 
 ### Changed

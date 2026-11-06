@@ -60,7 +60,7 @@ There are three ways to run Asta la Vista. They all run the same application.
 Download the latest version from the
 [**Releases page**](https://github.com/fedeRizzi04/asta-la-vista/releases/latest):
 
-- **Windows**: `AstaLaVista-<version>-windows.exe`
+- **Windows**: `AstaLaVista-<version>-windows-setup.exe`
 - **macOS (Apple Silicon)**: `AstaLaVista-<version>-macos.zip`
 
 The app opens in its own window, served by a small local server that runs on your computer.
@@ -73,12 +73,14 @@ computer warns you the first time you open it. This is expected. You only need t
 
 1. Your browser may say the file "isn't commonly downloaded". Choose **Keep** (in Edge: **⋯ →
    Keep → Show more → Keep anyway**).
-2. Move `AstaLaVista-<version>-windows.exe` somewhere convenient, for example your Desktop or
-   your Documents folder.
-3. Double-click it. If you see **"Windows protected your PC"**, click **More info**, then
+2. Double-click it. If you see **"Windows protected your PC"**, click **More info**, then
    **Run anyway**.
+3. The installer asks where to install the app (by default in your user folder, so no
+   administrator password is needed) and whether to add an icon to the desktop. At the end it
+   can open the app.
 
-Opening the app takes a few seconds, because Windows unpacks the program each time it starts.
+From then on, open **Asta la Vista** from the Start menu, like any other app. You can delete
+the downloaded installer.
 
 The window uses Microsoft Edge WebView2, which is already part of Windows 11 and of an updated
 Windows 10. If your PC lacks it, the app tells you so: install it from
@@ -140,8 +142,9 @@ download page. If you close the banner, it stays hidden until the next version c
 find out, the app asks GitHub for the latest release at most every few hours. Nothing about you
 or your auctions is sent, and when you are offline the app simply skips the check.
 
-To update, quit the app, download the new version and replace the old app with it. Your data is
-kept: the new version updates the database automatically the first time it starts. What changed in each
+To update, quit the app and install the new version: on Windows, run its installer, which
+replaces the old version where it is; on macOS, replace the old app in **Applications**. Your
+data is kept: the new version updates the database automatically the first time it starts. What changed in each
 version is listed in the [changelog](CHANGELOG.md).
 
 ### Docker
@@ -235,13 +238,15 @@ are forwarded to the Flask backend.
 #### Building the desktop app yourself
 
 You can build the desktop app for the system you are on (macOS builds the `.app`, Windows the
-`.exe`) with:
+`AstaLaVista` folder with `AstaLaVista.exe` inside) with:
 
 ```bash
 ./bin/build-desktop
 ```
 
-The result is in `dist/desktop/`. On macOS, open it with
+The result is in `dist/desktop/`. On Windows, the release workflow then packs that folder into
+the installer with [Inno Setup](https://jrsoftware.org/isinfo.php):
+`iscc /DVersion=<version> desktop\installer.iss`. On macOS, open it with
 `open "dist/desktop/Asta la Vista.app"`. To check a build automatically, run:
 
 ```bash
@@ -322,7 +327,8 @@ follow each of them.
 2. **Delete the app**:
    - macOS: drag **Asta la Vista** from **Applications** to the Trash, then empty the Trash. Also
      delete the downloaded `.zip`.
-   - Windows: delete `AstaLaVista-<version>-windows.exe`.
+   - Windows: open **Settings → Apps → Installed apps**, find **Asta la Vista**, and choose
+     **⋯ → Uninstall**. This keeps your data, which step 3 deletes.
 3. **Delete your data** (database, log and instance files). This cannot be undone, so back up
    the folder first if you might want your auctions later.
    - macOS: in Finder, choose **Go → Go to Folder…**, type
@@ -346,9 +352,7 @@ follow each of them.
      Remove-Item -Recurse -Force "$env:APPDATA\Asta la Vista"
      ```
 
-Asta la Vista writes nothing else on your computer, with one small exception: if the Windows
-app ever crashed, Windows may have left a folder named `_MEI` followed by numbers in `%TEMP%`;
-you can delete it.
+Asta la Vista writes nothing else on your computer.
 
 ### Built from source
 
@@ -420,8 +424,8 @@ migrations. The three ways of running it differ only in what surrounds that appl
 | Desktop | waitress, on `127.0.0.1` only | your user data folder | build bundled in the executable, served by Flask |
 
 The desktop app is built with [PyInstaller](https://pyinstaller.org/), which packages Python,
-the backend, the migrations and the compiled frontend into a single executable. When it starts,
-it:
+the backend, the migrations and the compiled frontend into one folder: the `.app` on macOS, the
+folder the installer copies on Windows. When it starts, it:
 
 1. makes sure it is the only copy running; if another copy is running, it brings that copy's
    window to the front (and warns if that copy is an older version) and exits;
@@ -494,14 +498,17 @@ Before tagging, build the app (`./bin/build-desktop`), open it with a separate d
 - opening the app a second time brings the window to the front;
 - closing the window asks for confirmation, then quits the app.
 
-Windows needs the same check, on the `.exe` built by the workflow below.
+Windows needs the same check, on the installer. Start the [Release
+workflow](.github/workflows/release.yml) by hand on your branch, from **Actions → Release → Run
+workflow** or with `gh workflow run release.yml --ref <branch>`: it builds and tests both apps
+without publishing anything. Then download `desktop-windows` from the run's page.
 
 Pushing the tag starts the [Release workflow](.github/workflows/release.yml). It:
 
 1. checks that the tag matches the version in `pyproject.toml`, and that `CHANGELOG.md` has a
    section for it;
-2. builds the app on Windows and on macOS;
-3. smoke-tests each build;
+2. builds the app on Windows and on macOS, and the installer on Windows;
+3. installs the Windows app with that installer, then smoke-tests each build;
 4. publishes a GitHub Release with both files, using that `CHANGELOG.md` section as its notes.
 
 Once it is published, the desktop apps already installed show the new-version banner.
