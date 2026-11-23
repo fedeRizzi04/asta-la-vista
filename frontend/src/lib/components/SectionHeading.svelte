@@ -32,10 +32,6 @@
 		margin-bottom: 0.8rem;
 	}
 
-	.section-heading .eyebrow {
-		margin-bottom: 0.5rem;
-	}
-
 	.section-heading h2 {
 		margin: 0;
 		font-size: 1.15rem;

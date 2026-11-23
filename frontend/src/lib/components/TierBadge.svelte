@@ -22,12 +22,12 @@
 		gap: 0.4rem;
 		max-width: 100%;
 		padding: 0.22rem 0.45rem 0.22rem 0.3rem;
-		border: 1px solid var(--tier-badge-border);
-		border-radius: 0.38rem;
+		border: var(--bw) solid var(--tier-badge-border);
+		border-radius: var(--radius-xs);
 		background: var(--tier-badge-bg);
 		color: var(--text);
 		font-size: 0.78rem;
-		font-weight: 750;
+		font-weight: 700;
 		line-height: 1.2;
 		text-align: left;
 	}

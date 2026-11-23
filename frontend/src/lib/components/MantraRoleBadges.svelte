@@ -32,7 +32,7 @@
 		place-items: center;
 		padding: 0.08rem 0.32rem;
 		border: 1px solid var(--border);
-		border-radius: 999px;
+		border-radius: var(--radius-xs);
 		background: var(--muted-bg);
 		color: var(--subdued);
 		font-size: 0.68rem;

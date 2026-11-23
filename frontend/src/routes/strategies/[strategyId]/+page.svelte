@@ -312,7 +312,6 @@
 
 <section class="detail-heading">
 	<div>
-		<p class="eyebrow">Modifica strategia</p>
 		<h1>{strategy?.name ?? 'Strategia'}</h1>
 	</div>
 	<form onsubmit={submitName}>
@@ -540,25 +539,11 @@
 {/if}
 
 <style>
-	.back-link {
-		display: inline-block;
-		margin-bottom: 1.5rem;
-		color: var(--muted);
-		font-size: 0.84rem;
-		font-weight: 650;
-	}
-
 	.detail-heading {
 		display: flex;
 		align-items: flex-end;
 		justify-content: space-between;
 		gap: 3rem;
-	}
-
-	.detail-heading h1 {
-		margin: 0;
-		font-size: clamp(2rem, 4vw, 3.5rem);
-		letter-spacing: -0.045em;
 	}
 
 	.detail-heading form {
@@ -579,53 +564,8 @@
 		gap: 0.55rem;
 	}
 
-	input:not([type='color']),
-	select {
-		min-width: 0;
-		height: 2.5rem;
-		padding: 0 0.7rem;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.4rem;
-		background: var(--input-bg);
-		color: inherit;
-		font: inherit;
-	}
-
 	.inline-fields input {
 		flex: 1;
-	}
-
-	input[type='color'] {
-		width: 2.75rem;
-		height: 2.5rem;
-		padding: 0.2rem;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.4rem;
-		background: var(--input-bg);
-	}
-
-	button {
-		min-height: 2.5rem;
-		padding: 0 0.9rem;
-		border: 1px solid var(--primary);
-		border-radius: 0.42rem;
-		background: var(--primary);
-		color: var(--on-primary);
-		font: inherit;
-		font-size: 0.82rem;
-		font-weight: 700;
-		cursor: pointer;
-	}
-
-	button:disabled {
-		cursor: not-allowed;
-		opacity: 0.45;
-	}
-
-	button.danger {
-		border-color: transparent;
-		background: transparent;
-		color: var(--error-text);
 	}
 
 	/* Completion feedback (§Feedback comes in four kinds): every field autosaves on its own,
@@ -664,25 +604,14 @@
 	   scrolling back up — the tier/player panels below all depend on it. */
 	.role-tabs {
 		position: sticky;
-		top: var(--header-height, 4.5rem);
+		top: var(--header-height);
 		z-index: 80;
 		display: flex;
 		gap: 0.4rem;
-		margin-top: 1.75rem;
-		padding-top: 0.5rem;
+		margin-top: 1.5rem;
+		padding: 0.5rem 0 0.4rem;
 		background: var(--page-bg);
 		border-bottom: 1px solid var(--border);
-	}
-
-	.role-tabs button {
-		border: 0;
-		border-radius: 0;
-		background: transparent;
-		color: var(--subdued);
-	}
-
-	.role-tabs button.active {
-		color: var(--primary);
 	}
 
 	.panel {
@@ -690,7 +619,7 @@
 	}
 
 	.detail-heading + .panel {
-		margin-top: 3rem;
+		margin-top: 1.5rem;
 	}
 
 	.tier-form input:not([type='color']) {
@@ -711,7 +640,7 @@
 		gap: 0.65rem;
 		padding: 0.6rem;
 		border: 1px solid var(--border);
-		border-radius: 0.5rem;
+		border-radius: var(--radius-sm);
 		background: var(--input-bg);
 		transition:
 			box-shadow 180ms ease,
@@ -725,7 +654,7 @@
 		position: relative;
 		z-index: 5;
 		border-color: var(--border-hover);
-		box-shadow: 0 18px 32px -12px rgb(0 0 0 / 30%);
+		box-shadow: var(--shadow-sm);
 		cursor: grabbing;
 	}
 
@@ -736,7 +665,7 @@
 		min-height: 2.1rem;
 		padding: 0;
 		border-color: var(--border-strong);
-		border-radius: 0.4rem;
+		border-radius: var(--radius-sm);
 		background: var(--input-bg);
 		color: var(--subdued);
 		font-size: 1rem;
@@ -761,7 +690,7 @@
 		margin-top: 1rem;
 		padding: 1rem;
 		border: 1px dashed var(--border-strong);
-		border-radius: 0.5rem;
+		border-radius: var(--radius-sm);
 		color: var(--subdued);
 		font-size: 0.85rem;
 	}
@@ -781,9 +710,9 @@
 
 	.tier-column {
 		flex: 0 0 min(17.5rem, calc(100vw - 4rem));
-		border: 1px solid var(--border);
+		border: var(--bw) solid var(--line);
 		border-top: 0.35rem solid var(--tier-color);
-		border-radius: 0.45rem;
+		border-radius: var(--radius-sm);
 		background: var(--surface);
 	}
 

@@ -99,7 +99,6 @@
 </svelte:head>
 
 <section class="page-heading">
-	<p class="eyebrow">Gestione aste</p>
 	<h1>Aste</h1>
 	<p>Crea una nuova asta Classic oppure riprendi rapidamente quella in corso.</p>
 </section>
@@ -179,7 +178,9 @@
 						<div>
 							<div class="auction-title">
 								<h3>{auction.name}</h3>
-								<span data-status={auction.status}>{statusLabels[auction.status]}</span>
+								<span class="status-badge" data-status={auction.status}
+									>{statusLabels[auction.status]}</span
+								>
 							</div>
 							<p>{auction.participant_count} partecipanti · {auction.purchase_count} acquisti</p>
 							<strong>{auction.initial_credits} crediti iniziali</strong>
@@ -194,8 +195,10 @@
 							>
 								Elimina
 							</button>
-							<a use:press href={resolve('/auctions/[auctionId]', { auctionId: auction.id })}
-								>Apri</a
+							<a
+								class="button-link"
+								use:press
+								href={resolve('/auctions/[auctionId]', { auctionId: auction.id })}>Apri</a
 							>
 						</div>
 					</article>
@@ -211,7 +214,7 @@
 		grid-template-columns: minmax(360px, 0.8fr) minmax(420px, 1.2fr);
 		align-items: start;
 		gap: 2rem;
-		margin-top: 3rem;
+		margin-top: 1.5rem;
 	}
 
 	.auction-form {
@@ -230,58 +233,6 @@
 		margin-bottom: 0.4rem;
 		font-size: 0.76rem;
 		font-weight: 700;
-	}
-
-	input,
-	select,
-	textarea {
-		width: 100%;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.4rem;
-		background: var(--input-bg);
-		color: inherit;
-		font: inherit;
-	}
-
-	input,
-	select {
-		height: 2.5rem;
-		padding: 0 0.7rem;
-	}
-
-	textarea {
-		padding: 0.65rem 0.7rem;
-		resize: vertical;
-		line-height: 1.45;
-	}
-
-	button,
-	.actions a {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 2.65rem;
-		padding: 0 1rem;
-		border: 1px solid var(--primary);
-		border-radius: 0.45rem;
-		background: var(--primary);
-		color: var(--on-primary);
-		font: inherit;
-		font-size: 0.86rem;
-		font-weight: 700;
-		text-decoration: none;
-		cursor: pointer;
-	}
-
-	button:disabled {
-		cursor: not-allowed;
-		opacity: 0.5;
-	}
-
-	button.danger {
-		border-color: transparent;
-		background: transparent;
-		color: var(--error-text);
 	}
 
 	.auction-title {
@@ -303,7 +254,7 @@
 		gap: 1.5rem;
 		padding: 1.15rem;
 		border: 1px solid var(--border);
-		border-radius: 0.65rem;
+		border-radius: var(--radius-sm);
 		background: var(--surface);
 		transition: border-color 140ms ease;
 	}
@@ -321,25 +272,6 @@
 	.auction-title h3 {
 		margin: 0;
 		font-size: 1rem;
-	}
-
-	.auction-title span {
-		padding: 0.25rem 0.5rem;
-		border-radius: 999px;
-		background: var(--status-bg);
-		color: var(--status-text);
-		font-size: 0.7rem;
-		font-weight: 750;
-	}
-
-	.auction-title span[data-status='live'] {
-		background: var(--live-bg);
-		color: var(--live-text);
-	}
-
-	.auction-title span[data-status='completed'] {
-		background: var(--completed-bg);
-		color: var(--completed-text);
 	}
 
 	.auction-list p {

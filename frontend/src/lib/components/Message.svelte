@@ -23,7 +23,7 @@
 		margin-top: 1.5rem;
 		padding: 0.85rem 1rem;
 		border: 1px solid var(--error-border);
-		border-radius: 0.5rem;
+		border-radius: var(--radius-sm);
 		background: var(--error-bg);
 		color: var(--error-text);
 		font-size: 0.9rem;

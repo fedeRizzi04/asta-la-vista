@@ -9,6 +9,11 @@ who use the app.
 
 ## [Unreleased]
 
+### Changed
+
+- Asta la Vista has a new sticker-inspired look in both themes, with pastel role badges and
+  bundled Bricolage Grotesque and Atkinson Hyperlegible fonts that work offline.
+
 ## [0.4.1] - 2026-11-06
 
 ### Fixed

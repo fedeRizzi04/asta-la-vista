@@ -340,12 +340,11 @@
 
 <header class="auction-heading">
 	<div>
-		<p class="eyebrow">Asta Classic</p>
 		<h1>{auction?.name ?? 'Asta'}</h1>
 	</div>
 	{#if auction}
 		<div class="status-actions">
-			<span data-status={auction.status}
+			<span class="status-badge" data-status={auction.status}
 				>{auction.status === 'draft'
 					? 'Da iniziare'
 					: auction.status === 'live'
@@ -389,7 +388,7 @@
 		</section>
 	{:else if auction.status === 'live'}
 		<div class="registry-trigger-row">
-			<button type="button" class="registry-trigger" use:press onclick={openRegistry}>
+			<button type="button" use:press onclick={openRegistry}>
 				Apri registro acquisti{allPurchases.length > 0 ? ` (${allPurchases.length})` : ''}
 			</button>
 		</div>
@@ -511,7 +510,8 @@
 													(tier) => tier.id === strategyEntry?.tier_id
 												)}
 												<div class="purchase-row">
-													<span class="role-badge">{purchase.role}</span><span class="purchase-name"
+													<span class="role-badge" data-role={purchase.role}>{purchase.role}</span
+													><span class="purchase-name"
 														><strong>{purchase.player_name}</strong><small
 															>{purchase.team}
 															<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
@@ -770,7 +770,8 @@
 										>Annulla</button
 									>
 								{:else}
-									<span class="role-badge">{purchase.role}</span><span class="purchase-name"
+									<span class="role-badge" data-role={purchase.role}>{purchase.role}</span><span
+										class="purchase-name"
 										><strong>{purchase.player_name}</strong><small
 											>{purchase.team}
 											<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
@@ -800,13 +801,6 @@
 {/if}
 
 <style>
-	.back-link {
-		display: inline-block;
-		margin-bottom: 1.5rem;
-		color: var(--muted);
-		font-size: 0.84rem;
-		font-weight: 650;
-	}
 	.auction-heading,
 	.status-actions,
 	.team-card header,
@@ -822,56 +816,18 @@
 	.auction-heading {
 		gap: 2rem;
 	}
-	.auction-heading h1 {
-		margin: 0;
-		font-size: clamp(2rem, 4vw, 3.5rem);
-		letter-spacing: -0.045em;
-	}
 	.status-actions {
 		gap: 0.7rem;
-	}
-	.status-actions > span {
-		padding: 0.35rem 0.65rem;
-		border-radius: 999px;
-		background: var(--live-bg);
-		color: var(--live-text);
-		font-size: 0.72rem;
-		font-weight: 750;
-	}
-	.status-actions > span[data-status='completed'] {
-		background: var(--completed-bg);
-		color: var(--completed-text);
 	}
 	.team-card {
 		container-type: inline-size;
 		container-name: team-card;
-		border: 1px solid var(--border);
-		border-radius: 0.7rem;
+		border: var(--bw) solid var(--line);
+		border-radius: var(--radius);
 		background: var(--surface);
 	}
 	.panel {
 		margin-top: 2rem;
-	}
-	button {
-		min-height: 2.5rem;
-		padding: 0 0.9rem;
-		border: 1px solid var(--primary);
-		border-radius: 0.42rem;
-		background: var(--primary);
-		color: var(--on-primary);
-		font: inherit;
-		font-size: 0.82rem;
-		font-weight: 700;
-		cursor: pointer;
-	}
-	button.secondary {
-		border-color: var(--border-strong);
-		background: var(--input-bg);
-		color: var(--text);
-	}
-	button:disabled {
-		cursor: not-allowed;
-		opacity: 0.45;
 	}
 	.draft-summary h2 {
 		margin: 0;
@@ -887,7 +843,7 @@
 	.slot-summary span,
 	.slots span {
 		padding: 0.35rem 0.55rem;
-		border-radius: 0.35rem;
+		border-radius: var(--radius-xs);
 		background: var(--muted-bg);
 		font-size: 0.76rem;
 	}
@@ -904,20 +860,9 @@
 		font-size: 0.74rem;
 		font-weight: 700;
 	}
-	input,
-	select {
-		width: 100%;
-		height: 2.5rem;
-		padding: 0 0.65rem;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.4rem;
-		background: var(--input-bg);
-		color: inherit;
-		font: inherit;
-	}
 	.selected-player {
 		padding: 0.5rem 0.7rem;
-		border-radius: 0.4rem;
+		border-radius: var(--radius-sm);
 		background: var(--primary-soft);
 		color: var(--primary-soft-text);
 		font-size: 0.82rem;
@@ -929,7 +874,7 @@
 		margin-top: 0.8rem;
 		padding: 0.8rem;
 		border: 1px solid var(--border);
-		border-radius: 0.45rem;
+		border-radius: var(--radius-sm);
 		background: var(--input-bg);
 	}
 	.called-player-strategy > div {
@@ -966,6 +911,7 @@
 		border-color: var(--border);
 		background: var(--input-bg);
 		color: var(--text);
+		box-shadow: none;
 		text-align: left;
 	}
 	.search-results span {
@@ -1022,7 +968,7 @@
 	.maximum-bid {
 		margin: 0.7rem 0;
 		padding: 0.6rem;
-		border-radius: 0.4rem;
+		border-radius: var(--radius-sm);
 		background: var(--primary-soft);
 		color: var(--primary-soft-text);
 		font-size: 0.78rem;
@@ -1042,20 +988,9 @@
 	}
 	.purchase-group {
 		padding: 0.25rem 0.45rem;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.55rem;
-	}
-	.purchase-group[data-role='P'] {
-		background: var(--goalkeeper-bg);
-	}
-	.purchase-group[data-role='D'] {
-		background: var(--defender-bg);
-	}
-	.purchase-group[data-role='C'] {
-		background: var(--midfielder-bg);
-	}
-	.purchase-group[data-role='A'] {
-		background: var(--forward-bg);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		background: var(--input-bg);
 	}
 	.purchase-row {
 		display: grid;
@@ -1079,22 +1014,13 @@
 	}
 	.registry-participant {
 		overflow: hidden;
-		font-weight: 650;
+		font-weight: 700;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.purchase-row input,
 	.purchase-row select {
-		height: 2rem;
-	}
-	.role-badge {
-		display: grid;
-		place-items: center;
-		width: 1.5rem;
-		height: 1.5rem;
-		border-radius: 0.3rem;
-		background: var(--muted-bg);
-		font-weight: 800;
+		min-height: 2rem;
 	}
 	.purchase-name {
 		display: grid;
@@ -1147,8 +1073,8 @@
 		display: flex;
 		flex-direction: column;
 		flex: 0 0 min(17.5rem, calc(100vw - 4rem));
-		border: 1px solid var(--border);
-		border-radius: 0.45rem;
+		border: var(--bw) solid var(--line);
+		border-radius: var(--radius-sm);
 		background: var(--surface);
 	}
 	.tier-heading {
@@ -1176,7 +1102,7 @@
 		width: 100%;
 		padding: 0;
 		border: 0;
-		border-radius: 0.38rem;
+		border-radius: var(--radius-xs);
 		background: none;
 		font: inherit;
 		color: inherit;
@@ -1185,18 +1111,17 @@
 	}
 	.tier-player-button:disabled {
 		cursor: default;
+		opacity: 1;
 	}
-	.tier-player-button:not(:disabled):hover,
-	.tier-player-button:not(:disabled):focus-visible {
-		outline: 2px solid var(--primary-text);
-		outline-offset: 1px;
+	.tier-player-button:not(:disabled):hover:not(:focus-visible) {
+		outline: 1px solid var(--border-hover);
 	}
 	.catalog-section {
 		margin-top: 3rem;
 	}
 	.catalog-section details {
-		border: 1px solid var(--border);
-		border-radius: 0.7rem;
+		border: var(--bw) solid var(--line);
+		border-radius: var(--radius);
 		background: var(--surface);
 	}
 	.catalog-section summary {
@@ -1211,12 +1136,8 @@
 		display: grid;
 		gap: 0.2rem;
 	}
-	.catalog-section summary .eyebrow {
-		margin: 0;
-		font-size: 0.65rem;
-	}
 	.catalog-section summary strong {
-		font-size: 1.1rem;
+		font: 800 1.1rem/1.15 var(--font-display);
 	}
 	.catalog-section summary small {
 		color: var(--subdued);
@@ -1243,21 +1164,6 @@
 	.catalog-mantra-chips {
 		flex-wrap: wrap;
 		gap: 0.35rem;
-	}
-	.catalog-role-tabs button,
-	.catalog-mantra-chips button,
-	.strategy-role-tabs button {
-		min-height: 2.2rem;
-		border-color: var(--border-strong);
-		background: var(--input-bg);
-		color: var(--text);
-	}
-	.catalog-role-tabs button.active,
-	.catalog-mantra-chips button.active,
-	.strategy-role-tabs button.active {
-		border-color: var(--primary);
-		background: var(--primary);
-		color: var(--on-primary);
 	}
 	.catalog-mantra-chips button {
 		min-height: 1.85rem;
@@ -1291,10 +1197,13 @@
 		min-width: 0;
 		height: auto;
 		padding: 0.7rem;
-		border-color: var(--border);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
 		background: var(--input-bg);
-		color: var(--text);
+		font-size: 0.875rem;
+		font-weight: 700;
 		text-align: left;
+		cursor: pointer;
 	}
 	.catalog-player:disabled {
 		cursor: default;
@@ -1326,7 +1235,10 @@
 	}
 	.catalog-player.purchased {
 		background: var(--muted-bg);
-		color: var(--disabled-text);
+		color: var(--taken-text);
+	}
+	.catalog-player.purchased .catalog-player-heading > strong {
+		text-decoration: line-through;
 	}
 	.catalog-player.purchased :global(.tier-badge-accent) {
 		filter: grayscale(1);
@@ -1343,48 +1255,13 @@
 	.registry-trigger-row {
 		margin-bottom: 0.6rem;
 	}
-	.registry-trigger {
-		all: unset;
-		padding: 0.4rem 0.8rem;
-		border: 1px solid var(--primary);
-		border-radius: 999px;
-		background: var(--primary);
-		color: var(--on-primary);
-		font-size: 0.8rem;
-		font-weight: 700;
-		cursor: pointer;
-	}
-	.registry-trigger:hover,
-	.registry-trigger:focus-visible {
-		background: var(--primary-text);
-		border-color: var(--primary-text);
-	}
-	.dialog-overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 1100;
-		display: grid;
-		place-items: center;
-		padding: 1.5rem;
-		background: var(--overlay);
-		animation: overlay-in 220ms cubic-bezier(0.19, 1, 0.22, 1);
-	}
 	.registry-dialog {
 		display: grid;
 		grid-template-rows: auto auto minmax(0, 1fr);
 		gap: 0.9rem;
 		width: min(760px, 100%);
 		max-height: min(80vh, 720px);
-		padding: 1.5rem;
-		border: 1px solid var(--border);
-		border-radius: 0.9rem;
-		background: color-mix(in srgb, var(--surface) 96%, transparent);
-		backdrop-filter: blur(24px) saturate(160%);
-		box-shadow:
-			0 1px 0 rgb(255 255 255 / 6%) inset,
-			0 24px 60px -12px rgb(0 0 0 / 32%);
 		overflow: hidden;
-		animation: dialog-in 260ms cubic-bezier(0.19, 1, 0.22, 1);
 	}
 	.registry-header {
 		display: flex;
@@ -1399,22 +1276,6 @@
 	.registry-search {
 		display: block;
 	}
-	.registry-search span {
-		display: block;
-		margin-bottom: 0.35rem;
-		font-size: 0.74rem;
-		font-weight: 700;
-	}
-	.registry-search input {
-		width: 100%;
-		height: 2.4rem;
-		padding: 0 0.65rem;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.4rem;
-		background: var(--input-bg);
-		color: inherit;
-		font: inherit;
-	}
 	.registry-empty {
 		margin: 0;
 		color: var(--subdued);
@@ -1428,7 +1289,7 @@
 		overflow-y: auto;
 		overflow-x: auto;
 		border: 1px solid var(--border);
-		border-radius: 0.5rem;
+		border-radius: var(--radius-sm);
 	}
 	.registry-row {
 		min-width: 34rem;
@@ -1436,38 +1297,6 @@
 	}
 	.registry-list .registry-row:first-child {
 		border-top: 0;
-	}
-	@keyframes overlay-in {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
-	}
-	@keyframes dialog-in {
-		from {
-			opacity: 0;
-			transform: translateY(10px) scale(0.96);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0) scale(1);
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.dialog-overlay,
-		.registry-dialog {
-			animation: fade-in 160ms ease;
-		}
-		@keyframes fade-in {
-			from {
-				opacity: 0;
-			}
-			to {
-				opacity: 1;
-			}
-		}
 	}
 	@media (max-width: 950px) {
 		.call-panel form {

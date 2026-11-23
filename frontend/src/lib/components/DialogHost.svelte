@@ -64,30 +64,8 @@
 {/if}
 
 <style>
-	.dialog-overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 1100;
-		display: grid;
-		place-items: center;
-		padding: 1.5rem;
-		background: var(--overlay);
-		backdrop-filter: blur(0);
-		animation: overlay-in 220ms cubic-bezier(0.19, 1, 0.22, 1);
-	}
-
 	.dialog {
 		width: min(420px, 100%);
-		padding: 1.5rem;
-		border: 1px solid var(--border);
-		border-radius: 0.9rem;
-		background: color-mix(in srgb, var(--surface) 92%, transparent);
-		backdrop-filter: blur(24px) saturate(160%);
-		box-shadow:
-			0 1px 0 rgb(255 255 255 / 6%) inset,
-			0 24px 60px -12px rgb(0 0 0 / 32%);
-		/* Materialize, don't just fade: blur and scale settle together, like a real surface arriving. */
-		animation: dialog-in 260ms cubic-bezier(0.19, 1, 0.22, 1);
 	}
 
 	.dialog h2 {
@@ -103,15 +81,7 @@
 	}
 
 	.dialog input {
-		width: 100%;
-		height: 2.5rem;
 		margin-top: 1rem;
-		padding: 0 0.7rem;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.4rem;
-		background: var(--input-bg);
-		color: inherit;
-		font: inherit;
 	}
 
 	.dialog-actions {
@@ -119,85 +89,5 @@
 		justify-content: flex-end;
 		gap: 0.6rem;
 		margin-top: 1.4rem;
-	}
-
-	.dialog-actions button {
-		min-height: 2.5rem;
-		padding: 0 1rem;
-		border: 1px solid var(--primary);
-		border-radius: 0.45rem;
-		background: var(--primary);
-		color: var(--on-primary);
-		font: inherit;
-		font-size: 0.85rem;
-		font-weight: 700;
-		cursor: pointer;
-	}
-
-	.dialog-actions button.secondary {
-		border-color: var(--border-strong);
-		background: transparent;
-		color: var(--text);
-	}
-
-	.dialog-actions button.danger {
-		border-color: var(--danger);
-		background: var(--danger);
-		color: var(--on-danger);
-	}
-
-	.dialog-actions button.danger:hover {
-		background: var(--danger-hover);
-	}
-
-	@keyframes overlay-in {
-		from {
-			opacity: 0;
-			backdrop-filter: blur(0);
-		}
-		to {
-			opacity: 1;
-			backdrop-filter: blur(6px);
-		}
-	}
-
-	@keyframes dialog-in {
-		from {
-			opacity: 0;
-			transform: translateY(10px) scale(0.96);
-			backdrop-filter: blur(0);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0) scale(1);
-			backdrop-filter: blur(24px) saturate(160%);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.dialog-overlay,
-		.dialog {
-			animation: fade-in 160ms ease;
-		}
-
-		@keyframes fade-in {
-			from {
-				opacity: 0;
-			}
-			to {
-				opacity: 1;
-			}
-		}
-	}
-
-	@media (prefers-reduced-transparency: reduce) {
-		.dialog-overlay {
-			backdrop-filter: none;
-		}
-
-		.dialog {
-			background: var(--surface);
-			backdrop-filter: none;
-		}
 	}
 </style>

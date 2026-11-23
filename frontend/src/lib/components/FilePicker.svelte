@@ -62,11 +62,6 @@
 		min-width: 0;
 		align-items: center;
 		gap: 0.55rem;
-		height: 2.55rem;
-		padding: 0 0.75rem;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.4rem;
-		background: var(--input-bg);
 		color: var(--muted);
 		font-size: 0.78rem;
 		cursor: pointer;
@@ -81,12 +76,11 @@
 	}
 
 	.file-input:focus-visible + .file-picker {
-		outline: 2px solid var(--primary);
-		outline-offset: 1px;
+		outline: 3px solid var(--focus);
+		outline-offset: 2px;
 	}
 
 	.file-picker.has-file {
-		border-color: var(--primary);
 		background: var(--primary-soft);
 		color: var(--primary-soft-text);
 	}

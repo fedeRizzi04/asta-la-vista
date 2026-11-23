@@ -189,14 +189,11 @@
 		height: 2.6rem;
 		min-height: 0;
 		padding: 0;
-		border: 1px solid color-mix(in srgb, var(--border-strong) 82%, transparent);
+		border: var(--bw) solid var(--line);
 		border-radius: 50%;
-		background: color-mix(in srgb, var(--surface) 88%, transparent);
-		backdrop-filter: blur(16px) saturate(160%);
-		box-shadow: 0 8px 24px -10px rgb(0 0 0 / 42%);
+		background: var(--surface);
+		box-shadow: var(--shadow-xs);
 		color: var(--text);
-		font: inherit;
-		cursor: pointer;
 		transform: translateY(-50%);
 		transition:
 			opacity 160ms ease,
@@ -214,16 +211,13 @@
 
 	.rail-button span {
 		font-size: 1.75rem;
-		font-weight: 450;
+		font-weight: 400;
 		line-height: 0.8;
 		transform: translateY(-0.06em);
 	}
 
-	.rail-button:hover,
-	.rail-button:focus-visible {
-		border-color: var(--border-hover);
-		background: color-mix(in srgb, var(--input-bg) 94%, transparent);
-		outline: none;
+	.rail-button:hover {
+		background: var(--hover);
 	}
 
 	.rail-button:disabled {
@@ -234,13 +228,6 @@
 	@media (pointer: coarse) {
 		.rail-button {
 			display: none;
-		}
-	}
-
-	@media (prefers-reduced-transparency: reduce) {
-		.rail-button {
-			background: var(--surface);
-			backdrop-filter: none;
 		}
 	}
 
