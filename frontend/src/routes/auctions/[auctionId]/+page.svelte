@@ -36,24 +36,18 @@
 		type Purchase
 	} from '$lib/auctions';
 	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
-	import { getPlayers, type Player, type Role } from '$lib/players';
+	import { getPlayers, roleLabels, roles, type Player, type Role } from '$lib/players';
 	import { matchesSearch, nameMatchRank } from '$lib/search';
 	import {
 		byMaxPercentageDesc,
 		getStrategies,
 		getStrategy,
 		percentageToCredits,
+		strategyIndex,
 		type Strategy,
 		type StrategySummary
 	} from '$lib/strategies';
 
-	const roleLabels: Record<Role, string> = {
-		P: 'Portieri',
-		D: 'Difensori',
-		C: 'Centrocampisti',
-		A: 'Attaccanti'
-	};
-	const roles = Object.keys(roleLabels) as Role[];
 	const roleTabs = roles.map((role) => ({ value: role, label: roleLabels[role] }));
 	type CatalogSort = 'tier' | 'quotation';
 
@@ -78,23 +72,22 @@
 	let loading = $state(true);
 	let saving = $state(false);
 
+	let index = $derived(strategy && strategyIndex(strategy));
 	let purchasedIds = $derived(new Set(auction?.purchased_player_ids ?? []));
 	/** Tiers for the selected strategy role, with their entries resolved once for reuse below. */
 	let strategyRoleTiers = $derived.by(() => {
 		const currentStrategy = strategy;
-		if (!currentStrategy) return [];
-		return [...currentStrategy.tiers]
-			.sort((first, second) => first.position - second.position)
-			.map((tier) => {
-				const entries = currentStrategy.entries
-					.filter((entry) => entry.role === strategyRole && entry.tier_id === tier.id)
-					.sort(byMaxPercentageDesc((entry) => entry.maximum_price_percentage));
-				return {
-					tier,
-					entries,
-					availableCount: entries.filter((entry) => !purchasedIds.has(entry.player_id)).length
-				};
-			});
+		if (!currentStrategy || !index) return [];
+		return index.sortedTiers.map((tier) => {
+			const entries = currentStrategy.entries
+				.filter((entry) => entry.role === strategyRole && entry.tier_id === tier.id)
+				.sort(byMaxPercentageDesc((entry) => entry.maximum_price_percentage));
+			return {
+				tier,
+				entries,
+				availableCount: entries.filter((entry) => !purchasedIds.has(entry.player_id)).length
+			};
+		});
 	});
 	let matchingPlayers = $derived.by(() => {
 		return players
@@ -123,17 +116,13 @@
 		allPurchases.filter(({ purchase }) => matchesSearch(registrySearch, purchase.player_name))
 	);
 	let selectedPlayer = $derived(players.find((player) => player.id === selectedPlayerId));
-	let selectedStrategyEntry = $derived(
-		strategy?.entries.find((entry) => entry.player_id === selectedPlayerId)
-	);
+	let selectedStrategyEntry = $derived(index?.entryByPlayerId.get(selectedPlayerId));
 	let selectedMaximumPriceCredits = $derived(
 		selectedStrategyEntry?.maximum_price_percentage != null && auction
 			? percentageToCredits(selectedStrategyEntry.maximum_price_percentage, auction.initial_credits)
 			: null
 	);
-	let selectedTier = $derived(
-		strategy?.tiers.find((tier) => tier.id === selectedStrategyEntry?.tier_id)
-	);
+	let selectedTier = $derived(tierForPlayer(selectedPlayerId));
 	let catalogRolePlayers = $derived(
 		players.filter(
 			(player) => player.role === catalogRole && (player.active || purchasedIds.has(player.id))
@@ -259,8 +248,8 @@
 	}
 
 	function tierForPlayer(playerId: string) {
-		const tierId = strategy?.entries.find((entry) => entry.player_id === playerId)?.tier_id;
-		return strategy?.tiers.find((tier) => tier.id === tierId);
+		const tierId = index?.entryByPlayerId.get(playerId)?.tier_id;
+		return tierId == null ? undefined : index?.tierById.get(tierId);
 	}
 
 	function tierPosition(playerId: string): number {
@@ -498,12 +487,7 @@
 									{#if rolePurchases.length > 0}
 										<div class="purchase-group" data-role={role} aria-label={roleLabels[role]}>
 											{#each rolePurchases as purchase (purchase.id)}
-												{@const strategyEntry = strategy?.entries.find(
-													(entry) => entry.player_id === purchase.player_id
-												)}
-												{@const purchaseTier = strategy?.tiers.find(
-													(tier) => tier.id === strategyEntry?.tier_id
-												)}
+												{@const purchaseTier = tierForPlayer(purchase.player_id)}
 												<div class="purchase-row">
 													<span class="role-badge" data-role={purchase.role}>{purchase.role}</span
 													><span class="purchase-name"
@@ -730,10 +714,7 @@
 		{:else}
 			<div class="registry-list">
 				{#each filteredRegistryPurchases as { purchase, participant } (purchase.id)}
-					{@const strategyEntry = strategy?.entries.find(
-						(entry) => entry.player_id === purchase.player_id
-					)}
-					{@const purchaseTier = strategy?.tiers.find((tier) => tier.id === strategyEntry?.tier_id)}
+					{@const purchaseTier = tierForPlayer(purchase.player_id)}
 					<div class="purchase-row registry-row" class:editing={editingPurchaseId === purchase.id}>
 						{#if editingPurchaseId === purchase.id}
 							<Select bind:value={editedParticipantId} aria-label="Vincitore">

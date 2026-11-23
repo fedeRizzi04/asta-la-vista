@@ -17,19 +17,13 @@
 		getPlayerCounts,
 		getPlayers,
 		importPlayers,
+		roleLabels,
+		roles,
 		type ImportSummary,
 		type Player,
 		type PlayerCounts,
 		type Role
 	} from '$lib/players';
-
-	const roleLabels: Record<Role, string> = {
-		P: 'Portieri',
-		D: 'Difensori',
-		C: 'Centrocampisti',
-		A: 'Attaccanti'
-	};
-	const roles = Object.keys(roleLabels) as Role[];
 
 	let players = $state<Player[]>([]);
 	let counts = $state<PlayerCounts>({ P: 0, D: 0, C: 0, A: 0 });

@@ -18,6 +18,7 @@ who use the app.
   arrow keys.
 - Confirmations and the purchase registry open as proper modal windows: Esc closes only the
   topmost one, and the registry search box is ready for typing as soon as it opens.
+- The app remembers which panels you show or hide when you reload the page.
 
 ## [0.4.1] - 2026-11-06
 

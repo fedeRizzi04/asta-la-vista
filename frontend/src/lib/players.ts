@@ -2,6 +2,14 @@ import { apiRequest } from './api';
 
 export type Role = 'P' | 'D' | 'C' | 'A';
 
+export const roleLabels: Record<Role, string> = {
+	P: 'Portieri',
+	D: 'Difensori',
+	C: 'Centrocampisti',
+	A: 'Attaccanti'
+};
+export const roles: Role[] = ['P', 'D', 'C', 'A'];
+
 export type Player = {
 	id: string;
 	name: string;
