@@ -91,7 +91,6 @@
 
 <section class="page-heading heading-row">
 	<div>
-		<p class="eyebrow">Catalogo calciatori</p>
 		<h1>Listone</h1>
 		<p>Importa il file ufficiale e consulta ruolo, squadra, quotazione e disponibilità.</p>
 	</div>
@@ -184,7 +183,7 @@
 				<tbody>
 					{#each players as player (player.id)}
 						<tr class:inactive={!player.active}>
-							<td><span class="role" data-role={player.role}>{player.role}</span></td>
+							<td><span class="role-badge" data-role={player.role}>{player.role}</span></td>
 							<td class="player-name"
 								>{player.name}
 								<MantraRoleBadges roles={player.mantra_roles} compact /></td
@@ -201,23 +200,11 @@
 </section>
 
 <style>
-	.heading-row {
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 3rem;
-		max-width: none;
-	}
-
-	.heading-row > div:first-child {
-		max-width: 680px;
-	}
-
 	.import-form {
 		width: min(100%, 390px);
 		padding: 1rem;
 		border: 1px solid var(--border);
-		border-radius: 0.65rem;
+		border-radius: var(--radius);
 		background: var(--surface);
 	}
 
@@ -235,29 +222,11 @@
 		gap: 0.75rem;
 	}
 
-	button {
-		min-height: 2.55rem;
-		padding: 0 1rem;
-		border: 1px solid var(--primary);
-		border-radius: 0.45rem;
-		background: var(--primary);
-		color: var(--on-primary);
-		font: inherit;
-		font-size: 0.85rem;
-		font-weight: 700;
-		cursor: pointer;
-	}
-
-	button:disabled {
-		cursor: not-allowed;
-		opacity: 0.5;
-	}
-
 	.counts {
 		display: grid;
 		grid-template-columns: repeat(5, 1fr);
 		gap: 0.75rem;
-		margin-top: 3rem;
+		margin-top: 1.5rem;
 	}
 
 	.count-card {
@@ -267,14 +236,14 @@
 		gap: 1rem;
 		padding: 1rem;
 		border: 1px solid var(--border);
-		border-radius: 0.6rem;
+		border-radius: var(--radius-sm);
 		background: var(--surface);
 	}
 
 	.count-card span {
 		color: var(--muted);
 		font-size: 0.78rem;
-		font-weight: 650;
+		font-weight: 700;
 	}
 
 	.count-card strong {
@@ -293,27 +262,15 @@
 		margin-top: 2rem;
 		padding: 1rem;
 		border: 1px solid var(--border);
-		border-radius: 0.65rem;
+		border-radius: var(--radius);
 		background: var(--surface);
-	}
-
-	.filters input[type='search'],
-	.filters select {
-		width: 100%;
-		height: 2.55rem;
-		padding: 0 0.75rem;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.4rem;
-		background: var(--input-bg);
-		color: inherit;
-		font: inherit;
 	}
 
 	.checkbox {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		min-height: 2.55rem;
+		min-height: var(--control-height);
 		font-size: 0.85rem;
 	}
 
@@ -325,42 +282,7 @@
 		margin-top: 2.5rem;
 	}
 
-	.table-scroll {
-		overflow-x: auto;
-		border: 1px solid var(--border);
-		border-radius: 0.65rem;
-		background: var(--surface);
-	}
-
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.88rem;
-	}
-
-	th,
-	td {
-		padding: 0.75rem 1rem;
-		border-bottom: 1px solid var(--border);
-		text-align: left;
-	}
-
-	th {
-		color: var(--subdued);
-		font-size: 0.72rem;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-	}
-
-	tbody tr:last-child td {
-		border-bottom: 0;
-	}
-
-	tbody tr:hover {
-		background: var(--muted-bg);
-	}
-
-	.inactive {
+	tbody tr.inactive {
 		color: var(--disabled-text);
 		background: var(--muted-bg);
 	}
@@ -372,37 +294,6 @@
 	.quotation {
 		font-variant-numeric: tabular-nums;
 		font-weight: 700;
-	}
-
-	.role {
-		display: inline-grid;
-		place-items: center;
-		width: 1.75rem;
-		height: 1.75rem;
-		border-radius: 0.35rem;
-		background: var(--muted-bg);
-		font-size: 0.75rem;
-		font-weight: 800;
-	}
-
-	.role[data-role='P'] {
-		background: var(--goalkeeper-bg);
-		color: var(--goalkeeper-text);
-	}
-
-	.role[data-role='D'] {
-		background: var(--defender-bg);
-		color: var(--defender-text);
-	}
-
-	.role[data-role='C'] {
-		background: var(--midfielder-bg);
-		color: var(--midfielder-text);
-	}
-
-	.role[data-role='A'] {
-		background: var(--forward-bg);
-		color: var(--forward-text);
 	}
 
 	@media (max-width: 900px) {

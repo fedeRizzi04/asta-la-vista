@@ -1,119 +1,162 @@
+@font-face {
+	font-family: 'Bricolage Grotesque';
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url('/fonts/bricolage-grotesque-latin-600.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Bricolage Grotesque';
+	font-style: normal;
+	font-weight: 800;
+	font-display: swap;
+	src: url('/fonts/bricolage-grotesque-latin-800.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Atkinson Hyperlegible';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/atkinson-hyperlegible-latin-400.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Atkinson Hyperlegible';
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url('/fonts/atkinson-hyperlegible-latin-700.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'Atkinson Hyperlegible';
+	font-style: italic;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/atkinson-hyperlegible-latin-400-italic.woff2') format('woff2');
+}
+
 :root {
-	--page-bg: #f4f5f2;
-	--surface: #fafbf8;
-	--input-bg: #ffffff;
-	--text: #18201c;
-	--muted: #5d665f;
-	--subdued: #667069;
-	--disabled-text: #8b918d;
-	--border: #d9ddd7;
-	--border-strong: #bdc5bf;
-	--border-hover: #9eaaa2;
-	--primary: #204c39;
-	--primary-text: #2f6b4f;
-	--on-primary: #ffffff;
-	--primary-soft: #edf3ef;
-	--primary-soft-text: #315641;
-	--muted-bg: #f0f1ef;
-	--error-border: #d4a7a7;
-	--error-bg: #fff7f7;
-	--error-text: #7a2727;
-	--success-border: #a9c6b5;
-	--success-bg: #f3faf5;
-	--success-text: #204c39;
-	--status-bg: #e5e8e4;
-	--status-text: #5e665f;
-	--live-bg: #dcebe1;
-	--live-text: #24583b;
-	--completed-bg: #e1e3e2;
-	--completed-text: #555c58;
-	--goalkeeper-bg: #f3e6bf;
-	--goalkeeper-text: #72560c;
-	--defender-bg: #d8eadf;
-	--defender-text: #24583b;
-	--midfielder-bg: #dce7f2;
-	--midfielder-text: #2b557a;
-	--forward-bg: #efdddd;
-	--forward-text: #773434;
-	--tier-default: #d8ded9;
-	--tier-badge-bg: #f1f3f0;
-	--tier-badge-border: #cbd2cc;
-	--scrollbar-track: #e8ebe7;
-	--scrollbar-thumb: #a8b1aa;
-	--scrollbar-thumb-hover: #7f8b83;
-	--danger: #9c3b3b;
-	--danger-hover: #7f2f2f;
-	--on-danger: #ffffff;
-	--overlay: rgb(10 14 11 / 55%);
-	font-family:
-		Inter,
-		ui-sans-serif,
-		system-ui,
-		-apple-system,
-		BlinkMacSystemFont,
-		'Segoe UI',
-		sans-serif;
+	--font-display: 'Bricolage Grotesque', ui-rounded, system-ui, sans-serif;
+	--font-text: 'Atkinson Hyperlegible', system-ui, sans-serif;
+	--bw: 2px;
+	--radius: 14px;
+	--radius-sm: 9px;
+	--radius-xs: 6px;
+	--shadow: 4px 4px 0 var(--line);
+	--shadow-sm: 3px 3px 0 var(--line);
+	--shadow-xs: 2px 2px 0 var(--line);
+	--control-height: 2.25rem;
+	--header-height: 3rem;
+
+	--line: #1f1a14;
+	--line-soft: #dccdb3;
+	--border: var(--line-soft);
+	--border-strong: var(--line);
+	--border-hover: var(--muted);
+	--page-bg: #f5ecdb;
+	--surface: #fffaf0;
+	--input-bg: #fff;
+	--text: #1f1a14;
+	--muted: #6b5f50;
+	--subdued: var(--muted);
+	--disabled-text: var(--taken-text);
+	--taken-text: #706964;
+	--muted-bg: #f3e7cf;
+	--hover: #fff1d6;
+	--head-bg: #fff3dc;
+	--zebra: #fbf3e4;
+	--focus: #a85b00;
+	--link: #265e9e;
+	--primary: #27784b;
+	--primary-text: #226640;
+	--on-primary: #fff;
+	--primary-soft: #e4f2e5;
+	--primary-soft-text: #24583b;
+	--error-border: #cc867c;
+	--error-bg: #fff0e8;
+	--error-text: #9e2e23;
+	--success-border: #9aba9b;
+	--success-bg: #edf7e9;
+	--success-text: #24583b;
+	--status-bg: #ffe2a8;
+	--status-text: #563902;
+	--live-bg: #c9f0d4;
+	--live-text: #14361f;
+	--completed-bg: var(--muted-bg);
+	--completed-text: var(--muted);
+	--goalkeeper-bg: #f7c873;
+	--defender-bg: #9fd8ae;
+	--midfielder-bg: #a9bdf5;
+	--forward-bg: #f5a3a0;
+	--on-role: #1f1a14;
+	--goalkeeper-text: var(--on-role);
+	--defender-text: var(--on-role);
+	--midfielder-text: var(--on-role);
+	--forward-text: var(--on-role);
+	--tier-default: #a69982;
+	--tier-badge-bg: var(--muted-bg);
+	--tier-badge-border: var(--line);
+	--scrollbar-track: var(--muted-bg);
+	--scrollbar-thumb: #b2a28c;
+	--scrollbar-thumb-hover: #8c7e6b;
+	--danger: #b3362a;
+	--danger-hover: #962c21;
+	--on-danger: #fff;
+	--overlay: rgb(20 15 10 / 44%);
+
+	color-scheme: light;
+	font: 1rem/1.4 var(--font-text);
 	color: var(--text);
 	background: var(--page-bg);
 	font-synthesis: none;
-	font-optical-sizing: auto;
 	text-rendering: optimizeLegibility;
-	/* Body copy: leading and tracking stay close to neutral — see .page-heading h1
-	   and .eyebrow for how both tighten/open up at other sizes (§Typography). */
-	line-height: 1.5;
-	letter-spacing: 0;
 }
 
-/* Inspired by GitHub's "Dark Dimmed" theme: a warm-neutral gray canvas instead of
-   near-black, with clear, restrained lightness steps between page/surface/field so
-   hierarchy stays legible without every surface competing for attention. */
 :root[data-theme='dark'] {
-	--page-bg: #22272e;
-	--surface: #2d333b;
-	--input-bg: #383e47;
-	--text: #adbac7;
-	--muted: #768390;
-	--subdued: #636e7b;
-	--disabled-text: #545d68;
-	--border: #373e47;
-	--border-strong: #444c56;
-	--border-hover: #636e7b;
-	--primary: #2f6f39;
-	--primary-text: #57ab5a;
-	--on-primary: #ffffff;
-	--primary-soft: #1b2b21;
-	--primary-soft-text: #7ee2a8;
-	--muted-bg: #262b32;
-	--error-border: #6e3630;
-	--error-bg: #2d1a19;
-	--error-text: #f85149;
-	--success-border: #3a6b46;
-	--success-bg: #172a1e;
-	--success-text: #57ab5a;
-	--status-bg: #343b44;
-	--status-text: #909dab;
-	--live-bg: #15281d;
-	--live-text: #57ab5a;
-	--completed-bg: #343b44;
-	--completed-text: #909dab;
-	--goalkeeper-bg: #3a2e14;
-	--goalkeeper-text: #d29922;
-	--defender-bg: #14261c;
-	--defender-text: #57ab5a;
-	--midfielder-bg: #16232f;
-	--midfielder-text: #6cb6ff;
-	--forward-bg: #2d1a19;
-	--forward-text: #f85149;
-	--tier-default: #4c5561;
-	--tier-badge-bg: #343b44;
-	--tier-badge-border: #444c56;
-	--scrollbar-track: #262b32;
-	--scrollbar-thumb: #59636e;
-	--scrollbar-thumb-hover: #768390;
-	--danger: #c93c37;
-	--danger-hover: #e5534b;
-	--on-danger: #ffffff;
-	--overlay: rgb(10 12 15 / 62%);
+	--line: #0f0c0a;
+	--line-soft: #4a3e35;
+	--page-bg: #211c19;
+	--surface: #302722;
+	--input-bg: #3a302a;
+	--text: #f4eadb;
+	--muted: #bcae9c;
+	--taken-text: #a99e94;
+	--muted-bg: #3a302a;
+	--hover: #41352e;
+	--head-bg: #3a2f28;
+	--zebra: #352b25;
+	--focus: #ffbf2e;
+	--link: #8cc4ff;
+	--primary: #3fae6e;
+	--primary-text: #86d5a3;
+	--on-primary: #0f1a12;
+	--primary-soft: #253d2d;
+	--primary-soft-text: #a9e0b8;
+	--error-border: #8f544c;
+	--error-bg: #462a25;
+	--error-text: #ff9f91;
+	--success-border: #507459;
+	--success-bg: #253d2d;
+	--success-text: #a9e0b8;
+	--status-bg: #5a4a22;
+	--status-text: #ffe2a8;
+	--live-bg: #2b5138;
+	--live-text: #c9f0d4;
+	--goalkeeper-bg: #f0c26c;
+	--defender-bg: #93cfa3;
+	--midfielder-bg: #9fb3ee;
+	--forward-bg: #ee9a96;
+	--tier-default: #9a8f80;
+	--scrollbar-thumb: #736356;
+	--scrollbar-thumb-hover: #9c8a79;
+	--danger: #ff8a7a;
+	--danger-hover: #ffab9f;
+	--on-danger: #2a1511;
+	--overlay: rgb(15 12 10 / 66%);
+	color-scheme: dark;
 }
 
 * {
@@ -168,21 +211,279 @@ body {
 		color 220ms ease;
 }
 
-a {
-	color: inherit;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--font-display);
+	font-weight: 800;
+	line-height: 1.15;
 }
 
-button,
-input,
-select,
-.panel,
-.feature-card,
-.tier-badge,
-article {
+h1 {
+	margin: 0;
+	font-size: clamp(1.45rem, 3vw, 1.85rem);
+}
+
+h2 {
+	font-size: 1.2rem;
+}
+
+h3 {
+	font-weight: 600;
+}
+
+:where(a) {
+	color: var(--link);
+}
+
+:focus-visible {
+	outline: 3px solid var(--focus);
+	outline-offset: 2px;
+}
+
+:where(button, input, select, textarea) {
+	color: inherit;
+	font: inherit;
+}
+
+:where(
+	button:not(.text-button, .dismiss-button, .tier-player-button, .catalog-player),
+	.button-link
+) {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: var(--control-height);
+	padding: 0 0.8rem;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius-sm);
+	background: var(--primary);
+	color: var(--on-primary);
+	box-shadow: var(--shadow-xs);
+	font-size: 0.875rem;
+	font-weight: 700;
+	text-decoration: none;
+	cursor: pointer;
 	transition:
-		background-color 200ms ease,
-		border-color 200ms ease,
-		color 200ms ease;
+		background-color 140ms ease,
+		box-shadow 100ms ease;
+}
+
+:where(
+	button:not(.text-button, .dismiss-button, .tier-player-button, .catalog-player):enabled,
+	.button-link
+):hover {
+	filter: brightness(1.08);
+}
+
+:where(
+	button:not(.text-button, .dismiss-button, .tier-player-button, .catalog-player):enabled,
+	.button-link
+):active {
+	box-shadow: none;
+}
+
+:where(button:disabled) {
+	cursor: not-allowed;
+	opacity: 0.55;
+	box-shadow: none;
+}
+
+:where(button.secondary) {
+	background: var(--surface);
+	color: var(--text);
+}
+
+:where(button.danger) {
+	border-color: transparent;
+	background: transparent;
+	color: var(--error-text);
+	box-shadow: none;
+}
+
+:where(
+	input:not([type='file'], [type='checkbox'], [type='radio']),
+	select,
+	textarea,
+	.file-picker
+) {
+	min-width: 0;
+	width: 100%;
+	min-height: var(--control-height);
+	padding: 0 0.65rem;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius-sm);
+	background: var(--input-bg);
+}
+
+:where(input[type='color']) {
+	width: 2.75rem;
+	padding: 0.2rem;
+}
+
+:where(input[type='checkbox'], input[type='radio']) {
+	accent-color: var(--primary);
+}
+
+:where(textarea) {
+	padding-block: 0.5rem;
+	resize: vertical;
+}
+
+.back-link {
+	display: inline-block;
+	margin-bottom: 0.55rem;
+	font-size: 0.875rem;
+	font-weight: 700;
+}
+
+:where(.role-tabs, .strategy-role-tabs, .catalog-role-tabs, .catalog-mantra-chips) button {
+	min-height: 2rem;
+	background: var(--surface);
+	color: var(--text);
+	box-shadow: none;
+}
+
+:where(.role-tabs, .strategy-role-tabs, .catalog-role-tabs, .catalog-mantra-chips) button.active {
+	background: var(--primary);
+	color: var(--on-primary);
+	box-shadow: var(--shadow-xs);
+}
+
+.table-scroll {
+	overflow-x: auto;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius);
+	background: var(--surface);
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9rem;
+}
+
+th,
+td {
+	padding: 0.5rem 0.75rem;
+	border-bottom: 1px solid var(--line-soft);
+	text-align: left;
+}
+
+th {
+	background: var(--head-bg);
+	font-weight: 700;
+}
+
+tbody tr:nth-child(even) {
+	background: var(--zebra);
+}
+
+tbody tr:hover {
+	background: var(--hover);
+}
+
+tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.role-badge {
+	display: inline-grid;
+	place-items: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius-xs);
+	background: var(--muted-bg);
+	font: 800 0.8rem/1 var(--font-display);
+}
+
+.role-badge[data-role='P'] {
+	background: var(--goalkeeper-bg);
+	color: var(--goalkeeper-text);
+}
+
+.role-badge[data-role='D'] {
+	background: var(--defender-bg);
+	color: var(--defender-text);
+}
+
+.role-badge[data-role='C'] {
+	background: var(--midfielder-bg);
+	color: var(--midfielder-text);
+}
+
+.role-badge[data-role='A'] {
+	background: var(--forward-bg);
+	color: var(--forward-text);
+}
+
+.status-badge {
+	padding: 0.2rem 0.55rem;
+	border: var(--bw) solid var(--line);
+	border-radius: 999px;
+	background: var(--status-bg);
+	color: var(--status-text);
+	font-size: 0.75rem;
+	font-weight: 700;
+}
+
+.status-badge[data-status='live'] {
+	background: var(--live-bg);
+	color: var(--live-text);
+}
+
+.status-badge[data-status='completed'] {
+	background: var(--completed-bg);
+	color: var(--completed-text);
+}
+
+.dialog-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1100;
+	display: grid;
+	place-items: center;
+	padding: 1.5rem;
+	background: var(--overlay);
+	animation: overlay-in 160ms ease;
+}
+
+.dialog,
+.registry-dialog {
+	padding: 1.5rem;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius);
+	background: var(--surface);
+	box-shadow: var(--shadow);
+	animation: dialog-in 180ms ease-out;
+}
+
+.dialog-actions button.danger {
+	border-color: var(--line);
+	background: var(--danger);
+	color: var(--on-danger);
+	box-shadow: var(--shadow-xs);
+}
+
+.dialog-actions button.danger:hover {
+	background: var(--danger-hover);
+}
+
+@keyframes overlay-in {
+	from {
+		opacity: 0;
+	}
+}
+
+@keyframes dialog-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
 }
 
 /* Instant press feedback (§Response): the moment the pointer goes down, never on release. */
@@ -198,29 +499,22 @@ article {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 2rem;
-	min-height: 4.5rem;
-	padding: 0 3rem;
-	border-bottom: 1px solid transparent;
-	background: color-mix(in srgb, var(--surface) 78%, transparent);
-	backdrop-filter: blur(20px) saturate(180%);
-	box-shadow: none;
-	transition:
-		border-color 220ms ease,
-		box-shadow 220ms ease,
-		background-color 220ms ease;
+	gap: 1rem;
+	min-height: 3rem;
+	padding: 0 1.5rem;
+	border-bottom: var(--bw) solid var(--line);
+	background: var(--surface);
+	transition: box-shadow 160ms ease;
 }
 
-/* Scroll edge effect: separation only appears once content actually meets the toolbar. */
 .app-header.is-scrolled {
-	border-bottom-color: var(--border);
-	box-shadow: 0 16px 32px -22px rgb(0 0 0 / 35%);
+	box-shadow: 0 2px 0 var(--line);
 }
 
 .brand {
-	font-size: 1.1rem;
-	font-weight: 750;
-	letter-spacing: -0.03em;
+	color: var(--text);
+	font: 800 1.15rem/1 var(--font-display);
+	white-space: nowrap;
 	text-decoration: none;
 }
 
@@ -239,7 +533,7 @@ nav {
 	position: relative;
 	align-items: stretch;
 	align-self: stretch;
-	gap: 1.75rem;
+	gap: 1.25rem;
 }
 
 nav a {
@@ -247,7 +541,7 @@ nav a {
 	align-items: center;
 	color: var(--muted);
 	font-size: 0.9rem;
-	font-weight: 600;
+	font-weight: 700;
 	text-decoration: none;
 	transition: color 160ms ease;
 }
@@ -279,17 +573,11 @@ nav a[aria-current='page'] {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.45rem;
-	min-height: 2.25rem;
-	padding: 0 0.7rem;
-	border: 1px solid var(--border-strong);
-	border-radius: 999px;
-	background: var(--input-bg);
+	min-height: 2rem;
+	background: var(--surface);
 	color: var(--text);
-	font: inherit;
-	font-size: 0.75rem;
-	font-weight: 650;
+	font-size: 0.8rem;
 	white-space: nowrap;
-	cursor: pointer;
 }
 
 .theme-toggle span {
@@ -313,7 +601,7 @@ nav a[aria-current='page'] {
 main {
 	width: min(1180px, calc(100% - 3rem));
 	margin: 0 auto;
-	padding: 4.5rem 0;
+	padding: 1.5rem 0 2.5rem;
 }
 
 .app-footer {
@@ -330,66 +618,60 @@ main {
 	max-width: 760px;
 }
 
-.page-heading h1 {
-	margin: 0;
-	font-size: clamp(2.35rem, 5vw, 4.5rem);
-	line-height: 1.02;
-	letter-spacing: -0.055em;
+.heading-row {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 3rem;
+	max-width: none;
 }
 
-.page-heading > p:last-child {
+.heading-row > div:first-child {
+	max-width: 680px;
+}
+
+.page-heading p:last-child {
 	max-width: 650px;
-	margin: 1.5rem 0 0;
+	margin: 0.35rem 0 0;
 	color: var(--muted);
-	font-size: 1.1rem;
-	line-height: 1.65;
 }
 
 .eyebrow {
-	margin: 0 0 1.25rem;
-	color: var(--primary-text);
-	font-size: 0.75rem;
-	font-weight: 750;
-	letter-spacing: 0.14em;
-	text-transform: uppercase;
+	margin: 0 0 0.2rem;
+	color: var(--muted);
+	font-size: 0.8rem;
+	font-weight: 700;
 }
 
 .feature-grid {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 	gap: 1rem;
-	margin-top: 4rem;
+	margin-top: 1.5rem;
 }
 
 .feature-card {
-	min-height: 230px;
-	padding: 1.5rem;
-	border: 1px solid var(--border);
-	border-radius: 0.9rem;
+	padding: 1.25rem;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius);
 	background: var(--surface);
+	color: var(--text);
 	text-decoration: none;
-	box-shadow: 0 1px 2px rgb(0 0 0 / 3%);
-	/* Elevation lives in shadow, not transform — transform is reserved for the press state. */
-	transition:
-		border-color 180ms ease,
-		box-shadow 220ms ease;
+	box-shadow: var(--shadow);
+	transition: background-color 140ms ease;
 }
 
 .feature-card:hover {
-	border-color: var(--border-hover);
-	box-shadow: 0 20px 40px -24px rgb(0 0 0 / 28%);
+	background: var(--hover);
 }
 
 .feature-card span {
-	color: var(--subdued);
-	font-size: 0.75rem;
-	font-weight: 700;
+	display: none;
 }
 
 .feature-card h2 {
-	margin: 4rem 0 0.7rem;
-	font-size: 1.35rem;
-	letter-spacing: -0.025em;
+	margin: 0 0 0.45rem;
+	font-size: 1.2rem;
 }
 
 .feature-card p {
@@ -400,10 +682,10 @@ main {
 }
 
 .empty-state {
-	margin-top: 3rem;
-	padding: 2rem;
-	border: 1px dashed var(--border-strong);
-	border-radius: 0.75rem;
+	margin-top: 1.5rem;
+	padding: 1.25rem;
+	border: var(--bw) dashed var(--border-strong);
+	border-radius: var(--radius);
 	background: var(--surface);
 	color: var(--muted);
 }
@@ -415,10 +697,10 @@ main {
 
 .panel {
 	padding: 1.25rem;
-	border: 1px solid var(--border);
-	border-radius: 0.85rem;
+	border: var(--bw) solid var(--line);
+	border-radius: var(--radius);
 	background: var(--surface);
-	box-shadow: 0 1px 2px rgb(0 0 0 / 3%);
+	box-shadow: var(--shadow);
 }
 
 /* Small inline action, e.g. row-level edit/delete or a section's show/hide toggle
@@ -428,9 +710,24 @@ main {
 	padding: 0.2rem;
 	border: 0;
 	background: transparent;
-	color: var(--primary-text);
+	color: var(--link);
 	font-size: 0.7rem;
 	cursor: pointer;
+}
+
+.dismiss-button {
+	flex: 0 0 auto;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	font-size: 1.2rem;
+	line-height: 1;
+	opacity: 0.7;
+	cursor: pointer;
+}
+
+.dismiss-button:hover {
+	opacity: 1;
 }
 
 .text-button.danger {
@@ -446,7 +743,7 @@ main {
 		align-items: flex-start;
 		flex-direction: column;
 		gap: 0;
-		padding: 1.25rem 1.5rem 0;
+		padding: 0.75rem 1rem 0;
 	}
 
 	.header-actions {
@@ -472,7 +769,7 @@ main {
 
 	main {
 		width: min(100% - 2rem, 1180px);
-		padding: 3rem 0;
+		padding: 1.25rem 0 2rem;
 	}
 
 	.app-footer {
@@ -481,14 +778,6 @@ main {
 
 	.feature-grid {
 		grid-template-columns: 1fr;
-	}
-
-	.feature-card {
-		min-height: auto;
-	}
-
-	.feature-card h2 {
-		margin-top: 2rem;
 	}
 }
 
@@ -505,20 +794,8 @@ main {
 		transform: none !important;
 	}
 
-	.feature-card:hover {
-		box-shadow: none;
-	}
-
 	.tab-indicator {
 		transition: none;
-	}
-}
-
-/* Reduced transparency: materials go solid instead of blurred/translucent. */
-@media (prefers-reduced-transparency: reduce) {
-	.app-header {
-		background: var(--surface);
-		backdrop-filter: none;
 	}
 }
 

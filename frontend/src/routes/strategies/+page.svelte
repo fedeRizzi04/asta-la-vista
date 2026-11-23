@@ -140,7 +140,6 @@
 
 <section class="page-heading heading-row">
 	<div>
-		<p class="eyebrow">Pianificazione dell'asta</p>
 		<h1>Strategie</h1>
 		<p>Crea fasce globali riutilizzabili e organizza al loro interno i calciatori di ogni ruolo.</p>
 	</div>
@@ -244,7 +243,10 @@
 						>
 							Elimina
 						</button>
-						<a href={resolve('/strategies/[strategyId]', { strategyId: strategy.id })}>Apri</a>
+						<a
+							class="button-link"
+							href={resolve('/strategies/[strategyId]', { strategyId: strategy.id })}>Apri</a
+						>
 					</div>
 				</article>
 			{/each}
@@ -253,23 +255,11 @@
 </section>
 
 <style>
-	.heading-row {
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 3rem;
-		max-width: none;
-	}
-
-	.heading-row > div:first-child {
-		max-width: 680px;
-	}
-
 	.create-form {
 		width: min(100%, 390px);
 		padding: 1rem;
 		border: 1px solid var(--border);
-		border-radius: 0.65rem;
+		border-radius: var(--radius-sm);
 		background: var(--surface);
 	}
 
@@ -287,13 +277,7 @@
 	}
 
 	.create-form input {
-		min-width: 0;
 		flex: 1;
-		height: 2.55rem;
-		padding: 0 0.75rem;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.4rem;
-		font: inherit;
 	}
 
 	.import-section {
@@ -304,7 +288,7 @@
 		width: min(100%, 560px);
 		padding: 1.2rem;
 		border: 1px solid var(--border);
-		border-radius: 0.75rem;
+		border-radius: var(--radius);
 		background: var(--surface);
 	}
 
@@ -325,16 +309,6 @@
 		margin-top: 0.9rem;
 	}
 
-	.import-fields > input {
-		width: 100%;
-		min-width: 0;
-		height: 2.55rem;
-		padding: 0 0.75rem;
-		border: 1px solid var(--border-strong);
-		border-radius: 0.4rem;
-		font: inherit;
-	}
-
 	.file-row {
 		display: flex;
 		align-items: center;
@@ -349,41 +323,6 @@
 
 	.import-form .hint code {
 		font-size: 0.74rem;
-	}
-
-	button,
-	.actions a {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 2.55rem;
-		padding: 0 1rem;
-		border: 1px solid var(--primary);
-		border-radius: 0.45rem;
-		background: var(--primary);
-		color: var(--on-primary);
-		font: inherit;
-		font-size: 0.85rem;
-		font-weight: 700;
-		text-decoration: none;
-		cursor: pointer;
-	}
-
-	button:disabled {
-		cursor: not-allowed;
-		opacity: 0.5;
-	}
-
-	button.secondary {
-		border-color: var(--border-strong);
-		background: transparent;
-		color: var(--text);
-	}
-
-	button.danger {
-		border-color: transparent;
-		background: transparent;
-		color: var(--error-text);
 	}
 
 	.strategy-section {
@@ -402,7 +341,7 @@
 		gap: 2rem;
 		padding: 1.25rem;
 		border: 1px solid var(--border);
-		border-radius: 0.65rem;
+		border-radius: var(--radius-sm);
 		background: var(--surface);
 	}
 

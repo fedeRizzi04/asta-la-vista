@@ -51,11 +51,19 @@
 			</p>
 			<div class="update-actions">
 				<!-- External page on GitHub, not an app route: resolve() does not apply. -->
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-				<a href={appVersion.release_url} target="_blank" rel="noopener noreferrer" use:press>
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				<a
+					class="button-link"
+					href={appVersion.release_url}
+					target="_blank"
+					rel="noopener noreferrer"
+					use:press
+				>
 					Scarica
 				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				<button
+					class="dismiss-button"
 					type="button"
 					aria-label="Nascondi avviso di aggiornamento"
 					use:press
@@ -101,36 +109,6 @@
 		flex: 0 0 auto;
 		align-items: center;
 		gap: 0.75rem;
-	}
-
-	a {
-		padding: 0.35rem 0.85rem;
-		border-radius: 999px;
-		background: var(--primary);
-		color: var(--on-primary);
-		font-weight: 600;
-		text-decoration: none;
-	}
-
-	a:hover {
-		filter: brightness(1.1);
-	}
-
-	button {
-		min-height: auto;
-		padding: 0;
-		border: 0;
-		background: transparent;
-		color: inherit;
-		font-size: 1.15rem;
-		line-height: 1;
-		opacity: 0.7;
-		cursor: pointer;
-		transition: opacity 140ms ease;
-	}
-
-	button:hover {
-		opacity: 1;
 	}
 
 	@media (max-width: 720px) {

@@ -7,7 +7,6 @@
 </svelte:head>
 
 <section class="page-heading">
-	<p class="eyebrow">Assistente per l'asta</p>
 	<h1>Tutto quello che serve, mentre l'asta è in corso.</h1>
 	<p>
 		Gestisci il listone, prepara le tue fasce e controlla crediti, slot e rose senza perdere di
