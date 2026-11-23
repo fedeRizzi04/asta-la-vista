@@ -9,10 +9,15 @@
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Tabs from '$lib/components/ui/Tabs.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { press } from '$lib/actions/press';
 	import { dragReorder } from '$lib/actions/dragReorder';
-	import { slidingIndicator } from '$lib/actions/slidingIndicator.svelte';
 	import { getPlayers, type Player, type Role } from '$lib/players';
 	import { matchesSearch } from '$lib/search';
 	import { pushErrorToast } from '$lib/toast.svelte';
@@ -45,6 +50,7 @@
 		A: 'Attaccanti'
 	};
 	const roles = Object.keys(roleLabels) as Role[];
+	const roleTabs = roles.map((role) => ({ value: role, label: roleLabels[role] }));
 
 	// Every field autosaves shortly after the user stops changing it (see §Response/§Direct
 	// manipulation in apple-design): no "Salva" button, no page-wide lock while one field settles.
@@ -64,8 +70,6 @@
 	let loading = $state(true);
 	let saving = $state(false);
 	let orderedTiers = $state<Tier[]>([]);
-	let roleTabsEl = $state<HTMLElement>();
-	let activeRoleTabEl = $state<HTMLElement>();
 
 	const pendingEntrySaves = new SvelteMap<string, ReturnType<typeof setTimeout>>();
 	const pendingTierSaves = new SvelteMap<string, ReturnType<typeof setTimeout>>();
@@ -102,12 +106,6 @@
 			loading = false;
 		}
 	}
-
-	$effect(() => {
-		// Re-measure whenever the selected role changes, so the indicator glides across.
-		void selectedRole;
-		activeRoleTabEl = roleTabsEl?.querySelector<HTMLElement>('button.active') ?? undefined;
-	});
 
 	function buildEntryDrafts(): void {
 		const entries = new Map(strategy?.entries.map((entry) => [entry.player_id, entry]));
@@ -308,23 +306,22 @@
 	<title>{strategy?.name ?? 'Strategia'} | Asta la Vista</title>
 </svelte:head>
 
-<a class="back-link" href={resolve('/strategies')}>Torna alle strategie</a>
-
-<section class="detail-heading">
-	<div>
-		<h1>{strategy?.name ?? 'Strategia'}</h1>
-	</div>
-	<form onsubmit={submitName}>
-		<label for="strategy-name">Nome</label>
-		<div class="inline-fields">
-			<input id="strategy-name" bind:value={strategyName} />
-			<button type="submit" use:press disabled={!strategyName.trim() || saving}>Salva</button>
-		</div>
-	</form>
-</section>
+<PageHeader
+	title={strategy?.name ?? 'Strategia'}
+	back={{ href: resolve('/strategies'), label: 'Strategie' }}
+>
+	{#snippet actions()}
+		<form class="name-form" onsubmit={submitName}>
+			<Field label="Nome" inline>
+				<Input bind:value={strategyName} />
+			</Field>
+			<Button type="submit" disabled={!strategyName.trim() || saving}>Salva</Button>
+		</form>
+	{/snippet}
+</PageHeader>
 
 {#if loading}
-	<div class="empty-state">Caricamento della strategia…</div>
+	<EmptyState>Caricamento della strategia…</EmptyState>
 {:else if strategy}
 	<section class="panel">
 		<CollapsibleSection
@@ -334,18 +331,19 @@
 		>
 			{#snippet trailing()}
 				<form class="tier-form" onsubmit={submitTier}>
-					<input
+					<Input
+						class="tier-name"
 						bind:value={newTierName}
 						placeholder="Nome fascia"
 						aria-label="Nome nuova fascia"
 					/>
-					<input bind:value={newTierColor} type="color" aria-label="Colore nuova fascia" />
-					<button type="submit" use:press disabled={!newTierName.trim() || saving}>Aggiungi</button>
+					<Input bind:value={newTierColor} type="color" aria-label="Colore nuova fascia" />
+					<Button type="submit" disabled={!newTierName.trim() || saving}>Aggiungi</Button>
 				</form>
 			{/snippet}
 
 			{#if orderedTiers.length === 0}
-				<div class="compact-empty">Non hai ancora creato nessuna fascia.</div>
+				<EmptyState compact>Non hai ancora creato nessuna fascia.</EmptyState>
 			{:else}
 				<div
 					class="tier-list"
@@ -361,23 +359,22 @@
 							data-drag-id={tier.id}
 							style:--tier-color={tier.color ?? 'var(--tier-default)'}
 						>
-							<button
-								type="button"
+							<Button
+								variant="secondary"
 								class="drag-handle"
 								data-drag-handle
-								use:press
 								aria-label={`Trascina per riordinare “${tier.name}”, o usa le frecce su/giù`}
 							>
 								⠿
-							</button>
+							</Button>
 							<span class="color-marker"></span>
-							<input
+							<Input
 								bind:value={tier.name}
 								oninput={() => scheduleTierSave(tier.id)}
 								onblur={() => flushTierSave(tier.id)}
 								aria-label="Nome fascia"
 							/>
-							<input
+							<Input
 								type="color"
 								value={tier.color ?? '#d8ded9'}
 								oninput={(event) => {
@@ -391,13 +388,9 @@
 								<span class="save-status" class:visible={tierSaved[tier.id]} role="status"
 									>{tierSaved[tier.id] ? 'Salvato' : ''}</span
 								>
-								<button
-									type="button"
-									class="danger"
-									use:press
-									onclick={() => deleteTier(tier)}
-									disabled={saving}>Elimina</button
-								>
+								<Button variant="danger" onclick={() => deleteTier(tier)} disabled={saving}>
+									Elimina
+								</Button>
 							</div>
 						</div>
 					{/each}
@@ -406,166 +399,146 @@
 		</CollapsibleSection>
 	</section>
 
-	<div class="role-tabs" role="tablist" aria-label="Ruoli" bind:this={roleTabsEl}>
-		{#each roles as role (role)}
-			<button
-				type="button"
-				class:active={selectedRole === role}
-				use:press
-				onclick={() => {
-					selectedRole = role;
-					playerSearch = '';
-				}}
-			>
-				{roleLabels[role]}
-			</button>
-		{/each}
-		<span class="tab-indicator" use:slidingIndicator={activeRoleTabEl} aria-hidden="true"></span>
+	<div class="role-tabs">
+		<Tabs
+			items={roleTabs}
+			bind:value={selectedRole}
+			label="Ruoli"
+			id="strategy-role"
+			panelId="strategy-role-panel"
+			onchange={() => (playerSearch = '')}
+		/>
 	</div>
 
-	<section class="panel role-tier-panel">
-		<CollapsibleSection
-			storageKey={`strategy:${strategy.id}:role-tiers`}
-			title={`Fasce per ${roleLabels[selectedRole].toLowerCase()}`}
-			subtitle="Vista raggruppata dei calciatori già assegnati."
-		>
-			{#if orderedTiers.length === 0}
-				<div class="compact-empty">Crea almeno una fascia per organizzare i calciatori.</div>
-			{:else}
-				<HorizontalScroller ariaLabel={`Fasce per ${roleLabels[selectedRole].toLowerCase()}`}>
-					<div class="tier-board">
-						{#each orderedTiers as tier (tier.id)}
-							<div class="tier-column" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
-								<h3><TierBadge name={tier.name} color={tier.color} /></h3>
-								<div>
-									{#each entriesForTier(tier.id) as entry (entry.player.id)}
-										<TierPlayerCard
-											name={entry.player.name}
-											team={entry.player.team}
-											mantraRoles={entry.player.mantra_roles}
-											maximumPricePercentage={entry.draft.maximumPricePercentage ?? null}
-											note={entry.draft.note}
-											inactive={!entry.player.active}
-										/>
-									{:else}
-										<p class="empty-tier">Nessun calciatore</p>
-									{/each}
+	<div
+		id="strategy-role-panel"
+		role="tabpanel"
+		tabindex="0"
+		aria-labelledby="strategy-role-{selectedRole}"
+	>
+		<section class="panel role-tier-panel">
+			<CollapsibleSection
+				storageKey={`strategy:${strategy.id}:role-tiers`}
+				title={`Fasce per ${roleLabels[selectedRole].toLowerCase()}`}
+				subtitle="Vista raggruppata dei calciatori già assegnati."
+			>
+				{#if orderedTiers.length === 0}
+					<EmptyState compact>Crea almeno una fascia per organizzare i calciatori.</EmptyState>
+				{:else}
+					<HorizontalScroller ariaLabel={`Fasce per ${roleLabels[selectedRole].toLowerCase()}`}>
+						<div class="tier-board">
+							{#each orderedTiers as tier (tier.id)}
+								<div class="tier-column" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
+									<h3><TierBadge name={tier.name} color={tier.color} /></h3>
+									<div>
+										{#each entriesForTier(tier.id) as entry (entry.player.id)}
+											<TierPlayerCard
+												name={entry.player.name}
+												team={entry.player.team}
+												mantraRoles={entry.player.mantra_roles}
+												maximumPricePercentage={entry.draft.maximumPricePercentage ?? null}
+												note={entry.draft.note}
+												inactive={!entry.player.active}
+											/>
+										{:else}
+											<p class="empty-tier">Nessun calciatore</p>
+										{/each}
+									</div>
 								</div>
+							{/each}
+						</div>
+					</HorizontalScroller>
+				{/if}
+			</CollapsibleSection>
+		</section>
+
+		<section class="panel players-panel">
+			<SectionHeading
+				title="Calciatori"
+				subtitle="Assegna una fascia, una percentuale massima di spesa e una nota facoltativa."
+			>
+				{#snippet trailing()}
+					<Input
+						class="search"
+						bind:value={playerSearch}
+						type="search"
+						placeholder="Cerca nome o squadra"
+						aria-label="Cerca calciatori"
+					/>
+				{/snippet}
+			</SectionHeading>
+
+			{#if visiblePlayers.length === 0}
+				<EmptyState compact>Nessun calciatore disponibile per questo ruolo.</EmptyState>
+			{:else}
+				<div class="player-list">
+					{#each visiblePlayers as player (player.id)}
+						{@const selectedPlayerTier = orderedTiers.find(
+							(tier) => tier.id === entryDrafts[player.id].tierId
+						)}
+						<div class:inactive={!player.active} class="player-row">
+							<div class="player-info">
+								<span class="name-row"
+									><strong>{player.name}</strong><MantraRoleBadges
+										roles={player.mantra_roles}
+										compact
+									/></span
+								>
+								<span>{player.team}{player.active ? '' : ' · inattivo'}</span>
 							</div>
-						{/each}
-					</div>
-				</HorizontalScroller>
-			{/if}
-		</CollapsibleSection>
-	</section>
-
-	<section class="panel players-panel">
-		<SectionHeading
-			title="Calciatori"
-			subtitle="Assegna una fascia, una percentuale massima di spesa e una nota facoltativa."
-		>
-			{#snippet trailing()}
-				<input
-					class="search"
-					bind:value={playerSearch}
-					type="search"
-					placeholder="Cerca nome o squadra"
-					aria-label="Cerca calciatori"
-				/>
-			{/snippet}
-		</SectionHeading>
-
-		{#if visiblePlayers.length === 0}
-			<div class="compact-empty">Nessun calciatore disponibile per questo ruolo.</div>
-		{:else}
-			<div class="player-list">
-				{#each visiblePlayers as player (player.id)}
-					{@const selectedPlayerTier = orderedTiers.find(
-						(tier) => tier.id === entryDrafts[player.id].tierId
-					)}
-					<div class:inactive={!player.active} class="player-row">
-						<div class="player-info">
-							<span class="name-row"
-								><strong>{player.name}</strong><MantraRoleBadges
-									roles={player.mantra_roles}
-									compact
-								/></span
-							>
-							<span>{player.team}{player.active ? '' : ' · inattivo'}</span>
-						</div>
-						<div class="tier-selector">
-							<select
-								bind:value={entryDrafts[player.id].tierId}
-								style:--tier-color={selectedPlayerTier?.color ?? 'var(--tier-default)'}
-								class:has-tier={!!selectedPlayerTier}
-								aria-label={`Fascia di ${player.name}`}
-								onchange={() => scheduleEntrySave(player.id, { immediate: true })}
-							>
-								<option value="">Senza fascia</option>
-								{#each orderedTiers as tier (tier.id)}
-									<option value={tier.id}>{tier.name}</option>
-								{/each}
-							</select>
-						</div>
-						<input
-							bind:value={entryDrafts[player.id].note}
-							placeholder="Nota"
-							aria-label={`Nota per ${player.name}`}
-							oninput={() => scheduleEntrySave(player.id)}
-							onblur={() => flushEntrySave(player.id)}
-						/>
-						<div class="percentage-field">
-							<input
-								bind:value={entryDrafts[player.id].maximumPricePercentage}
-								type="number"
-								min="0.1"
-								max="100"
-								step="0.1"
-								placeholder="% max"
-								aria-label={`Percentuale massima per ${player.name}`}
+							<div class="tier-selector">
+								<Select
+									bind:value={entryDrafts[player.id].tierId}
+									style="--tier-color: {selectedPlayerTier?.color ?? 'var(--tier-default)'}"
+									class={selectedPlayerTier ? 'has-tier' : ''}
+									aria-label={`Fascia di ${player.name}`}
+									onchange={() => scheduleEntrySave(player.id, { immediate: true })}
+								>
+									<option value="">Senza fascia</option>
+									{#each orderedTiers as tier (tier.id)}
+										<option value={tier.id}>{tier.name}</option>
+									{/each}
+								</Select>
+							</div>
+							<Input
+								bind:value={entryDrafts[player.id].note}
+								placeholder="Nota"
+								aria-label={`Nota per ${player.name}`}
 								oninput={() => scheduleEntrySave(player.id)}
 								onblur={() => flushEntrySave(player.id)}
 							/>
-							<span class="percentage-suffix">%</span>
+							<div class="percentage-field">
+								<Input
+									bind:value={entryDrafts[player.id].maximumPricePercentage}
+									type="number"
+									min="0.1"
+									max="100"
+									step="0.1"
+									placeholder="% max"
+									aria-label={`Percentuale massima per ${player.name}`}
+									oninput={() => scheduleEntrySave(player.id)}
+									onblur={() => flushEntrySave(player.id)}
+								/>
+								<span class="percentage-suffix">%</span>
+							</div>
+							<span class="save-status" class:visible={entrySaved[player.id]} role="status"
+								>{entrySaved[player.id] ? 'Salvato' : ''}</span
+							>
 						</div>
-						<span class="save-status" class:visible={entrySaved[player.id]} role="status"
-							>{entrySaved[player.id] ? 'Salvato' : ''}</span
-						>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</section>
+					{/each}
+				</div>
+			{/if}
+		</section>
+	</div>
 {/if}
 
 <style>
-	.detail-heading {
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 3rem;
-	}
-
-	.detail-heading form {
-		width: min(100%, 390px);
-	}
-
-	label {
-		display: block;
-		margin-bottom: 0.4rem;
-		font-size: 0.78rem;
-		font-weight: 700;
-	}
-
-	.inline-fields,
+	.name-form,
 	.tier-form,
 	.tier-actions {
 		display: flex;
+		align-items: center;
 		gap: 0.55rem;
-	}
-
-	.inline-fields input {
-		flex: 1;
 	}
 
 	/* Completion feedback (§Feedback comes in four kinds): every field autosaves on its own,
@@ -606,8 +579,6 @@
 		position: sticky;
 		top: var(--header-height);
 		z-index: 80;
-		display: flex;
-		gap: 0.4rem;
 		margin-top: 1.5rem;
 		padding: 0.5rem 0 0.4rem;
 		background: var(--page-bg);
@@ -618,11 +589,7 @@
 		margin-top: 1.5rem;
 	}
 
-	.detail-heading + .panel {
-		margin-top: 1.5rem;
-	}
-
-	.tier-form input:not([type='color']) {
+	.tier-form :global(.tier-name) {
 		width: 190px;
 	}
 
@@ -658,7 +625,7 @@
 		cursor: grabbing;
 	}
 
-	.drag-handle {
+	.tier-row :global(.drag-handle) {
 		display: grid;
 		place-items: center;
 		width: 2.1rem;
@@ -675,7 +642,7 @@
 		touch-action: none;
 	}
 
-	.drag-handle:active {
+	.tier-row :global(.drag-handle:active) {
 		cursor: grabbing;
 	}
 
@@ -684,15 +651,6 @@
 		border: 1px solid rgb(0 0 0 / 14%);
 		border-radius: 0.24rem;
 		background: var(--tier-color);
-	}
-
-	.compact-empty {
-		margin-top: 1rem;
-		padding: 1rem;
-		border: 1px dashed var(--border-strong);
-		border-radius: var(--radius-sm);
-		color: var(--subdued);
-		font-size: 0.85rem;
 	}
 
 	.role-tier-panel {
@@ -739,7 +697,7 @@
 		margin-top: 1rem;
 	}
 
-	.search {
+	.players-panel :global(.search) {
 		width: min(100%, 280px);
 	}
 
@@ -791,16 +749,12 @@
 		min-width: 0;
 	}
 
-	.tier-selector select {
-		width: 100%;
-	}
-
 	.percentage-field {
 		position: relative;
 		min-width: 0;
 	}
 
-	.percentage-field input {
+	.percentage-field :global(input) {
 		width: 100%;
 		padding-right: 1.6rem;
 	}
@@ -815,16 +769,11 @@
 		pointer-events: none;
 	}
 
-	.tier-selector select.has-tier {
+	.tier-selector :global(select.has-tier) {
 		border-left: 4px solid var(--tier-color);
 	}
 
 	@media (max-width: 900px) {
-		.detail-heading {
-			align-items: stretch;
-			flex-direction: column;
-		}
-
 		.player-row {
 			grid-template-columns: 0.35rem 1fr auto;
 		}
@@ -837,7 +786,7 @@
 			grid-column: 3 / -1;
 		}
 
-		.player-row > input,
+		.player-row > :global(input),
 		.player-row > .tier-selector,
 		.player-row > .percentage-field,
 		.player-row > .save-status {
@@ -846,16 +795,12 @@
 	}
 
 	@media (max-width: 560px) {
-		.role-tabs {
-			overflow-x: auto;
-		}
-
 		.tier-form,
 		.tier-actions {
 			flex-wrap: wrap;
 		}
 
-		.tier-form input:not([type='color']) {
+		.tier-form :global(.tier-name) {
 			width: 100%;
 		}
 	}

@@ -8,9 +8,18 @@
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Dialog from '$lib/components/ui/Dialog.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
+	import Tabs from '$lib/components/ui/Tabs.svelte';
+	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
 	import { saveFile } from '$lib/api';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { press } from '$lib/actions/press';
+
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		amendPurchase,
@@ -45,6 +54,7 @@
 		A: 'Attaccanti'
 	};
 	const roles = Object.keys(roleLabels) as Role[];
+	const roleTabs = roles.map((role) => ({ value: role, label: roleLabels[role] }));
 	type CatalogSort = 'tier' | 'quotation';
 
 	let auction = $state<Auction>();
@@ -257,20 +267,9 @@
 		return tierForPlayer(playerId)?.position ?? Number.POSITIVE_INFINITY;
 	}
 
-	function openRegistry(): void {
-		registryOpen = true;
-	}
-
-	function closeRegistry(): void {
-		registryOpen = false;
+	function resetRegistry(): void {
 		registrySearch = '';
 		editingPurchaseId = '';
-	}
-
-	function handleRegistryKeydown(event: KeyboardEvent): void {
-		if (!registryOpen || event.key !== 'Escape') return;
-		event.preventDefault();
-		closeRegistry();
 	}
 
 	function beginEdit(purchase: Purchase, participant: Participant): void {
@@ -334,16 +333,10 @@
 </script>
 
 <svelte:head><title>{auction?.name ?? 'Asta'} | Asta la Vista</title></svelte:head>
-<svelte:window onkeydown={handleRegistryKeydown} />
 
-<a class="back-link" href={resolve('/auctions')}>Torna alle aste</a>
-
-<header class="auction-heading">
-	<div>
-		<h1>{auction?.name ?? 'Asta'}</h1>
-	</div>
-	{#if auction}
-		<div class="status-actions">
+<PageHeader title={auction?.name ?? 'Asta'} back={{ href: resolve('/auctions'), label: 'Aste' }}>
+	{#snippet meta()}
+		{#if auction}
 			<span class="status-badge" data-status={auction.status}
 				>{auction.status === 'draft'
 					? 'Da iniziare'
@@ -351,24 +344,23 @@
 						? 'In corso'
 						: 'Terminata'}</span
 			>
-			{#if auction.status === 'draft'}<button
-					onclick={() => changeStatus('start')}
-					disabled={saving}>Inizia asta</button
-				>{/if}
-			{#if auction.status === 'live'}<button
-					class="secondary"
-					onclick={() => changeStatus('complete')}
-					disabled={saving}>Termina asta</button
-				>{/if}
-			{#if auction.status === 'completed'}
-				<button onclick={() => changeStatus('reopen')} disabled={saving}>Riapri asta</button>
-				<button class="secondary" onclick={downloadReport}>Scarica report</button>
-			{/if}
-		</div>
-	{/if}
-</header>
+		{/if}
+	{/snippet}
+	{#snippet actions()}
+		{#if auction?.status === 'draft'}
+			<Button onclick={() => changeStatus('start')} disabled={saving}>Inizia asta</Button>
+		{:else if auction?.status === 'live'}
+			<Button variant="secondary" onclick={() => changeStatus('complete')} disabled={saving}>
+				Termina asta
+			</Button>
+		{:else if auction?.status === 'completed'}
+			<Button onclick={() => changeStatus('reopen')} disabled={saving}>Riapri asta</Button>
+			<Button variant="secondary" onclick={downloadReport}>Scarica report</Button>
+		{/if}
+	{/snippet}
+</PageHeader>
 
-{#if loading}<div class="empty-state">Caricamento dell'asta…</div>{/if}
+{#if loading}<EmptyState>Caricamento dell'asta…</EmptyState>{/if}
 
 {#if auction && !loading}
 	{#if auction.status === 'draft'}
@@ -388,9 +380,9 @@
 		</section>
 	{:else if auction.status === 'live'}
 		<div class="registry-trigger-row">
-			<button type="button" use:press onclick={openRegistry}>
+			<Button onclick={() => (registryOpen = true)}>
 				Apri registro acquisti{allPurchases.length > 0 ? ` (${allPurchases.length})` : ''}
-			</button>
+			</Button>
 		</div>
 		<section class="call-panel panel">
 			<SectionHeading eyebrow="Calciatore chiamato" title="Registra l'acquisto">
@@ -407,27 +399,30 @@
 				{/snippet}
 			</SectionHeading>
 			<form onsubmit={submitPurchase}>
-				<label class="player-search"
-					><span>Calciatore</span><input
+				<Field label="Calciatore">
+					<Input
 						bind:value={playerSearch}
 						type="search"
 						placeholder="Cerca per nome o squadra"
 						oninput={() => (selectedPlayerId = '')}
 						onkeydown={handleSearchKeydown}
-					/></label
-				>
-				<label
-					><span>Vincitore</span><select bind:value={selectedParticipantId}
-						>{#each auction.participants as participant (participant.id)}<option
-								value={participant.id}>{participant.name} · max {participant.maximum_bid}</option
-							>{/each}</select
-					></label
-				>
-				<label><span>Prezzo</span><input bind:value={price} type="number" min="1" required /></label
-				>
-				<button type="submit" disabled={!selectedPlayerId || !selectedParticipantId || saving}
-					>Registra</button
-				>
+					/>
+				</Field>
+				<Field label="Vincitore">
+					<Select bind:value={selectedParticipantId}>
+						{#each auction.participants as participant (participant.id)}
+							<option value={participant.id}
+								>{participant.name} · max {participant.maximum_bid}</option
+							>
+						{/each}
+					</Select>
+				</Field>
+				<Field label="Prezzo">
+					<Input bind:value={price} type="number" min="1" required />
+				</Field>
+				<Button type="submit" disabled={!selectedPlayerId || !selectedParticipantId || saving}>
+					Registra
+				</Button>
 			</form>
 			{#if selectedPlayer && strategy}
 				<div class="called-player-strategy">
@@ -550,74 +545,75 @@
 			>
 				{#snippet trailing()}
 					<div class="strategy-picker">
-						<label>
-							<span>Visualizza</span>
-							<select bind:value={viewingStrategyId} onchange={viewSelectedStrategy}>
+						<Field label="Visualizza" inline>
+							<Select bind:value={viewingStrategyId} onchange={viewSelectedStrategy}>
 								<option value="">Nessuna strategia</option>
 								{#each strategies as candidate (candidate.id)}
 									<option value={candidate.id}>{candidate.name}</option>
 								{/each}
-							</select>
-						</label>
+							</Select>
+						</Field>
 						{#if viewingStrategyId !== (auction?.strategy_id ?? '')}
-							<button type="button" use:press disabled={saving} onclick={fixViewedStrategy}>
-								Fissa per l'asta
-							</button>
+							<Button disabled={saving} onclick={fixViewedStrategy}>Fissa per l'asta</Button>
 						{/if}
 					</div>
 				{/snippet}
 				{#if strategy}
-					<div class="strategy-role-tabs" aria-label="Ruolo strategia">
-						{#each roles as role (role)}
-							<button
-								type="button"
-								class:active={strategyRole === role}
-								onclick={() => (strategyRole = role)}
-							>
-								{roleLabels[role]}
-							</button>
-						{/each}
-					</div>
-					<HorizontalScroller ariaLabel={`Fasce della strategia per ${roleLabels[strategyRole]}`}>
-						<div class="strategy-roles">
-							{#each strategyRoleTiers as { tier, entries, availableCount } (tier.id)}
-								<div class="tier">
-									<div class="tier-heading">
-										<TierBadge name={tier.name} color={tier.color} compact />
-										<span class="tier-availability">{availableCount}/{entries.length}</span>
-									</div>
-									{#if entries.length > 0}
-										<div class="tier-players">
-											{#each entries as entry (entry.player_id)}
-												<button
-													type="button"
-													class="tier-player-button"
-													disabled={auction.status !== 'live' || purchasedIds.has(entry.player_id)}
-													onclick={() => callPlayerFromStrategy(entry.player_id)}
-												>
-													<TierPlayerCard
-														name={entry.name}
-														team={entry.team}
-														mantraRoles={entry.mantra_roles}
-														maximumPricePercentage={entry.maximum_price_percentage}
-														maximumPriceCredits={entry.maximum_price_percentage != null
-															? percentageToCredits(
-																	entry.maximum_price_percentage,
-																	auction.initial_credits
-																)
-															: null}
-														note={entry.note}
-														purchased={purchasedIds.has(entry.player_id)}
-														compact
-													/>
-												</button>
-											{/each}
+					<Tabs
+						items={roleTabs}
+						bind:value={strategyRole}
+						label="Ruolo strategia"
+						id="strategy-role"
+						panelId="strategy-role-panel"
+					/>
+					<div
+						id="strategy-role-panel"
+						role="tabpanel"
+						tabindex="0"
+						aria-labelledby="strategy-role-{strategyRole}"
+					>
+						<HorizontalScroller ariaLabel={`Fasce della strategia per ${roleLabels[strategyRole]}`}>
+							<div class="strategy-roles">
+								{#each strategyRoleTiers as { tier, entries, availableCount } (tier.id)}
+									<div class="tier">
+										<div class="tier-heading">
+											<TierBadge name={tier.name} color={tier.color} compact />
+											<span class="tier-availability">{availableCount}/{entries.length}</span>
 										</div>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					</HorizontalScroller>
+										{#if entries.length > 0}
+											<div class="tier-players">
+												{#each entries as entry (entry.player_id)}
+													<button
+														type="button"
+														class="tier-player-button"
+														disabled={auction.status !== 'live' ||
+															purchasedIds.has(entry.player_id)}
+														onclick={() => callPlayerFromStrategy(entry.player_id)}
+													>
+														<TierPlayerCard
+															name={entry.name}
+															team={entry.team}
+															mantraRoles={entry.mantra_roles}
+															maximumPricePercentage={entry.maximum_price_percentage}
+															maximumPriceCredits={entry.maximum_price_percentage != null
+																? percentageToCredits(
+																		entry.maximum_price_percentage,
+																		auction.initial_credits
+																	)
+																: null}
+															note={entry.note}
+															purchased={purchasedIds.has(entry.player_id)}
+															compact
+														/>
+													</button>
+												{/each}
+											</div>
+										{/if}
+									</div>
+								{/each}
+							</div>
+						</HorizontalScroller>
+					</div>
 				{/if}
 			</CollapsibleSection>
 		</section>
@@ -636,33 +632,25 @@
 				<div class="catalog-content">
 					<div class="catalog-toolbar">
 						<div class="catalog-tabs-group">
-							<div class="catalog-role-tabs" aria-label="Ruolo calciatori">
-								{#each roles as role (role)}
-									<button
-										type="button"
-										class:active={catalogRole === role}
-										onclick={() => {
-											catalogRole = role;
-											catalogMantraRoles = [];
-										}}
-									>
-										{roleLabels[role]}
-									</button>
-								{/each}
-							</div>
+							<Tabs
+								items={roleTabs}
+								bind:value={catalogRole}
+								label="Ruolo calciatori"
+								id="catalog-role"
+								panelId="catalog-role-panel"
+								onchange={() => (catalogMantraRoles = [])}
+							/>
 							{#if catalogMantraCodes.length > 0}
-								<div class="catalog-mantra-chips" aria-label="Sotto-ruolo mantra">
-									<button
-										type="button"
-										class:active={catalogMantraRoles.length === 0}
+								<div class="catalog-mantra-chips" role="group" aria-label="Sotto-ruolo mantra">
+									<ToggleChip
+										pressed={catalogMantraRoles.length === 0}
 										onclick={() => (catalogMantraRoles = [])}
 									>
 										Tutti
-									</button>
+									</ToggleChip>
 									{#each catalogMantraCodes as code (code)}
-										<button
-											type="button"
-											class:active={catalogMantraRoles.includes(code)}
+										<ToggleChip
+											pressed={catalogMantraRoles.includes(code)}
 											onclick={() => {
 												catalogMantraRoles = catalogMantraRoles.includes(code)
 													? catalogMantraRoles.filter((role) => role !== code)
@@ -670,21 +658,26 @@
 											}}
 										>
 											{mantraRoleLabel(code)}
-										</button>
+										</ToggleChip>
 									{/each}
 								</div>
 							{/if}
 						</div>
-						<label>
-							<span>Ordina per</span>
-							<select bind:value={catalogSort}>
+						<Field label="Ordina per" inline>
+							<Select bind:value={catalogSort}>
 								{#if strategy}<option value="tier">Fascia</option>{/if}
 								<option value="quotation">Quotazione</option>
-							</select>
-						</label>
+							</Select>
+						</Field>
 					</div>
 
-					<div class="catalog-grid">
+					<div
+						class="catalog-grid"
+						id="catalog-role-panel"
+						role="tabpanel"
+						tabindex="0"
+						aria-labelledby="catalog-role-{catalogRole}"
+					>
 						{#each catalogPlayers as player (player.id)}
 							{@const playerTier = tierForPlayer(player.id)}
 							<button
@@ -715,109 +708,88 @@
 		</section>
 	{/if}
 
-	{#if registryOpen}
-		<div class="dialog-overlay" onclick={closeRegistry} role="presentation">
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<div
-				class="registry-dialog"
-				role="dialog"
-				tabindex="-1"
-				aria-modal="true"
-				aria-labelledby="registry-title"
-				onclick={(event) => event.stopPropagation()}
-			>
-				<header class="registry-header">
-					<h2 id="registry-title">Registro acquisti</h2>
-					<button type="button" class="text-button" use:press onclick={closeRegistry}>Chiudi</button
-					>
-				</header>
-				<label class="registry-search"
-					><span>Cerca calciatore</span><input
-						bind:value={registrySearch}
-						type="search"
-						placeholder="Nome del calciatore"
-					/></label
-				>
-				{#if allPurchases.length === 0}
-					<p class="registry-empty">Nessun acquisto registrato.</p>
-				{:else if filteredRegistryPurchases.length === 0}
-					<p class="registry-empty">Nessun calciatore corrisponde alla ricerca.</p>
-				{:else}
-					<div class="registry-list">
-						{#each filteredRegistryPurchases as { purchase, participant } (purchase.id)}
-							{@const strategyEntry = strategy?.entries.find(
-								(entry) => entry.player_id === purchase.player_id
-							)}
-							{@const purchaseTier = strategy?.tiers.find(
-								(tier) => tier.id === strategyEntry?.tier_id
-							)}
-							<div
-								class="purchase-row registry-row"
-								class:editing={editingPurchaseId === purchase.id}
+	<Dialog
+		bind:open={registryOpen}
+		title="Registro acquisti"
+		width="760px"
+		closeLabel="Chiudi"
+		onclose={resetRegistry}
+	>
+		<Field label="Cerca calciatore">
+			<Input
+				bind:value={registrySearch}
+				type="search"
+				placeholder="Nome del calciatore"
+				data-autofocus
+			/>
+		</Field>
+		{#if allPurchases.length === 0}
+			<p class="registry-empty">Nessun acquisto registrato.</p>
+		{:else if filteredRegistryPurchases.length === 0}
+			<p class="registry-empty">Nessun calciatore corrisponde alla ricerca.</p>
+		{:else}
+			<div class="registry-list">
+				{#each filteredRegistryPurchases as { purchase, participant } (purchase.id)}
+					{@const strategyEntry = strategy?.entries.find(
+						(entry) => entry.player_id === purchase.player_id
+					)}
+					{@const purchaseTier = strategy?.tiers.find((tier) => tier.id === strategyEntry?.tier_id)}
+					<div class="purchase-row registry-row" class:editing={editingPurchaseId === purchase.id}>
+						{#if editingPurchaseId === purchase.id}
+							<Select bind:value={editedParticipantId} aria-label="Vincitore">
+								{#each auction.participants as option (option.id)}
+									<option value={option.id}>{option.name}</option>
+								{/each}
+							</Select>
+							<Input bind:value={editedPrice} type="number" min="1" aria-label="Prezzo" />
+							<Button
+								variant="text"
+								size="sm"
+								onclick={() => savePurchase(purchase.id)}
+								disabled={saving}>Salva</Button
 							>
-								{#if editingPurchaseId === purchase.id}
-									<select bind:value={editedParticipantId} aria-label="Vincitore"
-										>{#each auction.participants as option (option.id)}<option value={option.id}
-												>{option.name}</option
-											>{/each}</select
-									>
-									<input bind:value={editedPrice} type="number" min="1" aria-label="Prezzo" />
-									<button
-										class="text-button"
-										onclick={() => savePurchase(purchase.id)}
-										disabled={saving}>Salva</button
-									><button class="text-button" onclick={() => (editingPurchaseId = '')}
-										>Annulla</button
-									>
-								{:else}
-									<span class="role-badge" data-role={purchase.role}>{purchase.role}</span><span
-										class="purchase-name"
-										><strong>{purchase.player_name}</strong><small
-											>{purchase.team}
-											<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
-										></span
-									><strong class="purchase-price">{purchase.price}</strong>
-									{#if purchaseTier}
-										<span class="purchase-tier">
-											<TierBadge name={purchaseTier.name} color={purchaseTier.color} compact />
-										</span>
-									{:else}
-										<span class="purchase-tier-spacer" aria-hidden="true"></span>
-									{/if}
-									<span class="registry-participant">{participant.name}</span>
-									<button class="text-button" onclick={() => beginEdit(purchase, participant)}
-										>Modifica</button
-									><button class="text-button danger" onclick={() => deletePurchase(purchase)}
-										>Elimina</button
-									>
-								{/if}
-							</div>
-						{/each}
+							<Button variant="text" size="sm" onclick={() => (editingPurchaseId = '')}>
+								Annulla
+							</Button>
+						{:else}
+							<span class="role-badge" data-role={purchase.role}>{purchase.role}</span><span
+								class="purchase-name"
+								><strong>{purchase.player_name}</strong><small
+									>{purchase.team}
+									<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
+								></span
+							><strong class="purchase-price">{purchase.price}</strong>
+							{#if purchaseTier}
+								<span class="purchase-tier">
+									<TierBadge name={purchaseTier.name} color={purchaseTier.color} compact />
+								</span>
+							{:else}
+								<span class="purchase-tier-spacer" aria-hidden="true"></span>
+							{/if}
+							<span class="registry-participant">{participant.name}</span>
+							<Button variant="text" size="sm" onclick={() => beginEdit(purchase, participant)}>
+								Modifica
+							</Button>
+							<Button variant="danger" size="sm" onclick={() => deletePurchase(purchase)}>
+								Elimina
+							</Button>
+						{/if}
 					</div>
-				{/if}
+				{/each}
 			</div>
-		</div>
-	{/if}
+		{/if}
+	</Dialog>
 {/if}
 
 <style>
-	.auction-heading,
-	.status-actions,
 	.team-card header,
 	.slots,
 	.slot-summary {
 		display: flex;
 		align-items: center;
 	}
-	.auction-heading,
 	.team-card header {
 		justify-content: space-between;
-	}
-	.auction-heading {
-		gap: 2rem;
-	}
-	.status-actions {
-		gap: 0.7rem;
 	}
 	.team-card {
 		container-type: inline-size;
@@ -854,12 +826,7 @@
 		gap: 0.75rem;
 		margin-top: 1rem;
 	}
-	label > span {
-		display: block;
-		margin-bottom: 0.35rem;
-		font-size: 0.74rem;
-		font-weight: 700;
-	}
+
 	.selected-player {
 		padding: 0.5rem 0.7rem;
 		border-radius: var(--radius-sm);
@@ -906,13 +873,18 @@
 		display: grid;
 		justify-items: start;
 		gap: 0.2rem;
-		height: auto;
 		padding: 0.6rem;
-		border-color: var(--border);
+		border: var(--bw) solid var(--border);
+		border-radius: var(--radius-sm);
 		background: var(--input-bg);
 		color: var(--text);
-		box-shadow: none;
+		font-size: 0.875rem;
+		font-weight: 700;
 		text-align: left;
+		cursor: pointer;
+	}
+	.search-results button:hover {
+		border-color: var(--border-hover);
 	}
 	.search-results span {
 		color: var(--subdued);
@@ -927,15 +899,7 @@
 		align-items: center;
 		gap: 0.75rem;
 	}
-	.strategy-picker label {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.75rem;
-		font-weight: 700;
-		white-space: nowrap;
-	}
-	.strategy-picker select {
+	.strategy-picker :global(select) {
 		width: auto;
 		min-width: 9rem;
 	}
@@ -1018,8 +982,8 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.purchase-row input,
-	.purchase-row select {
+	.purchase-row :global(input),
+	.purchase-row :global(select) {
 		min-height: 2rem;
 	}
 	.purchase-name {
@@ -1056,11 +1020,7 @@
 			display: none;
 		}
 	}
-	.strategy-role-tabs {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.35rem;
-	}
+
 	.strategy-roles {
 		display: flex;
 		align-items: stretch;
@@ -1147,7 +1107,6 @@
 		border-top: 1px solid var(--border);
 	}
 	.catalog-toolbar,
-	.catalog-role-tabs,
 	.catalog-mantra-chips {
 		display: flex;
 		align-items: center;
@@ -1160,28 +1119,11 @@
 		display: grid;
 		gap: 0.5rem;
 	}
-	.catalog-role-tabs,
 	.catalog-mantra-chips {
 		flex-wrap: wrap;
 		gap: 0.35rem;
 	}
-	.catalog-mantra-chips button {
-		min-height: 1.85rem;
-		padding: 0 0.6rem;
-		font-size: 0.72rem;
-	}
-	.catalog-toolbar label {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.75rem;
-		font-weight: 700;
-		white-space: nowrap;
-	}
-	.catalog-toolbar label span {
-		margin: 0;
-	}
-	.catalog-toolbar select {
+	.catalog-toolbar :global(select) {
 		width: auto;
 		min-width: 9rem;
 	}
@@ -1255,27 +1197,7 @@
 	.registry-trigger-row {
 		margin-bottom: 0.6rem;
 	}
-	.registry-dialog {
-		display: grid;
-		grid-template-rows: auto auto minmax(0, 1fr);
-		gap: 0.9rem;
-		width: min(760px, 100%);
-		max-height: min(80vh, 720px);
-		overflow: hidden;
-	}
-	.registry-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-	}
-	.registry-header h2 {
-		margin: 0;
-		font-size: 1.15rem;
-	}
-	.registry-search {
-		display: block;
-	}
+
 	.registry-empty {
 		margin: 0;
 		color: var(--subdued);
@@ -1307,13 +1229,6 @@
 		}
 	}
 	@media (max-width: 620px) {
-		.auction-heading {
-			align-items: stretch;
-			flex-direction: column;
-		}
-		.status-actions {
-			flex-wrap: wrap;
-		}
 		.call-panel form,
 		.called-player-strategy,
 		.search-results {
@@ -1323,10 +1238,10 @@
 			align-items: stretch;
 			flex-direction: column;
 		}
-		.catalog-toolbar label {
+		.catalog-toolbar :global(.field) {
 			justify-content: space-between;
 		}
-		.catalog-toolbar select {
+		.catalog-toolbar :global(select) {
 			flex: 1;
 		}
 	}

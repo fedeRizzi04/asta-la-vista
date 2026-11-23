@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import { press } from '$lib/actions/press';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { motionPreferences } from '$lib/motionPreferences.svelte';
 	import type { AppVersion } from '$lib/system';
 
@@ -51,17 +52,13 @@
 			</p>
 			<div class="update-actions">
 				<!-- External page on GitHub, not an app route: resolve() does not apply. -->
-				<!-- eslint-disable svelte/no-navigation-without-resolve -->
-				<a
-					class="button-link"
-					href={appVersion.release_url}
+				<Button
+					href={appVersion.release_url ?? undefined}
 					target="_blank"
 					rel="noopener noreferrer"
-					use:press
 				>
 					Scarica
-				</a>
-				<!-- eslint-enable svelte/no-navigation-without-resolve -->
+				</Button>
 				<button
 					class="dismiss-button"
 					type="button"

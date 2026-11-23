@@ -13,6 +13,11 @@ who use the app.
 
 - Asta la Vista has a new sticker-inspired look in both themes, with pastel role badges and
   bundled Bricolage Grotesque and Atkinson Hyperlegible fonts that work offline.
+- Page headers are compact, so more of the screen goes to your data, and buttons, fields, role
+  tabs and filters look and behave the same on every page. Role tabs can be switched with the
+  arrow keys.
+- Confirmations and the purchase registry open as proper modal windows: Esc closes only the
+  topmost one, and the registry search box is ready for typing as soon as it opens.
 
 ## [0.4.1] - 2026-11-06
 

@@ -5,6 +5,12 @@
 	import Message from '$lib/components/Message.svelte';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
@@ -89,28 +95,24 @@
 	<title>Listone | Asta la Vista</title>
 </svelte:head>
 
-<section class="page-heading heading-row">
-	<div>
-		<h1>Listone</h1>
-		<p>Importa il file ufficiale e consulta ruolo, squadra, quotazione e disponibilità.</p>
-	</div>
-
-	<form class="import-form" onsubmit={submitImport}>
-		<label for="player-file">File CSV o XLSX</label>
-		<div class="file-row">
-			<FilePicker
-				id="player-file"
-				accept=".csv,.xlsx"
-				bind:selectedFile
-				ariaLabel="File del Listone"
-				onSelect={() => (importSummary = undefined)}
-			/>
-			<button type="submit" disabled={!selectedFile || importing}>
-				{importing ? 'Importazione…' : 'Importa'}
-			</button>
-		</div>
-	</form>
-</section>
+<PageHeader title="Listone">
+	{#snippet actions()}
+		<form class="import-form" onsubmit={submitImport}>
+			<Field label="File CSV o XLSX" for="player-file">
+				<div class="file-row">
+					<FilePicker
+						id="player-file"
+						accept=".csv,.xlsx"
+						bind:selectedFile
+						ariaLabel="File del Listone"
+						onSelect={() => (importSummary = undefined)}
+					/>
+					<Button type="submit" loading={importing} disabled={!selectedFile}>Importa</Button>
+				</div>
+			</Field>
+		</form>
+	{/snippet}
+</PageHeader>
 
 {#if importSummary}
 	<Message kind="success">
@@ -139,24 +141,22 @@
 		loadCatalog();
 	}}
 >
-	<label>
-		<span>Cerca</span>
-		<input bind:value={search} type="search" placeholder="Nome o squadra" />
-	</label>
-	<label>
-		<span>Ruolo</span>
-		<select bind:value={role}>
+	<Field label="Cerca">
+		<Input bind:value={search} type="search" placeholder="Nome o squadra" />
+	</Field>
+	<Field label="Ruolo">
+		<Select bind:value={role}>
 			<option value="">Tutti i ruoli</option>
 			{#each roles as currentRole (currentRole)}
 				<option value={currentRole}>{roleLabels[currentRole]}</option>
 			{/each}
-		</select>
-	</label>
+		</Select>
+	</Field>
 	<label class="checkbox">
 		<input bind:checked={includeInactive} type="checkbox" />
 		<span>Mostra inattivi</span>
 	</label>
-	<button type="submit" disabled={loading}>Applica filtri</button>
+	<Button type="submit" disabled={loading}>Applica filtri</Button>
 </form>
 
 <section class="table-section" aria-live="polite" aria-busy={loading}>
@@ -167,7 +167,7 @@
 	</SectionHeading>
 
 	{#if !loading && players.length === 0}
-		<div class="empty-state">Nessun calciatore corrisponde ai filtri selezionati.</div>
+		<EmptyState>Nessun calciatore corrisponde ai filtri selezionati.</EmptyState>
 	{:else}
 		<div class="table-scroll">
 			<table>
@@ -202,18 +202,6 @@
 <style>
 	.import-form {
 		width: min(100%, 390px);
-		padding: 1rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		background: var(--surface);
-	}
-
-	.import-form > label,
-	.filters label > span:first-child {
-		display: block;
-		margin-bottom: 0.45rem;
-		font-size: 0.78rem;
-		font-weight: 700;
 	}
 
 	.file-row {
@@ -297,12 +285,6 @@
 	}
 
 	@media (max-width: 900px) {
-		.heading-row {
-			align-items: stretch;
-			flex-direction: column;
-			gap: 2rem;
-		}
-
 		.counts {
 			grid-template-columns: repeat(2, 1fr);
 		}
