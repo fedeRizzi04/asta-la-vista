@@ -2,8 +2,13 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
-	import { press } from '$lib/actions/press';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
@@ -98,10 +103,7 @@
 	<title>Aste | Asta la Vista</title>
 </svelte:head>
 
-<section class="page-heading">
-	<h1>Aste</h1>
-	<p>Crea una nuova asta Classic oppure riprendi rapidamente quella in corso.</p>
-</section>
+<PageHeader title="Aste" />
 
 <div class="page-grid">
 	<section class="panel">
@@ -111,54 +113,48 @@
 		/>
 
 		<form class="auction-form" onsubmit={submitAuction}>
-			<label class="wide">
-				<span>Nome asta</span>
-				<input bind:value={name} placeholder="Ad esempio: Lega amici" required />
-			</label>
-			<label>
-				<span>Crediti</span>
-				<input bind:value={initialCredits} type="number" min="1" required />
-			</label>
-			<label>
-				<span>Portieri</span>
-				<input bind:value={goalkeeperSlots} type="number" min="0" required />
-			</label>
-			<label>
-				<span>Difensori</span>
-				<input bind:value={defenderSlots} type="number" min="0" required />
-			</label>
-			<label>
-				<span>Centrocampisti</span>
-				<input bind:value={midfielderSlots} type="number" min="0" required />
-			</label>
-			<label>
-				<span>Attaccanti</span>
-				<input bind:value={forwardSlots} type="number" min="0" required />
-			</label>
-			<label class="wide">
-				<span>Strategia predefinita</span>
-				<select bind:value={strategyId}>
+			<Field label="Nome asta" class="wide">
+				<Input bind:value={name} placeholder="Ad esempio: Lega amici" required />
+			</Field>
+			<Field label="Crediti">
+				<Input bind:value={initialCredits} type="number" min="1" required />
+			</Field>
+			<Field label="Portieri">
+				<Input bind:value={goalkeeperSlots} type="number" min="0" required />
+			</Field>
+			<Field label="Difensori">
+				<Input bind:value={defenderSlots} type="number" min="0" required />
+			</Field>
+			<Field label="Centrocampisti">
+				<Input bind:value={midfielderSlots} type="number" min="0" required />
+			</Field>
+			<Field label="Attaccanti">
+				<Input bind:value={forwardSlots} type="number" min="0" required />
+			</Field>
+			<Field label="Strategia predefinita" class="wide">
+				<Select bind:value={strategyId}>
 					<option value="">Nessuna strategia</option>
 					{#each strategies as strategy (strategy.id)}
 						<option value={strategy.id}>{strategy.name}</option>
 					{/each}
-				</select>
-			</label>
-			<label class="wide">
-				<span>Partecipanti, uno per riga</span>
+				</Select>
+			</Field>
+			<Field label="Partecipanti, uno per riga" class="wide">
 				<textarea
+					class="control"
 					bind:value={participantNames}
 					rows="7"
 					placeholder="Alice&#10;Bob&#10;Carlo"
 					required></textarea>
-			</label>
-			<button
+			</Field>
+			<Button
 				class="wide"
 				type="submit"
-				disabled={saving || !name.trim() || !participantNames.trim()}
+				loading={saving}
+				disabled={!name.trim() || !participantNames.trim()}
 			>
-				{saving ? 'Creazione…' : 'Crea asta'}
-			</button>
+				Crea asta
+			</Button>
 		</form>
 	</section>
 
@@ -170,7 +166,7 @@
 		</SectionHeading>
 
 		{#if !loading && auctions.length === 0}
-			<div class="empty-state">Non ci sono ancora aste salvate.</div>
+			<EmptyState>Non ci sono ancora aste salvate.</EmptyState>
 		{:else}
 			<div class="auction-list">
 				{#each auctions as auction (auction.id)}
@@ -186,19 +182,11 @@
 							<strong>{auction.initial_credits} crediti iniziali</strong>
 						</div>
 						<div class="actions">
-							<button
-								class="danger"
-								type="button"
-								use:press
-								onclick={() => removeAuction(auction)}
-								disabled={saving}
-							>
+							<Button variant="danger" onclick={() => removeAuction(auction)} disabled={saving}>
 								Elimina
-							</button>
-							<a
-								class="button-link"
-								use:press
-								href={resolve('/auctions/[auctionId]', { auctionId: auction.id })}>Apri</a
+							</Button>
+							<Button href={resolve('/auctions/[auctionId]', { auctionId: auction.id })}
+								>Apri</Button
 							>
 						</div>
 					</article>
@@ -224,15 +212,8 @@
 		margin-top: 1.25rem;
 	}
 
-	.wide {
+	.auction-form :global(.wide) {
 		grid-column: 1 / -1;
-	}
-
-	label span {
-		display: block;
-		margin-bottom: 0.4rem;
-		font-size: 0.76rem;
-		font-weight: 700;
 	}
 
 	.auction-title {
@@ -295,7 +276,7 @@
 			grid-template-columns: 1fr;
 		}
 
-		.wide {
+		.auction-form :global(.wide) {
 			grid-column: auto;
 		}
 
@@ -304,7 +285,7 @@
 			flex-direction: column;
 		}
 
-		.actions > * {
+		.actions > :global(*) {
 			flex: 1;
 		}
 	}

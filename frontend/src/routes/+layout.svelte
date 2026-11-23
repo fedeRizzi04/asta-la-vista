@@ -6,6 +6,7 @@
 	import DialogHost from '$lib/components/DialogHost.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import UpdateBanner from '$lib/components/UpdateBanner.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { press } from '$lib/actions/press';
 	import { slidingIndicator } from '$lib/actions/slidingIndicator.svelte';
 	import type { AppVersion } from '$lib/system';
@@ -100,17 +101,17 @@
 			{/each}
 			<span class="tab-indicator" use:slidingIndicator={activeNavEl} aria-hidden="true"></span>
 		</nav>
-		<button
+		<Button
+			variant="secondary"
+			size="sm"
 			class="theme-toggle"
-			type="button"
 			onclick={toggleTheme}
-			use:press
 			aria-label={theme === 'light' ? 'Attiva tema scuro' : 'Attiva tema chiaro'}
 			aria-pressed={theme === 'dark'}
 		>
 			<span aria-hidden="true"></span>
 			{theme === 'light' ? 'Tema scuro' : 'Tema chiaro'}
-		</button>
+		</Button>
 	</div>
 </header>
 

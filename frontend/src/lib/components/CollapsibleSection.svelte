@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import SectionHeading from './SectionHeading.svelte';
+	import Button from './ui/Button.svelte';
 	import { panelVisibility } from '$lib/panelVisibility.svelte';
 
 	/**
@@ -32,9 +33,9 @@
 {#snippet trailingContent()}
 	<div class="collapsible-trailing">
 		{#if trailing}{@render trailing()}{/if}
-		<button type="button" class="text-button" onclick={() => panel.toggle()}>
+		<Button variant="text" size="sm" onclick={() => panel.toggle()}>
 			{panel.visible ? 'Nascondi' : 'Mostra'}
-		</button>
+		</Button>
 	</div>
 {/snippet}
 

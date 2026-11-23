@@ -5,6 +5,11 @@
 	import FilePicker from '$lib/components/FilePicker.svelte';
 	import Message from '$lib/components/Message.svelte';
 	import SectionHeading from '$lib/components/SectionHeading.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
@@ -138,24 +143,22 @@
 	<title>Strategie | Asta la Vista</title>
 </svelte:head>
 
-<section class="page-heading heading-row">
-	<div>
-		<h1>Strategie</h1>
-		<p>Crea fasce globali riutilizzabili e organizza al loro interno i calciatori di ogni ruolo.</p>
-	</div>
-
-	<form class="create-form" onsubmit={submitStrategy}>
-		<label for="strategy-name">Nuova strategia</label>
-		<div>
-			<input
-				id="strategy-name"
-				bind:value={newStrategyName}
-				placeholder="Ad esempio: Asta principale"
-			/>
-			<button type="submit" disabled={!newStrategyName.trim() || saving}>Crea</button>
-		</div>
-	</form>
-</section>
+<PageHeader title="Strategie">
+	{#snippet actions()}
+		<form class="create-form" onsubmit={submitStrategy}>
+			<Field label="Nuova strategia" for="strategy-name">
+				<div class="create-row">
+					<Input
+						id="strategy-name"
+						bind:value={newStrategyName}
+						placeholder="Ad esempio: Asta principale"
+					/>
+					<Button type="submit" loading={saving} disabled={!newStrategyName.trim()}>Crea</Button>
+				</div>
+			</Field>
+		</form>
+	{/snippet}
+</PageHeader>
 
 <section class="import-section">
 	<form class="import-form" onsubmit={submitImport}>
@@ -164,7 +167,7 @@
 			<p>Crea una nuova strategia a partire dalle fasce che hai già preparato.</p>
 		</div>
 		<div class="import-fields">
-			<input id="import-strategy-name" bind:value={importName} placeholder="Nome della strategia" />
+			<Input id="import-strategy-name" bind:value={importName} placeholder="Nome della strategia" />
 			<div class="file-row">
 				<FilePicker
 					id="strategy-import-file"
@@ -173,9 +176,9 @@
 					ariaLabel="File CSV della strategia"
 					onSelect={() => (importSummary = undefined)}
 				/>
-				<button type="submit" disabled={!importName.trim() || !importFile || importing}>
-					{importing ? 'Importazione…' : 'Importa'}
-				</button>
+				<Button type="submit" loading={importing} disabled={!importName.trim() || !importFile}>
+					Importa
+				</Button>
 			</div>
 		</div>
 		<p class="hint">
@@ -207,7 +210,7 @@
 	</SectionHeading>
 
 	{#if !loading && strategies.length === 0}
-		<div class="empty-state">Non ci sono ancora strategie. Creane una per iniziare.</div>
+		<EmptyState>Non ci sono ancora strategie. Creane una per iniziare.</EmptyState>
 	{:else}
 		<div class="strategy-list">
 			{#each strategies as strategy (strategy.id)}
@@ -219,34 +222,22 @@
 						</p>
 					</div>
 					<div class="actions">
-						<button
-							class="secondary"
-							type="button"
+						<Button
+							variant="secondary"
 							onclick={() => downloadStrategy(strategy)}
 							disabled={saving}
 						>
 							Esporta
-						</button>
-						<button
-							class="secondary"
-							type="button"
-							onclick={() => duplicate(strategy)}
-							disabled={saving}
-						>
+						</Button>
+						<Button variant="secondary" onclick={() => duplicate(strategy)} disabled={saving}>
 							Duplica
-						</button>
-						<button
-							class="danger"
-							type="button"
-							onclick={() => removeStrategy(strategy)}
-							disabled={saving}
-						>
+						</Button>
+						<Button variant="danger" onclick={() => removeStrategy(strategy)} disabled={saving}>
 							Elimina
-						</button>
-						<a
-							class="button-link"
-							href={resolve('/strategies/[strategyId]', { strategyId: strategy.id })}>Apri</a
-						>
+						</Button>
+						<Button href={resolve('/strategies/[strategyId]', { strategyId: strategy.id })}>
+							Apri
+						</Button>
 					</div>
 				</article>
 			{/each}
@@ -257,27 +248,12 @@
 <style>
 	.create-form {
 		width: min(100%, 390px);
-		padding: 1rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
 	}
 
-	.create-form label {
-		display: block;
-		margin-bottom: 0.45rem;
-		font-size: 0.78rem;
-		font-weight: 700;
-	}
-
-	.create-form > div,
+	.create-row,
 	.actions {
 		display: flex;
 		gap: 0.65rem;
-	}
-
-	.create-form input {
-		flex: 1;
 	}
 
 	.import-section {
@@ -357,13 +333,12 @@
 	}
 
 	@media (max-width: 720px) {
-		.heading-row,
 		article {
 			align-items: stretch;
 			flex-direction: column;
 		}
 
-		.actions > * {
+		.actions > :global(*) {
 			flex: 1;
 		}
 	}

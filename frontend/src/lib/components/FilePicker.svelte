@@ -34,7 +34,7 @@
 	onchange={chooseFile}
 	aria-label={ariaLabel}
 />
-<label for={id} class="file-picker" class:has-file={!!selectedFile}>
+<label for={id} class="control file-picker" class:has-file={!!selectedFile}>
 	<svg class="file-icon" viewBox="0 0 24 24" aria-hidden="true">
 		<path d="M6 3.5h8.5L19 8v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" />
 		<path d="M14.5 3.5V8H19" />

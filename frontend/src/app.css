@@ -66,6 +66,7 @@
 	--taken-text: #706964;
 	--muted-bg: #f3e7cf;
 	--hover: #fff1d6;
+	--selected-bg: #ffe7a8;
 	--head-bg: #fff3dc;
 	--zebra: #fbf3e4;
 	--focus: #a85b00;
@@ -103,9 +104,6 @@
 	--scrollbar-thumb: #b2a28c;
 	--scrollbar-thumb-hover: #8c7e6b;
 	--danger: #b3362a;
-	--danger-hover: #962c21;
-	--on-danger: #fff;
-	--overlay: rgb(20 15 10 / 44%);
 
 	color-scheme: light;
 	font: 1rem/1.4 var(--font-text);
@@ -126,6 +124,7 @@
 	--taken-text: #a99e94;
 	--muted-bg: #3a302a;
 	--hover: #41352e;
+	--selected-bg: #5a4a22;
 	--head-bg: #3a2f28;
 	--zebra: #352b25;
 	--focus: #ffbf2e;
@@ -153,9 +152,6 @@
 	--scrollbar-thumb: #736356;
 	--scrollbar-thumb-hover: #9c8a79;
 	--danger: #ff8a7a;
-	--danger-hover: #ffab9f;
-	--on-danger: #2a1511;
-	--overlay: rgb(15 12 10 / 66%);
 	color-scheme: dark;
 }
 
@@ -249,67 +245,8 @@ h3 {
 	font: inherit;
 }
 
-:where(
-	button:not(.text-button, .dismiss-button, .tier-player-button, .catalog-player),
-	.button-link
-) {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-height: var(--control-height);
-	padding: 0 0.8rem;
-	border: var(--bw) solid var(--line);
-	border-radius: var(--radius-sm);
-	background: var(--primary);
-	color: var(--on-primary);
-	box-shadow: var(--shadow-xs);
-	font-size: 0.875rem;
-	font-weight: 700;
-	text-decoration: none;
-	cursor: pointer;
-	transition:
-		background-color 140ms ease,
-		box-shadow 100ms ease;
-}
-
-:where(
-	button:not(.text-button, .dismiss-button, .tier-player-button, .catalog-player):enabled,
-	.button-link
-):hover {
-	filter: brightness(1.08);
-}
-
-:where(
-	button:not(.text-button, .dismiss-button, .tier-player-button, .catalog-player):enabled,
-	.button-link
-):active {
-	box-shadow: none;
-}
-
-:where(button:disabled) {
-	cursor: not-allowed;
-	opacity: 0.55;
-	box-shadow: none;
-}
-
-:where(button.secondary) {
-	background: var(--surface);
-	color: var(--text);
-}
-
-:where(button.danger) {
-	border-color: transparent;
-	background: transparent;
-	color: var(--error-text);
-	box-shadow: none;
-}
-
-:where(
-	input:not([type='file'], [type='checkbox'], [type='radio']),
-	select,
-	textarea,
-	.file-picker
-) {
+/* The look of text fields, selects and the file picker: see ui/Input and ui/Select. */
+:where(.control) {
 	min-width: 0;
 	width: 100%;
 	min-height: var(--control-height);
@@ -319,7 +256,7 @@ h3 {
 	background: var(--input-bg);
 }
 
-:where(input[type='color']) {
+:where(.control[type='color']) {
 	width: 2.75rem;
 	padding: 0.2rem;
 }
@@ -328,29 +265,9 @@ h3 {
 	accent-color: var(--primary);
 }
 
-:where(textarea) {
+:where(textarea.control) {
 	padding-block: 0.5rem;
 	resize: vertical;
-}
-
-.back-link {
-	display: inline-block;
-	margin-bottom: 0.55rem;
-	font-size: 0.875rem;
-	font-weight: 700;
-}
-
-:where(.role-tabs, .strategy-role-tabs, .catalog-role-tabs, .catalog-mantra-chips) button {
-	min-height: 2rem;
-	background: var(--surface);
-	color: var(--text);
-	box-shadow: none;
-}
-
-:where(.role-tabs, .strategy-role-tabs, .catalog-role-tabs, .catalog-mantra-chips) button.active {
-	background: var(--primary);
-	color: var(--on-primary);
-	box-shadow: var(--shadow-xs);
 }
 
 .table-scroll {
@@ -441,51 +358,6 @@ tbody tr:last-child td {
 	color: var(--completed-text);
 }
 
-.dialog-overlay {
-	position: fixed;
-	inset: 0;
-	z-index: 1100;
-	display: grid;
-	place-items: center;
-	padding: 1.5rem;
-	background: var(--overlay);
-	animation: overlay-in 160ms ease;
-}
-
-.dialog,
-.registry-dialog {
-	padding: 1.5rem;
-	border: var(--bw) solid var(--line);
-	border-radius: var(--radius);
-	background: var(--surface);
-	box-shadow: var(--shadow);
-	animation: dialog-in 180ms ease-out;
-}
-
-.dialog-actions button.danger {
-	border-color: var(--line);
-	background: var(--danger);
-	color: var(--on-danger);
-	box-shadow: var(--shadow-xs);
-}
-
-.dialog-actions button.danger:hover {
-	background: var(--danger-hover);
-}
-
-@keyframes overlay-in {
-	from {
-		opacity: 0;
-	}
-}
-
-@keyframes dialog-in {
-	from {
-		opacity: 0;
-		transform: translateY(6px);
-	}
-}
-
 /* Instant press feedback (§Response): the moment the pointer goes down, never on release. */
 .is-pressed {
 	transform: scale(0.97);
@@ -570,14 +442,7 @@ nav a[aria-current='page'] {
 }
 
 .theme-toggle {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.45rem;
-	min-height: 2rem;
-	background: var(--surface);
-	color: var(--text);
-	font-size: 0.8rem;
-	white-space: nowrap;
+	align-self: center;
 }
 
 .theme-toggle span {
@@ -616,18 +481,6 @@ main {
 
 .page-heading {
 	max-width: 760px;
-}
-
-.heading-row {
-	display: flex;
-	align-items: flex-end;
-	justify-content: space-between;
-	gap: 3rem;
-	max-width: none;
-}
-
-.heading-row > div:first-child {
-	max-width: 680px;
 }
 
 .page-heading p:last-child {
@@ -681,15 +534,6 @@ main {
 	line-height: 1.55;
 }
 
-.empty-state {
-	margin-top: 1.5rem;
-	padding: 1.25rem;
-	border: var(--bw) dashed var(--border-strong);
-	border-radius: var(--radius);
-	background: var(--surface);
-	color: var(--muted);
-}
-
 .count-label {
 	color: var(--subdued);
 	font-size: 0.8rem;
@@ -701,18 +545,6 @@ main {
 	border-radius: var(--radius);
 	background: var(--surface);
 	box-shadow: var(--shadow);
-}
-
-/* Small inline action, e.g. row-level edit/delete or a section's show/hide toggle
-   (see CollapsibleSection). Shared globally since it shows up across several pages. */
-.text-button {
-	min-height: auto;
-	padding: 0.2rem;
-	border: 0;
-	background: transparent;
-	color: var(--link);
-	font-size: 0.7rem;
-	cursor: pointer;
 }
 
 .dismiss-button {
@@ -728,14 +560,6 @@ main {
 
 .dismiss-button:hover {
 	opacity: 1;
-}
-
-.text-button.danger {
-	color: var(--error-text);
-}
-
-.text-button:disabled {
-	cursor: not-allowed;
 }
 
 @media (max-width: 720px) {
@@ -757,10 +581,6 @@ main {
 		flex: 1;
 		gap: 1.25rem;
 		overflow-x: auto;
-	}
-
-	.theme-toggle {
-		align-self: center;
 	}
 
 	nav a {
