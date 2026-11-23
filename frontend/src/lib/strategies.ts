@@ -34,6 +34,14 @@ export type Strategy = {
 	entries: StrategyEntry[];
 };
 
+export function strategyIndex(strategy: Strategy) {
+	return {
+		entryByPlayerId: new Map(strategy.entries.map((entry) => [entry.player_id, entry])),
+		tierById: new Map(strategy.tiers.map((tier) => [tier.id, tier])),
+		sortedTiers: [...strategy.tiers].sort((first, second) => first.position - second.position)
+	};
+}
+
 type EntityId = { id: string };
 
 export function getStrategies(): Promise<StrategySummary[]> {

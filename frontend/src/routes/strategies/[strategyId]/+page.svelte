@@ -18,7 +18,7 @@
 	import Tabs from '$lib/components/ui/Tabs.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { dragReorder } from '$lib/actions/dragReorder';
-	import { getPlayers, type Player, type Role } from '$lib/players';
+	import { getPlayers, roleLabels, roles, type Player, type Role } from '$lib/players';
 	import { matchesSearch } from '$lib/search';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
@@ -28,6 +28,7 @@
 		removeTier,
 		renameStrategy,
 		reorderTiers,
+		strategyIndex,
 		updateStrategyEntry,
 		updateTier,
 		type Strategy,
@@ -43,13 +44,6 @@
 	/** A player row paired with its current (possibly unsaved-for-a-moment) draft, for the tier board. */
 	type BoardEntry = { player: Player; draft: EntryDraft };
 
-	const roleLabels: Record<Role, string> = {
-		P: 'Portieri',
-		D: 'Difensori',
-		C: 'Centrocampisti',
-		A: 'Attaccanti'
-	};
-	const roles = Object.keys(roleLabels) as Role[];
 	const roleTabs = roles.map((role) => ({ value: role, label: roleLabels[role] }));
 
 	// Every field autosaves shortly after the user stops changing it (see §Response/§Direct
@@ -70,6 +64,7 @@
 	let loading = $state(true);
 	let saving = $state(false);
 	let orderedTiers = $state<Tier[]>([]);
+	let index = $derived(strategy && strategyIndex(strategy));
 
 	const pendingEntrySaves = new SvelteMap<string, ReturnType<typeof setTimeout>>();
 	const pendingTierSaves = new SvelteMap<string, ReturnType<typeof setTimeout>>();
@@ -108,10 +103,10 @@
 	}
 
 	function buildEntryDrafts(): void {
-		const entries = new Map(strategy?.entries.map((entry) => [entry.player_id, entry]));
+		const entries = index?.entryByPlayerId;
 		entryDrafts = Object.fromEntries(
 			players.map((player) => {
-				const entry = entries.get(player.id);
+				const entry = entries?.get(player.id);
 				return [
 					player.id,
 					{
@@ -165,9 +160,9 @@
 
 	/** Called once by the drag/keyboard reorder gesture, with the final tier order. */
 	async function commitTierOrder(nextIds: string[]): Promise<void> {
-		if (!strategy) return;
-		const byId = new Map(orderedTiers.map((tier) => [tier.id, tier]));
-		orderedTiers = nextIds.map((id) => byId.get(id)).filter((tier) => tier !== undefined);
+		if (!strategy || !index) return;
+		const { tierById } = index;
+		orderedTiers = nextIds.map((id) => tierById.get(id)).filter((tier) => tier !== undefined);
 		await runMutation(() => reorderTiers(strategy!.id, nextIds));
 	}
 
@@ -241,7 +236,7 @@
 	}
 
 	async function persistTier(tierId: string): Promise<void> {
-		const tier = orderedTiers.find((candidate) => candidate.id === tierId);
+		const tier = index?.tierById.get(tierId);
 		if (!strategy || !tier || !tier.name.trim()) return;
 		try {
 			await updateTier(strategy.id, tier.id, tier.name.trim(), tier.color);
@@ -279,9 +274,7 @@
 	}
 
 	function syncOrderedTiers(): void {
-		orderedTiers = [...(strategy?.tiers ?? [])].sort(
-			(first, second) => first.position - second.position
-		);
+		orderedTiers = index?.sortedTiers ?? [];
 	}
 
 	function currentStrategyId(): string {
@@ -473,9 +466,7 @@
 			{:else}
 				<div class="player-list">
 					{#each visiblePlayers as player (player.id)}
-						{@const selectedPlayerTier = orderedTiers.find(
-							(tier) => tier.id === entryDrafts[player.id].tierId
-						)}
+						{@const selectedPlayerTier = index?.tierById.get(entryDrafts[player.id].tierId)}
 						<div class:inactive={!player.active} class="player-row">
 							<div class="player-info">
 								<span class="name-row"
