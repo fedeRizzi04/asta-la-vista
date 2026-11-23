@@ -9,6 +9,10 @@ who use the app.
 
 ## [Unreleased]
 
+### Added
+
+- Press `?` to see the keyboard shortcuts available on the current page.
+
 ### Changed
 
 - Asta la Vista has a new sticker-inspired look in both themes, with pastel role badges and

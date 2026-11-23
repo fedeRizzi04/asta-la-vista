@@ -4,11 +4,13 @@
 	import { onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
 	import DialogHost from '$lib/components/DialogHost.svelte';
+	import ShortcutsPanel from '$lib/components/ShortcutsPanel.svelte';
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import UpdateBanner from '$lib/components/UpdateBanner.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { press } from '$lib/actions/press';
 	import { slidingIndicator } from '$lib/actions/slidingIndicator.svelte';
+	import { installShortcuts, registerShortcuts, shortcutsPanel } from '$lib/shortcuts.svelte';
 	import type { AppVersion } from '$lib/system';
 	import { watchVersion } from '$lib/versionWatcher';
 	import '../app.css';
@@ -37,6 +39,18 @@
 		void page.url.pathname;
 		activeNavEl = navEl?.querySelector<HTMLElement>('a[aria-current="page"]') ?? undefined;
 	});
+
+	$effect(() =>
+		registerShortcuts([
+			{
+				keys: '?',
+				description: 'Mostra le scorciatoie',
+				group: 'Generali',
+				handler: () => (shortcutsPanel.open = true)
+			}
+		])
+	);
+	onMount(installShortcuts);
 
 	onMount(() => {
 		theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
@@ -131,3 +145,4 @@
 
 <ToastStack />
 <DialogHost />
+<ShortcutsPanel />
