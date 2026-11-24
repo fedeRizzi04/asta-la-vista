@@ -55,6 +55,8 @@
 	--line-soft: #dccdb3;
 	--border: var(--line-soft);
 	--border-strong: var(--line);
+	/* The edge of a text field: at least 3:1 against what is around it. */
+	--control-border: var(--line);
 	--border-hover: var(--muted);
 	--page-bg: #f5ecdb;
 	--surface: #fffaf0;
@@ -116,6 +118,7 @@
 :root[data-theme='dark'] {
 	--line: #0f0c0a;
 	--line-soft: #4a3e35;
+	--control-border: #8d7f70;
 	--page-bg: #211c19;
 	--surface: #302722;
 	--input-bg: #3a302a;
@@ -124,7 +127,7 @@
 	--taken-text: #a99e94;
 	--muted-bg: #3a302a;
 	--hover: #41352e;
-	--selected-bg: #5a4a22;
+	--selected-bg: #4d3f1c;
 	--head-bg: #3a2f28;
 	--zebra: #352b25;
 	--focus: #ffbf2e;
@@ -251,7 +254,7 @@ h3 {
 	width: 100%;
 	min-height: var(--control-height);
 	padding: 0 0.65rem;
-	border: var(--bw) solid var(--line);
+	border: var(--bw) solid var(--control-border);
 	border-radius: var(--radius-sm);
 	background: var(--input-bg);
 }
@@ -288,7 +291,7 @@ h3 {
 }
 
 .inline-name:focus {
-	border-color: var(--line);
+	border-color: var(--control-border);
 	background: var(--input-bg);
 }
 
@@ -522,6 +525,8 @@ main {
 
 .dismiss-button {
 	flex: 0 0 auto;
+	min-width: 1.5rem;
+	min-height: 1.5rem;
 	padding: 0;
 	border: 0;
 	background: transparent;
@@ -576,6 +581,7 @@ main {
 	* {
 		animation-duration: 0.001ms !important;
 		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
 		scroll-behavior: auto !important;
 	}
 

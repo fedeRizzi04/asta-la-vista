@@ -7,6 +7,7 @@
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import AuctionCard from '$lib/features/auction/AuctionCard.svelte';
 	import { getPlayerCounts, roleLabels, roles, type PlayerCounts } from '$lib/players';
+	import { plural } from '$lib/plural';
 	import { getStrategies, type StrategySummary } from '$lib/strategies';
 	import { pushErrorToast } from '$lib/toast.svelte';
 
@@ -84,7 +85,9 @@
 								<a href={resolve('/strategies/[strategyId]', { strategyId: strategy.id })}>
 									<strong>{strategy.name}</strong>
 									<span
-										>{strategy.tier_count} fasce · {strategy.assigned_player_count} calciatori</span
+										>{strategy.tier_count}
+										{plural(strategy.tier_count, 'fascia', 'fasce')} · {strategy.assigned_player_count}
+										{plural(strategy.assigned_player_count, 'calciatore', 'calciatori')}</span
 									>
 								</a>
 							</li>
@@ -101,7 +104,10 @@
 					<Button href={resolve('/players')} variant="secondary" size="sm">Apri Listone</Button>
 				</header>
 				{#if overview.total > 0}
-					<p class="player-total"><strong>{overview.total}</strong> calciatori</p>
+					<p class="player-total">
+						<strong>{overview.total}</strong>
+						{plural(overview.total, 'calciatore', 'calciatori')}
+					</p>
 					<dl class="role-counts">
 						{#each roles as role (role)}
 							<div>

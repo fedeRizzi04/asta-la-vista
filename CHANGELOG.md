@@ -83,12 +83,21 @@ who use the app.
   opens a window instead of a form that is always on the page.
 - The home page shows the auction in progress, your first strategies and how many players each
   role has in the Listone, instead of the welcome banner.
+- Accessibility pass on both themes: text fields in the dark theme have a clearly visible edge,
+  secondary text on selected rows is readable, small controls are big enough to hit, tier names
+  are headings, and with reduced motion enabled the transitions are turned off too.
 
 ### Fixed
 
 - Notes, percentages and names typed on a strategy no longer risk being lost when you reload the
   page right away: pending changes are saved first, and two quick edits of the same player or tier
   are saved in order.
+- Counts read correctly with one item ("1 acquisto", "1 fascia", "1 nuovo") instead of always using
+  the plural.
+- The confirmation shown when importing the Listone during a live auction, and the one for
+  players missing from a strategy CSV, are now in Italian. Cancelling the first one no longer
+  shows an error.
+- A tier badge in a narrow list is cut with an ellipsis instead of shrinking to a single letter.
 
 ## [0.4.1] - 2026-11-06
 

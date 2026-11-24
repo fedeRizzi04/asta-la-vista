@@ -15,6 +15,7 @@
 	import TeamsStrip from '$lib/features/auction/TeamsStrip.svelte';
 	import { AuctionState } from '$lib/features/auction/auctionState.svelte';
 	import { roleLabels, roles, type Role } from '$lib/players';
+	import { plural } from '$lib/plural';
 	import { registerShortcuts, withShortcut } from '$lib/shortcuts.svelte';
 	import { getUrlParams, setUrlParams } from '$lib/urlState';
 
@@ -119,8 +120,10 @@
 				>{auctionStatusLabels[auction.status]}</span
 			>
 			<span class="header-summary">
-				{auction.participants.length} partecipanti · {auction.initial_credits} crediti · {purchaseCount}/{purchaseCapacity}
-				acquisti
+				{auction.participants.length}
+				{plural(auction.participants.length, 'partecipante', 'partecipanti')} · {auction.initial_credits}
+				crediti · {purchaseCount}/{purchaseCapacity}
+				{plural(purchaseCapacity, 'acquisto', 'acquisti')}
 			</span>
 		{/if}
 	{/snippet}

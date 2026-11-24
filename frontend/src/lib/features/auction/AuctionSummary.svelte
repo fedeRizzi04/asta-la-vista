@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Auction } from '$lib/auctions';
 	import { roleLabels, roles } from '$lib/players';
+	import { plural } from '$lib/plural';
 
 	let { auction, purchaseCount }: { auction: Auction; purchaseCount: number } = $props();
 </script>
@@ -9,7 +10,9 @@
 	{#if auction.status === 'draft'}
 		<h2 id="auction-summary-title">Configurazione</h2>
 		<span
-			>{auction.participants.length} partecipanti · {auction.initial_credits} crediti a testa</span
+			>{auction.participants.length}
+			{plural(auction.participants.length, 'partecipante', 'partecipanti')} · {auction.initial_credits}
+			crediti a testa</span
 		>
 		<div class="slots">
 			<span>Slot</span>
@@ -20,9 +23,8 @@
 	{:else}
 		<h2 id="auction-summary-title">Asta terminata</h2>
 		<span
-			>{purchaseCount} {purchaseCount === 1 ? 'acquisto registrato' : 'acquisti registrati'}</span
+			>{purchaseCount} {plural(purchaseCount, 'acquisto registrato', 'acquisti registrati')}</span
 		>
-		<span class="hint">Sola lettura: per correggere qualcosa usa «Riapri asta».</span>
 	{/if}
 </section>
 
@@ -46,8 +48,7 @@
 		font-size: 1.05rem;
 	}
 
-	.slots,
-	.hint {
+	.slots {
 		color: var(--muted);
 	}
 </style>

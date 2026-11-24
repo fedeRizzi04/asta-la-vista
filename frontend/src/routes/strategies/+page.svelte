@@ -13,6 +13,7 @@
 	import Menu from '$lib/components/ui/Menu.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
+	import { plural } from '$lib/plural';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		createStrategy,
@@ -79,9 +80,14 @@
 		try {
 			const summary = await importStrategy(name, file).catch(async (caught: unknown) => {
 				if (!(caught instanceof ApiError) || caught.code !== 'confirmation_required') throw caught;
+				// The backend lists the names after the colon, in English: the sentence is ours.
+				const unmatched = caught.message.slice(caught.message.indexOf(':') + 1).trim();
 				if (
 					importOpen &&
-					(await confirmDialog({ message: caught.message, confirmLabel: 'Continua comunque' }))
+					(await confirmDialog({
+						message: `Questi calciatori non sono nel Listone e verranno ignorati: ${unmatched}.`,
+						confirmLabel: 'Continua comunque'
+					}))
 				) {
 					return importStrategy(name, file, true);
 				}
@@ -227,12 +233,16 @@
 {#if importSummary}
 	<div class="import-summary">
 		<Message kind="success">
-			Strategia creata: {importSummary.tiers_created} fasce e {importSummary.players_assigned} calciatori
-			assegnati.
+			Strategia creata: {importSummary.tiers_created}
+			{plural(importSummary.tiers_created, 'fascia', 'fasce')} e {importSummary.players_assigned}
+			{plural(importSummary.players_assigned, 'calciatore assegnato', 'calciatori assegnati')}.
 			{#if importSummary.unmatched.length}
-				{importSummary.unmatched.length} non trovati e ignorati: {importSummary.unmatched.join(
-					', '
-				)}.
+				{importSummary.unmatched.length}
+				{plural(
+					importSummary.unmatched.length,
+					'non trovato e ignorato',
+					'non trovati e ignorati'
+				)}: {importSummary.unmatched.join(', ')}.
 			{/if}
 		</Message>
 	</div>
@@ -254,7 +264,13 @@
 					<div class="details">
 						<h2>{strategy.name}</h2>
 						<p>
-							{strategy.tier_count} fasce · {strategy.assigned_player_count} calciatori assegnati
+							{strategy.tier_count}
+							{plural(strategy.tier_count, 'fascia', 'fasce')} · {strategy.assigned_player_count}
+							{plural(
+								strategy.assigned_player_count,
+								'calciatore assegnato',
+								'calciatori assegnati'
+							)}
 						</p>
 					</div>
 					<div class="actions">
