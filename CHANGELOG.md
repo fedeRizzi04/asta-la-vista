@@ -57,6 +57,28 @@ who use the app.
   go to the winner, `⏎` in the price to register, Esc to drop the call, `P` `D` `C` `A` to switch
   role, `⌥1` and `⌥2` for the tiers and Svincolati, `⌘J` for the registry and `⌘Z` to undo the
   last purchase. A player can be called and registered with the keyboard alone.
+- The strategy page shows the players without a tier on the left and the tiers side by side on
+  the right. Search the players, sort them by quotation, name or team, filter them by Mantra role
+  and choose whether to show the ones already in a tier; inactive players stay visible and are
+  flagged. Add a tier with **+ Nuova fascia**, rename it and change its colour right in its header,
+  and reorder tiers by dragging the grip or with the left and right arrow keys.
+- Drag players from the list to a tier, between tiers, or back to the list to take them out of
+  their tier. Select several with `⇧` or `⌘` (or Space), then drag them together, press `1`-`9` to
+  move them to that tier or `0` to take them out of it. Click a player to open its tier, maximum
+  price and note: the price is also shown in credits, based on a reference budget you can change
+  at the top (it is remembered and does not affect the strategy itself).
+- The strategy name is edited in place and saves itself, like the rest of the page. Export and
+  duplicate are in the **⋯** menu, and duplicating opens the copy.
+- Creating a strategy opens it straight away. An empty strategy offers a set of default tiers
+  (Top, Semitop, Terza fascia, Scommesse) or lets you create your own, and the strategies list has
+  **Importa CSV** in a window, with the file format explained under **Formato CSV**. Each row has
+  a **⋯** menu with export, duplicate and delete.
+
+### Fixed
+
+- Notes, percentages and names typed on a strategy no longer risk being lost when you reload the
+  page right away: pending changes are saved first, and two quick edits of the same player or tier
+  are saved in order.
 
 ## [0.4.1] - 2026-11-06
 

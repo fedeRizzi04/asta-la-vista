@@ -64,9 +64,10 @@
 		};
 	}
 
+	/** Moves the focus first: a field losing it saves its draft, which needs the panel still open. */
 	function closeAndFocus(anchor: HTMLElement): void {
-		editor.closeDetail();
 		if (anchor.isConnected) anchor.focus({ preventScroll: true });
+		editor.closeDetail();
 	}
 </script>
 
