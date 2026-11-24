@@ -15,6 +15,7 @@ import {
 	type Tier
 } from '$lib/strategies';
 import { pushErrorToast } from '$lib/toast.svelte';
+import { PlayerSelection } from './playerSelection.svelte';
 
 type EntryDraft = {
 	tierId: string;
@@ -103,8 +104,11 @@ export class StrategyEditor {
 	loading = $state(true);
 	saving = $state(false);
 	orderedTiers = $state<Tier[]>([]);
+	/** The last move of players, for screen readers. */
+	lastMove = $state('');
 	index = $derived(this.strategy && strategyIndex(this.strategy));
 
+	readonly selection = new PlayerSelection();
 	readonly #entrySaves = new DebouncedSaver(ENTRY_SAVE_DEBOUNCE_MS, (id) => this.#persistEntry(id));
 	readonly #tierSaves = new DebouncedSaver(TIER_SAVE_DEBOUNCE_MS, (id) => this.#persistTier(id));
 	readonly #getStrategyId: () => string | undefined;
@@ -135,11 +139,31 @@ export class StrategyEditor {
 		return this.index?.tierById.get(this.entryDrafts[playerId]?.tierId);
 	}
 
-	entriesForTier(tierId: string, role: Role) {
+	/** The players of a role in a tier, and the ones that `isLanding` there, in order. */
+	playersInTier(tierId: string, role: Role, isLanding: (playerId: string) => boolean): Player[] {
 		return this.players
-			.filter((player) => player.role === role && this.entryDrafts[player.id]?.tierId === tierId)
-			.map((player) => ({ player, draft: this.entryDrafts[player.id] }))
-			.sort(byMaxPercentageDesc((entry) => entry.draft.maximumPricePercentage));
+			.filter(
+				(player) =>
+					player.role === role &&
+					(this.entryDrafts[player.id]?.tierId === tierId || isLanding(player.id))
+			)
+			.sort(byMaxPercentageDesc(({ id }) => this.entryDrafts[id].maximumPricePercentage));
+	}
+
+	/** Moves players to a tier, or out of theirs with an empty `tierId`. */
+	movePlayers(playerIds: Iterable<string>, tierId: string): void {
+		const movedIds = [...playerIds].filter((id) => this.entryDrafts[id].tierId !== tierId);
+		if (movedIds.length === 0) return;
+		for (const id of movedIds) {
+			this.entryDrafts[id].tierId = tierId;
+			void this.saveEntryNow(id);
+		}
+		this.selection.clear();
+		const moved =
+			movedIds.length === 1
+				? this.players.find((player) => player.id === movedIds[0])?.name
+				: `${movedIds.length} calciatori`;
+		this.lastMove = `${moved}: ${this.index?.tierById.get(tierId)?.name ?? 'senza fascia'}`;
 	}
 
 	async rename(): Promise<void> {

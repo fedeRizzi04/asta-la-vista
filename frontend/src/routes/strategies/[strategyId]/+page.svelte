@@ -11,13 +11,17 @@
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Tabs from '$lib/components/ui/Tabs.svelte';
+	import { PlayerDrag } from '$lib/features/strategy/playerDrag.svelte';
+	import PlayerDragPreview from '$lib/features/strategy/PlayerDragPreview.svelte';
 	import PlayerPool from '$lib/features/strategy/PlayerPool.svelte';
+	import SelectionBar from '$lib/features/strategy/SelectionBar.svelte';
 	import { StrategyEditor } from '$lib/features/strategy/strategyEditor.svelte';
 	import StrategyTiers from '$lib/features/strategy/StrategyTiers.svelte';
 	import { roleLabels, roles, type Role } from '$lib/players';
 	import { matchesSearch } from '$lib/search';
 
 	const editor = new StrategyEditor(() => page.params.strategyId);
+	const drag = new PlayerDrag(editor);
 	const strategy = $derived(editor.strategy);
 	const roleTabs = roles.map((role) => ({ value: role, label: roleLabels[role] }));
 
@@ -66,15 +70,19 @@
 	{#if editor.loading}
 		<EmptyState>Caricamento della strategia…</EmptyState>
 	{:else if strategy}
-		<div class="role-tabs">
+		<div class="toolbar">
 			<Tabs
 				items={roleTabs}
 				bind:value={selectedRole}
 				label="Ruoli"
 				id="strategy-role"
 				panelId="strategy-role-panel"
-				onchange={() => (playerSearch = '')}
+				onchange={() => {
+					playerSearch = '';
+					editor.selection.clear();
+				}}
 			/>
+			<SelectionBar {editor} workspaceId="strategy-role-panel" />
 		</div>
 		<div
 			id="strategy-role-panel"
@@ -82,10 +90,12 @@
 			role="tabpanel"
 			tabindex="0"
 			aria-labelledby="strategy-role-{selectedRole}"
+			use:drag.area
 		>
-			<PlayerPool {editor} role={selectedRole} />
-			<StrategyTiers {editor} role={selectedRole} />
+			<PlayerPool {editor} {drag} role={selectedRole} />
+			<StrategyTiers {editor} {drag} role={selectedRole} />
 		</div>
+		<PlayerDragPreview {drag} />
 	{/if}
 </div>
 
@@ -182,7 +192,11 @@
 		min-height: 30rem;
 	}
 
-	.role-tabs {
+	.toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 1rem;
 		margin-bottom: 0.6rem;
 	}
 

@@ -8,10 +8,12 @@
 	import { mantraRolesOf } from '$lib/mantraRoles';
 	import type { Player, Role } from '$lib/players';
 	import { matchesSearch } from '$lib/search';
+	import type { PlayerDrag } from './playerDrag.svelte';
+	import PlayerList from './PlayerList.svelte';
 	import type { StrategyEditor } from './strategyEditor.svelte';
 
 	/** The players of a role still without a tier, to assign to one. */
-	let { editor, role }: { editor: StrategyEditor; role: Role } = $props();
+	let { editor, drag, role }: { editor: StrategyEditor; drag: PlayerDrag; role: Role } = $props();
 
 	type Sort = 'quotation' | 'name' | 'team';
 
@@ -34,11 +36,12 @@
 	let mantraCodes = $derived(mantraRolesOf(rolePlayers));
 	// A selection that does not apply to the role is ignored, and comes back with its role.
 	let mantraRoles = $derived(selectedMantraRoles.filter((code) => mantraCodes.includes(code)));
+	let title = $derived(showAssigned ? 'Tutti' : 'Senza fascia');
 	let shownPlayers = $derived(
 		rolePlayers
 			.filter(
 				(player) =>
-					(showAssigned || !editor.tierOfPlayer(player.id)) &&
+					(showAssigned || !editor.tierOfPlayer(player.id) || drag.landsIn('', player.id)) &&
 					(mantraRoles.length === 0 ||
 						mantraRoles.some((code) => player.mantra_roles.includes(code))) &&
 					matchesSearch(search, player.name, player.team)
@@ -47,10 +50,15 @@
 	);
 </script>
 
-<section class="panel pool" aria-labelledby="pool-title">
+<section
+	class="panel pool"
+	class:drop-target={drag.target === ''}
+	aria-labelledby="pool-title"
+	data-drop-tier=""
+>
 	<div class="pool-header">
 		<div class="row">
-			<h2 id="pool-title">{showAssigned ? 'Tutti' : 'Senza fascia'}</h2>
+			<h2 id="pool-title">{title}</h2>
 			<span class="count" aria-live="polite">{shownPlayers.length}</span>
 			<div class="show-assigned">
 				<ToggleChip pressed={showAssigned} onclick={() => (showAssigned = !showAssigned)}>
@@ -79,22 +87,21 @@
 		{/if}
 	</div>
 
-	<!-- svelte-ignore a11y_no_noninteractive_tabindex (Allow keyboard scrolling.) -->
-	<div class="pool-players" role="region" aria-labelledby="pool-title" tabindex="0">
-		{#each shownPlayers as player (player.id)}
-			{@const tier = showAssigned && editor.tierOfPlayer(player.id)}
-			<div class="player" class:inactive={!player.active}>
-				<span class="identity">
-					<strong title={player.name}>{player.name}</strong>
-					<small>{player.team}{player.active ? '' : ' · inattivo'}</small>
-					<MantraRoleBadges roles={player.mantra_roles} compact />
-					{#if tier}<TierBadge name={tier.name} color={tier.color} compact />{/if}
+	<div class="pool-players" data-drag-scroll>
+		<PlayerList {editor} {drag} players={shownPlayers} tierId="" label={title}>
+			{#snippet row(player)}
+				{@const tier = showAssigned && editor.tierOfPlayer(player.id)}
+				<span class="player" class:inactive={!player.active}>
+					<span class="identity">
+						<strong title={player.name}>{player.name}</strong>
+						<small>{player.team}{player.active ? '' : ' · inattivo'}</small>
+						<MantraRoleBadges roles={player.mantra_roles} compact />
+						{#if tier}<TierBadge name={tier.name} color={tier.color} compact />{/if}
+					</span>
+					<span class="quotation" title="Quotazione">{player.quotation ?? '—'}</span>
 				</span>
-				<span class="quotation" title="Quotazione">{player.quotation ?? '—'}</span>
-			</div>
-		{:else}
-			<p class="empty">Nessun calciatore</p>
-		{/each}
+			{/snippet}
+		</PlayerList>
 	</div>
 </section>
 
@@ -151,8 +158,12 @@
 		overflow-y: auto;
 	}
 
-	.pool-players:focus-visible {
-		outline-offset: -3px;
+	.drop-target {
+		border-color: var(--focus);
+	}
+
+	.drop-target .pool-players {
+		background: color-mix(in srgb, var(--selected-bg) 45%, var(--surface));
 	}
 
 	.player {
@@ -161,12 +172,7 @@
 		align-items: baseline;
 		gap: 0.5rem;
 		padding: 0.3rem 0.45rem;
-		border-radius: var(--radius-xs);
 		font-size: 0.875rem;
-	}
-
-	.player:hover {
-		background: var(--hover);
 	}
 
 	.identity {
@@ -196,12 +202,5 @@
 	.inactive,
 	.inactive small {
 		color: var(--taken-text);
-	}
-
-	.empty {
-		margin: 0;
-		padding: 0.45rem;
-		color: var(--muted);
-		font-size: 0.8rem;
 	}
 </style>

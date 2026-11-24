@@ -1,7 +1,7 @@
 import { tick } from 'svelte';
 import { Spring } from 'svelte/motion';
 import type { Action } from 'svelte/action';
-import { clampOffsetRange, indexForOffset, moveItem } from '$lib/dragList';
+import { clampOffsetRange, edgeScrollStep, indexForOffset, moveItem } from '$lib/dragList';
 import { rubberband, springPresets, velocityFromHistory } from '$lib/motion';
 import { motionPreferences } from '$lib/motionPreferences.svelte';
 
@@ -33,8 +33,6 @@ export interface DragReorderOptions {
 
 const VELOCITY_THRESHOLD = 300; // px/s — above this, the release keeps a touch of bounce
 const HISTORY_WINDOW_MS = 80;
-const SCROLL_EDGE = 60; // px from the edge of the scroller
-const SCROLL_STEP = 14; // px per frame
 const SIBLING_TRANSITION = 'transform 220ms cubic-bezier(0.19, 1, 0.22, 1)';
 
 /** The element that scrolls `element` sideways, if any. */
@@ -126,10 +124,7 @@ export const dragReorder: Action<HTMLElement, DragReorderOptions> = (container, 
 			if (!scroller) return;
 			const { left, right } = scroller.getBoundingClientRect();
 			const before = scroller.scrollLeft;
-			// A handle pressed near an edge scrolls only once it moves towards that edge.
-			if (clientX < Math.min(left + SCROLL_EDGE, startClientX)) scroller.scrollLeft -= SCROLL_STEP;
-			else if (clientX > Math.max(right - SCROLL_EDGE, startClientX))
-				scroller.scrollLeft += SCROLL_STEP;
+			scroller.scrollLeft += edgeScrollStep(clientX, startClientX, left, right);
 			if (scroller.scrollLeft !== before) track();
 			scrollFrame = requestAnimationFrame(scrollAtEdges);
 		}

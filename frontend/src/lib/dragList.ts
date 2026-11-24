@@ -1,6 +1,6 @@
 /**
- * Pure helpers for a drag-to-reorder list (the tier list in the
- * strategy editor). No DOM, no Svelte — the component owns pointer events and
+ * Pure helpers for the drags of the strategy editor (the tier list, and the
+ * players between the tiers). No DOM, no Svelte — the component owns pointer events and
  * spring wiring; this module only does the array/geometry math, so it's easy to
  * reason about and to unit-test in isolation.
  */
@@ -31,6 +31,23 @@ export function indexForOffset(
 	const shift = Math.round(offset / slotSize);
 	const target = startIndex + shift;
 	return Math.min(count - 1, Math.max(0, target));
+}
+
+const SCROLL_EDGE = 60; // px from the edge of the scroller
+const SCROLL_STEP = 14; // px per frame
+
+/**
+ * How far to scroll on one axis, in the next frame, a scroller from `min` to `max` while a drag
+ * from `start` is at `position`: the nearer to an edge, the faster. An item grabbed near an edge
+ * scrolls only once it moves towards that edge.
+ */
+export function edgeScrollStep(position: number, start: number, min: number, max: number): number {
+	const startsInside = start >= min && start <= max;
+	const step = (depth: number) =>
+		Math.ceil(SCROLL_STEP * Math.min(1, Math.max(0, depth / SCROLL_EDGE)));
+	const backward = !startsInside || position < start ? step(min + SCROLL_EDGE - position) : 0;
+	const forward = !startsInside || position > start ? step(position - max + SCROLL_EDGE) : 0;
+	return forward - backward;
 }
 
 /** Clamps a drag offset to the travel available between the list's first and last slot. */
