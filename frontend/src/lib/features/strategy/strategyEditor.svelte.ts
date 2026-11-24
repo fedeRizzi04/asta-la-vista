@@ -26,10 +26,15 @@ type EntryDraft = {
 const ENTRY_SAVE_DEBOUNCE_MS = 500;
 const TIER_SAVE_DEBOUNCE_MS = 400;
 
-/** Delays the save of each id until its changes settle. `persist` must handle its own errors. */
+/**
+ * Delays the save of each id until its changes settle, and saves an id again only after its
+ * running save, or the older request could land last. `persist` must handle its own errors.
+ */
 class DebouncedSaver {
 	readonly #timers = new Map<string, ReturnType<typeof setTimeout>>();
-	readonly #inFlight = new Set<Promise<void>>();
+	readonly #running = new Map<string, Promise<void>>();
+	/** The ids to save again after their running save. */
+	readonly #changed = new Set<string>();
 	readonly #delay: number;
 	readonly #persist: (id: string) => Promise<void>;
 
@@ -51,21 +56,39 @@ class DebouncedSaver {
 		if (this.#timers.has(id)) await this.saveNow(id);
 	}
 
-	async saveNow(id: string): Promise<void> {
+	saveNow(id: string): Promise<void> {
 		clearTimeout(this.#timers.get(id));
 		this.#timers.delete(id);
-		const request = this.#persist(id);
-		this.#inFlight.add(request);
-		await request;
-		this.#inFlight.delete(request);
+		const running = this.#running.get(id);
+		if (running) {
+			this.#changed.add(id);
+			return running;
+		}
+		const save = this.#save(id);
+		this.#running.set(id, save);
+		return save;
 	}
 
-	/** Starts every waiting save synchronously, so that it also works while the page unloads. */
 	async flushAll(): Promise<void> {
-		await Promise.all([
-			...this.#inFlight,
-			...Array.from(this.#timers.keys(), (id) => this.flush(id))
-		]);
+		for (const id of [...this.#timers.keys()]) void this.saveNow(id);
+		await Promise.all(this.#running.values());
+	}
+
+	/** Starts every save synchronously: an unloading page cannot wait for the running ones. */
+	flushOnUnload(): void {
+		const ids = new Set([...this.#timers.keys(), ...this.#changed]);
+		for (const timer of this.#timers.values()) clearTimeout(timer);
+		this.#timers.clear();
+		this.#changed.clear();
+		for (const id of ids) void this.#persist(id);
+	}
+
+	async #save(id: string): Promise<void> {
+		do {
+			this.#changed.delete(id);
+			await this.#persist(id);
+		} while (this.#changed.has(id));
+		this.#running.delete(id);
 	}
 }
 
@@ -194,6 +217,12 @@ export class StrategyEditor {
 	/** Persists the waiting autosaves, e.g. before a full re-fetch overwrites the local state. */
 	async flushAll(): Promise<void> {
 		await Promise.all([this.#entrySaves.flushAll(), this.#tierSaves.flushAll()]);
+	}
+
+	/** As `flushAll`, for a page that is reloading or closing. */
+	flushOnUnload(): void {
+		this.#entrySaves.flushOnUnload();
+		this.#tierSaves.flushOnUnload();
 	}
 
 	/** The backend wants the tier names of a strategy to be unique. */
