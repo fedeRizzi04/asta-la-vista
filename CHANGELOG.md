@@ -74,6 +74,16 @@ who use the app.
   **Importa CSV** in a window, with the file format explained under **Formato CSV**. Each row has
   a **⋯** menu with export, duplicate and delete.
 
+- The Listone filters by role with the counts in the tabs (**Tutti**, **P**, **D**, **C**, **A**),
+  and the filters apply as soon as you change them or type in the search, with no button to press.
+  The table header stays in view while you scroll, and you can sort by player, team or
+  quotation. The import (CSV or XLSX) is under **Importa**, in a window, and the summary and the
+  confirmation for a live auction work as before.
+- The auctions list shows the auction in progress first, with **Riprendi**, and **Nuova asta**
+  opens a window instead of a form that is always on the page.
+- The home page shows the auction in progress, your first strategies and how many players each
+  role has in the Listone, instead of the welcome banner.
+
 ### Fixed
 
 - Notes, percentages and names typed on a strategy no longer risk being lost when you reload the

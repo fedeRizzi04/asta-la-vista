@@ -316,7 +316,7 @@
 	}
 
 	.table-scroll {
-		max-height: max(12rem, calc(100dvh - var(--header-height) - 10rem));
+		max-height: max(12rem, calc(100dvh - var(--header-height) - 12.75rem));
 		overflow: auto;
 	}
 
