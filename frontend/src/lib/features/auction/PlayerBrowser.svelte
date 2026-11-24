@@ -1,11 +1,12 @@
 <script lang="ts">
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
+	import MantraRoleFilter from '$lib/components/MantraRoleFilter.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
-	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
+	import { mantraRolesOf } from '$lib/mantraRoles';
 	import type { Role } from '$lib/players';
 	import { matchesSearch } from '$lib/search';
 	import type { AuctionState } from './auctionState.svelte';
@@ -28,9 +29,7 @@
 				player.role === role && (player.active || auctionState.purchasedIds.has(player.id))
 		)
 	);
-	let mantraCodes = $derived(
-		sortMantraRoles([...new Set(rolePlayers.flatMap((player) => player.mantra_roles))])
-	);
+	let mantraCodes = $derived(mantraRolesOf(rolePlayers));
 	let effectiveMantraRoles = $derived(
 		selectedMantraRoles.filter((code) => mantraCodes.includes(code))
 	);
@@ -58,33 +57,13 @@
 				return first.player.name.localeCompare(second.player.name, 'it');
 			})
 	);
-
-	function toggleMantraRole(code: string): void {
-		selectedMantraRoles = selectedMantraRoles.includes(code)
-			? selectedMantraRoles.filter((selected) => selected !== code)
-			: [...selectedMantraRoles, code];
-	}
 </script>
 
 <div class="filters">
-	{#if mantraCodes.length > 0}
-		<div class="filter-row" role="group" aria-label="Sotto-ruoli Mantra">
-			<ToggleChip
-				pressed={effectiveMantraRoles.length === 0}
-				onclick={() => (selectedMantraRoles = [])}
-			>
-				Tutti
-			</ToggleChip>
-			{#each mantraCodes as code (code)}
-				<ToggleChip
-					pressed={effectiveMantraRoles.includes(code)}
-					onclick={() => toggleMantraRole(code)}
-				>
-					{mantraRoleLabel(code)}
-				</ToggleChip>
-			{/each}
-		</div>
-	{/if}
+	<MantraRoleFilter
+		codes={mantraCodes}
+		bind:selected={() => effectiveMantraRoles, (codes) => (selectedMantraRoles = codes)}
+	/>
 	<div class="filter-row">
 		<Input
 			bind:value={search}

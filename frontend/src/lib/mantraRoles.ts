@@ -27,6 +27,11 @@ export function mantraRoleLabel(code: string): string {
 	return MANTRA_ROLE_LABELS[code] ?? code;
 }
 
+/** The distinct Mantra roles of the given players, sorted. */
+export function mantraRolesOf(players: { mantra_roles: string[] }[]): string[] {
+	return sortMantraRoles([...new Set(players.flatMap((player) => player.mantra_roles))]);
+}
+
 export function sortMantraRoles(codes: string[]): string[] {
 	return [...codes].sort((first, second) => {
 		const firstIndex = MANTRA_ROLE_ORDER.indexOf(first);
