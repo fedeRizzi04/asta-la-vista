@@ -41,7 +41,7 @@
 </script>
 
 <!-- A reload or a closed window does not destroy the component. -->
-<svelte:window onpagehide={() => void editor.flushAll()} />
+<svelte:window onpagehide={() => editor.flushOnUnload()} />
 
 <svelte:head>
 	<title>{strategy?.name ?? 'Strategia'} | Asta la Vista</title>
