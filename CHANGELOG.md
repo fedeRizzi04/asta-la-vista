@@ -73,7 +73,6 @@ who use the app.
   (Top, Semitop, Terza fascia, Scommesse) or lets you create your own, and the strategies list has
   **Importa CSV** in a window, with the file format explained under **Formato CSV**. Each row has
   a **⋯** menu with export, duplicate and delete.
-
 - The Listone filters by role with the counts in the tabs (**Tutti**, **P**, **D**, **C**, **A**),
   and the filters apply as soon as you change them or type in the search, with no button to press.
   The table header stays in view while you scroll, and you can sort by player, team or
@@ -97,6 +96,8 @@ who use the app.
 - The confirmation shown when importing the Listone during a live auction, and the one for
   players missing from a strategy CSV, are now in Italian. Cancelling the first one no longer
   shows an error.
+- In a narrow window the auction header wraps onto two rows instead of squeezing the title down to
+  a few letters and splitting the status badge.
 - A tier badge in a narrow list is cut with an ellipsis instead of shrinking to a single letter.
 - The maximum price percentage of a player cannot go above 100%: a larger value, typed or
   pasted, is brought back to 100% before it is shown on the card or saved, and the credits follow.

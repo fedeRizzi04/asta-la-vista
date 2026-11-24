@@ -80,7 +80,7 @@
 		white-space: nowrap;
 	}
 
-	@media (min-width: 48rem) {
+	@media (min-width: 72rem) {
 		.compact,
 		.compact .actions {
 			flex-wrap: nowrap;
