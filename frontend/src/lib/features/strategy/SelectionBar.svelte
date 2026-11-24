@@ -14,6 +14,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { nameFit } from '$lib/names';
 	import { registerShortcuts } from '$lib/shortcuts.svelte';
 	import type { StrategyEditor } from './strategyEditor.svelte';
 
@@ -29,6 +30,9 @@
 
 	let selection = $derived(editor.selection);
 	let selectedPlayers = $derived(editor.players.filter((player) => selection.ids.has(player.id)));
+	let selectedLabel = $derived(
+		selectedPlayers.length === 1 ? selectedPlayers[0].name : `${selectedPlayers.length} calciatori`
+	);
 	let anyInTier = $derived(selectedPlayers.some((player) => editor.tierOfPlayer(player.id)));
 
 	$effect(() =>
@@ -89,11 +93,7 @@
 	aria-label="Selezione"
 >
 	{#if selectedPlayers.length > 0}
-		<span class="selected">
-			{selectedPlayers.length === 1
-				? selectedPlayers[0].name
-				: `${selectedPlayers.length} calciatori`}
-		</span>
+		<span class={['selected', 'name-line', nameFit(selectedLabel)]}>{selectedLabel}</span>
 		{#each editor.orderedTiers as tier, index (tier.id)}
 			<Button
 				variant="secondary"
@@ -105,7 +105,7 @@
 				disabled={editor.saving}
 				onclick={() => moveWithButton(tier.id)}
 			>
-				<span class="tier-name">{tier.name}</span>
+				<span class={['tier-name', 'name-line', nameFit(tier.name)]}>{tier.name}</span>
 			</Button>
 		{/each}
 		{#if anyInTier}
@@ -136,6 +136,8 @@
 	.selection-bar {
 		display: flex;
 		flex: 1 1 24rem;
+		/* With many or long tier names the buttons go to a second row instead of shrinking. */
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: flex-end;
 		gap: 0.35rem;
@@ -148,13 +150,10 @@
 	}
 
 	.selected {
-		flex: none;
+		flex: 0 1 auto;
 		max-width: 12rem;
 		margin-right: 0.25rem;
-		overflow: hidden;
 		font-weight: 700;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 	.selection-bar :global(.button) {
@@ -162,13 +161,9 @@
 	}
 
 	.selection-bar :global(.tier) {
-		min-width: 2.2rem;
+		/* Only a name wider than the whole bar is cut. */
+		max-width: 100%;
 		border-left: 0.5rem solid var(--tier-color);
-	}
-
-	.tier-name {
-		overflow: hidden;
-		text-overflow: ellipsis;
 	}
 
 	/* Only for screen readers. */

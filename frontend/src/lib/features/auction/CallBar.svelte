@@ -86,7 +86,7 @@
 				{@const percentage = auctionState.entryForPlayer(result.id)?.maximum_price_percentage}
 				<span class="result">
 					<span class="role-badge" data-role={result.role}>{result.role}</span>
-					<span class="result-name"
+					<span class="result-name name-line name-min"
 						><strong>{result.name}</strong> <small>{result.team}</small></span
 					>
 					<MantraRoleBadges roles={result.mantra_roles} compact />
@@ -163,13 +163,10 @@
 	.details,
 	.result {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5rem;
 		min-width: 0;
-	}
-
-	.identity {
-		flex-wrap: wrap;
 	}
 
 	.name {
@@ -191,15 +188,16 @@
 		color: var(--text);
 	}
 
-	.details em,
-	.result-name {
+	/* What does not fit goes to the next line: a name or a note is never cut to a sliver. */
+	.details em {
+		flex: 1 1 12ch;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
 	.result-name {
-		flex: 1;
+		flex: 1 1 14ch;
 	}
 
 	.result small {

@@ -98,7 +98,13 @@ who use the app.
   shows an error.
 - In a narrow window the auction header wraps onto two rows instead of squeezing the title down to
   a few letters and splitting the status badge.
-- A tier badge in a narrow list is cut with an ellipsis instead of shrinking to a single letter.
+- Names are no longer cut down to a bare "…". Player surnames in the team rosters, fantasy team
+  names, tier names and the strategy name take the room that prices and badges leave free: the
+  rosters show about three teams at a time with room for long surnames, long team and tier names
+  wrap onto a second line, the buyer's name gives way to the player's in the tiers, and the tier
+  buttons of the strategy page go to a second row instead of shrinking. When a name is still too
+  long, at least its first letters stay visible and the full name is in the tooltip. A long file
+  name in the import windows no longer makes the window wider.
 - The maximum price percentage of a player cannot go above 100%: a larger value, typed or
   pasted, is brought back to 100% before it is shown on the card or saved, and the credits follow.
 

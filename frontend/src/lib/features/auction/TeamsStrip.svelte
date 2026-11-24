@@ -78,7 +78,9 @@
 									aria-label={`Rosa di ${participant.name}, ${participant.credits_remaining} ${plural(participant.credits_remaining, 'credito residuo', 'crediti residui')}, puntata massima ${participant.maximum_bid}`}
 									onclick={() => (selectedId = participant.id)}
 								>
-									<span class="team-name" title={participant.name}>{participant.name}</span>
+									<span class="team-name name-lines name-min" title={participant.name}
+										>{participant.name}</span
+									>
 									<span class="budget">
 										<strong>{participant.credits_remaining}</strong>
 										<span>max {participant.maximum_bid}</span>
@@ -126,7 +128,7 @@
 															style:--tier-color={tier?.color ?? 'transparent'}
 															title={`${purchase.player_name} · ${purchase.team} · ${purchase.price} cr${tier ? ` · ${tier.name}` : ''}`}
 														>
-															<span class="surname"
+															<span class="surname name-line name-min"
 																>{purchase.player_name.replace(/(?:\s+\p{L}\.)+$/u, '')}</span
 															>
 															<span class="price">{purchase.price}</span>
@@ -190,12 +192,12 @@
 		flex: none;
 		width: min(
 			calc(100cqw - 2 * var(--strip-padding)),
-			max(14rem, calc((100cqw - 3 * var(--strip-gap) - 2 * var(--strip-padding)) / 4))
+			max(22rem, calc((100cqw - 2 * var(--strip-gap) - 2 * var(--strip-padding)) / 3))
 		);
 		padding: 0.35rem;
 	}
 	.compact .team-card {
-		width: 10.5rem;
+		width: 13rem;
 	}
 	.team-header {
 		display: flex;
@@ -203,6 +205,8 @@
 		align-items: center;
 		gap: 0.4rem;
 		width: 100%;
+		/* Two lines of name, so that the slots start at the same height in every card. */
+		min-height: 2.8rem;
 		padding: 0.25rem 0.35rem;
 		border: 0;
 		border-radius: var(--radius-xs);
@@ -212,12 +216,6 @@
 	}
 	.team-header:hover {
 		background: var(--hover);
-	}
-	.team-name,
-	.surname {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 	.team-name {
 		font: 800 1rem/1.15 var(--font-display);
@@ -242,8 +240,9 @@
 	.team-slots {
 		--slot-height: 1.125rem;
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 0.25rem;
+		/* A role with short surnames gives its room to the ones with long surnames. */
+		grid-template-columns: repeat(4, minmax(0, auto));
+		gap: 0.25rem 0.55rem;
 		max-height: calc((var(--visible-slots) + 1) * var(--slot-height) + 0.25rem + 1px);
 		padding-top: 0.25rem;
 		border-top: 1px dashed var(--border);
@@ -277,6 +276,7 @@
 		font-weight: 700;
 	}
 	.price {
+		flex: none;
 		color: var(--muted);
 		font-size: 0.7rem;
 	}

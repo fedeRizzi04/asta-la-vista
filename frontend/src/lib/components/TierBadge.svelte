@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { nameFit } from '$lib/names';
 	let {
 		name,
 		color = null,
@@ -17,7 +18,7 @@
 	style:--tier-color={color ?? 'var(--tier-default)'}
 >
 	<span class="tier-badge-accent" aria-hidden="true"></span>
-	<span class="tier-badge-name">{name}</span>
+	<span class={['tier-badge-name', 'name-lines', nameFit(name)]}>{name}</span>
 </span>
 
 <style>
@@ -45,14 +46,6 @@
 		border: 1px solid rgb(0 0 0 / 14%);
 		border-radius: 0.18rem;
 		background: var(--tier-color);
-	}
-
-	/* One line cut with an ellipsis: wrapping anywhere shrank the badge to a single letter. */
-	.tier-badge-name {
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 	.tier-badge.compact {

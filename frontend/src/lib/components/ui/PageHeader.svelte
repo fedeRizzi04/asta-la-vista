@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { nameFit } from '$lib/names';
 	import type { Snippet } from 'svelte';
 	import type { ResolvedPathname } from '$app/types';
 
@@ -20,7 +21,13 @@
 
 <header class="page-header" class:compact>
 	{#if back}<a class="back" href={back.href}>← {back.label}</a>{/if}
-	<h1 class:custom-title={typeof title !== 'string'}>
+	<h1
+		class={[
+			typeof title !== 'string' && 'custom-title',
+			compact && typeof title === 'string' && ['name-lines', nameFit(title)]
+		]}
+		title={compact && typeof title === 'string' ? title : undefined}
+	>
 		{#if typeof title === 'string'}{title}{:else}{@render title()}{/if}
 	</h1>
 	{#if meta}{@render meta()}{/if}
@@ -70,14 +77,8 @@
 		white-space: nowrap;
 	}
 
-	.compact h1 {
+	.compact h1.custom-title {
 		min-width: 0;
-	}
-
-	.compact h1:not(.custom-title) {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 	@media (min-width: 72rem) {

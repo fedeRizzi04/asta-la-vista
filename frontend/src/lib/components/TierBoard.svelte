@@ -73,7 +73,9 @@
 								style:background={tier.color ?? 'var(--tier-default)'}
 								aria-hidden="true"
 							></span>
-							<span class="tier-name">{tier.name}</span>
+							<span class="tier-name" class:name-lines={visible} class:name-min={visible}
+								>{tier.name}</span
+							>
 							<span class="tier-summary">{@render summary?.(column)}</span>
 						</button>
 					</h2>
@@ -165,11 +167,7 @@
 
 	.tier-name {
 		flex: 1;
-		min-width: 0;
-		overflow: hidden;
 		font-weight: 800;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 	.tier-summary {
@@ -242,6 +240,9 @@
 	}
 
 	.closed .tier-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 		flex: 0 1 auto;
 		min-width: auto;
 		min-height: 0;

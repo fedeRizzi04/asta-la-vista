@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { nameFit } from '$lib/names';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import MantraRoleFilter from '$lib/components/MantraRoleFilter.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
@@ -93,7 +94,9 @@
 				{@const tier = showAssigned && editor.tierOfPlayer(player.id)}
 				<span class="player" class:inactive={!player.active}>
 					<span class="identity">
-						<strong title={player.name}>{player.name}</strong>
+						<strong class={['name-line', nameFit(player.name)]} title={player.name}
+							>{player.name}</strong
+						>
 						<small>{player.team}{player.active ? '' : ' · inattivo'}</small>
 						<MantraRoleBadges roles={player.mantra_roles} compact />
 						{#if tier}<TierBadge name={tier.name} color={tier.color} compact />{/if}
@@ -168,7 +171,7 @@
 
 	.player {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-columns: minmax(var(--name-min), 1fr) auto;
 		align-items: baseline;
 		gap: 0.5rem;
 		padding: 0.3rem 0.45rem;
@@ -181,12 +184,6 @@
 		align-items: baseline;
 		gap: 0 0.35rem;
 		min-width: 0;
-	}
-
-	.identity strong {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 	small {

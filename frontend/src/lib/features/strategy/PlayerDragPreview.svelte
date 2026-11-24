@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { nameFit } from '$lib/names';
 	import type { PlayerDrag } from './playerDrag.svelte';
 
 	/** What follows the pointer while players are dragged. */
@@ -15,8 +16,8 @@
 		aria-hidden="true"
 	>
 		<div class="card" class:stacked={drag.players.length > 1}>
-			<strong>{grabbed.name}</strong>
-			<small>{grabbed.team}</small>
+			<strong class={['name-line', nameFit(grabbed.name)]}>{grabbed.name}</strong>
+			<small class={['name-line', nameFit(grabbed.team)]}>{grabbed.team}</small>
 			{#if drag.players.length > 1}<span class="count">{drag.players.length}</span>{/if}
 		</div>
 	</div>
@@ -36,7 +37,7 @@
 		display: flex;
 		align-items: baseline;
 		gap: 0.4rem;
-		max-width: 15rem;
+		max-width: 18rem;
 		padding: 0.3rem 0.6rem;
 		border: var(--bw) solid var(--line);
 		border-radius: var(--radius-xs);
@@ -55,13 +56,9 @@
 			8px 8px 0 0 var(--line);
 	}
 
-	strong {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
+	/* The team gives way before the player. */
 	small {
+		flex-shrink: 4;
 		color: var(--muted);
 		font-size: 0.75rem;
 	}
