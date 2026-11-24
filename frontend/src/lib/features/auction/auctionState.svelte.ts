@@ -11,12 +11,10 @@ import {
 	setAuctionStrategy,
 	startAuction,
 	type Auction,
-	type Participant,
 	type Purchase
 } from '$lib/auctions';
-import { confirmDialog } from '$lib/dialog.svelte';
+import { confirmDialog, type DialogOptions } from '$lib/dialog.svelte';
 import { getPlayers, type Player } from '$lib/players';
-import { matchesSearch } from '$lib/search';
 import {
 	getStrategies,
 	getStrategy,
@@ -35,11 +33,6 @@ export class AuctionState {
 	viewedStrategy = $state<Strategy>();
 	viewingStrategyId = $state('');
 	#calledPlayerId = $state('');
-	editingPurchaseId = $state('');
-	editedParticipantId = $state('');
-	editedPrice = $state(1);
-	registryOpen = $state(false);
-	registrySearch = $state('');
 	loading = $state(true);
 	saving = $state(false);
 
@@ -52,7 +45,7 @@ export class AuctionState {
 	callablePlayers = $derived(
 		this.players.filter((player) => player.active && !this.purchasedIds.has(player.id))
 	);
-	/** All purchases across every participant, newest first, for the purchase registry. */
+	/** All purchases across every participant, newest first. */
 	allPurchases = $derived.by(() => {
 		if (!this.auction) return [];
 		return this.auction.participants
@@ -63,11 +56,6 @@ export class AuctionState {
 	});
 	#purchaseByPlayerId = $derived(
 		new Map(this.allPurchases.map((record) => [record.purchase.player_id, record]))
-	);
-	filteredRegistryPurchases = $derived(
-		this.allPurchases.filter(({ purchase }) =>
-			matchesSearch(this.registrySearch, purchase.player_name)
-		)
 	);
 
 	readonly #getAuctionId: () => string | undefined;
@@ -118,13 +106,17 @@ export class AuctionState {
 			!(await confirmDialog({
 				title: 'Termina asta',
 				message: 'Terminare questa asta? Potrai riaprirla in seguito.',
-				confirmLabel: 'Termina asta'
+				confirmLabel: 'Termina asta',
+				danger: true
 			}))
 		)
 			return;
 		await this.#runMutation(async (auctionId) => {
 			if (action === 'start') await startAuction(auctionId);
-			if (action === 'complete') await completeAuction(auctionId);
+			if (action === 'complete') {
+				await completeAuction(auctionId);
+				this.cancelCall();
+			}
 			if (action === 'reopen') await reopenAuction(auctionId);
 		});
 	}
@@ -173,33 +165,43 @@ export class AuctionState {
 			: null;
 	}
 
-	resetRegistry(): void {
-		this.registrySearch = '';
-		this.editingPurchaseId = '';
-	}
-
-	beginEdit(purchase: Purchase, participant: Participant): void {
-		this.editingPurchaseId = purchase.id;
-		this.editedParticipantId = participant.id;
-		this.editedPrice = purchase.price;
-	}
-
-	async savePurchase(purchaseId: string): Promise<void> {
-		await this.#runMutation(async (auctionId) => {
-			await amendPurchase(auctionId, purchaseId, this.editedParticipantId, this.editedPrice);
-			this.editingPurchaseId = '';
-		});
+	async savePurchase(purchaseId: string, participantId: string, price: number): Promise<boolean> {
+		if (this.auction?.status !== 'live' || this.saving) return false;
+		return this.#runMutation((auctionId) =>
+			amendPurchase(auctionId, purchaseId, participantId, price)
+		);
 	}
 
 	async deletePurchase(purchase: Purchase): Promise<void> {
-		const confirmed = await confirmDialog({
+		await this.#confirmPurchaseCancellation(purchase.id, {
 			title: 'Annulla acquisto',
-			message: `Annullare l'acquisto di ${purchase.player_name}?`,
+			message: `Annullare l'acquisto di ${purchase.player_name}?`
+		});
+	}
+
+	async undoLastPurchase(): Promise<void> {
+		const latest = this.allPurchases[0];
+		if (!latest) return;
+		const { purchase, participant } = latest;
+		await this.#confirmPurchaseCancellation(purchase.id, {
+			title: "Annullare l'ultimo acquisto?",
+			message: `${purchase.player_name} → ${participant.name} a ${purchase.price} crediti. I crediti tornano disponibili.`,
+			cancelLabel: 'Lascia stare'
+		});
+	}
+
+	async #confirmPurchaseCancellation(
+		purchaseId: string,
+		options: Pick<DialogOptions, 'title' | 'message' | 'cancelLabel'>
+	): Promise<void> {
+		if (this.auction?.status !== 'live' || this.saving) return;
+		const confirmed = await confirmDialog({
+			...options,
 			confirmLabel: 'Annulla acquisto',
 			danger: true
 		});
-		if (!confirmed) return;
-		await this.#runMutation((auctionId) => cancelPurchase(auctionId, purchase.id));
+		if (!confirmed || this.auction?.status !== 'live' || this.saving) return;
+		await this.#runMutation((auctionId) => cancelPurchase(auctionId, purchaseId));
 	}
 
 	// Through fetch, like the strategy export: the app window has no Back button, so navigating
@@ -212,14 +214,16 @@ export class AuctionState {
 		}
 	}
 
-	async #runMutation(mutation: (auctionId: string) => Promise<unknown>): Promise<void> {
+	async #runMutation(mutation: (auctionId: string) => Promise<unknown>): Promise<boolean> {
 		this.saving = true;
 		try {
 			const auctionId = this.#currentAuctionId();
 			await mutation(auctionId);
 			this.auction = await getAuction(auctionId);
+			return true;
 		} catch (caught) {
 			pushErrorToast(caught);
+			return false;
 		} finally {
 			this.saving = false;
 		}

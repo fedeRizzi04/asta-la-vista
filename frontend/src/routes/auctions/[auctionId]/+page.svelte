@@ -2,20 +2,16 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
-	import TierBadge from '$lib/components/TierBadge.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
-	import Field from '$lib/components/ui/Field.svelte';
-	import Input from '$lib/components/ui/Input.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
-	import Select from '$lib/components/ui/Select.svelte';
 	import Tabs from '$lib/components/ui/Tabs.svelte';
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
+	import AuctionSummary from '$lib/features/auction/AuctionSummary.svelte';
 	import AuctionTiers from '$lib/features/auction/AuctionTiers.svelte';
 	import CallBar from '$lib/features/auction/CallBar.svelte';
 	import PlayerBrowser from '$lib/features/auction/PlayerBrowser.svelte';
+	import PurchaseRegistry from '$lib/features/auction/PurchaseRegistry.svelte';
 	import TeamsStrip from '$lib/features/auction/TeamsStrip.svelte';
 	import { AuctionState } from '$lib/features/auction/auctionState.svelte';
 	import { roleLabels, roles, type Role } from '$lib/players';
@@ -25,6 +21,14 @@
 
 	const auctionState = new AuctionState(() => page.params.auctionId);
 	const auction = $derived(auctionState.auction);
+	let registryOpen = $state(false);
+	const purchaseCount = $derived(auctionState.allPurchases.length);
+	const purchaseCapacity = $derived(
+		auction
+			? auction.participants.length *
+					roles.reduce((total, role) => total + auction.slot_totals[role], 0)
+			: 0
+	);
 	const view = $derived<AuctionView>(getUrlParams().get('view') === 'free' ? 'free' : 'tiers');
 
 	/** The role filter of both views: no role selected means all of them. */
@@ -48,7 +52,11 @@
 
 <svelte:head><title>{auction?.name ?? 'Asta'} | Asta la Vista</title></svelte:head>
 
-<PageHeader title={auction?.name ?? 'Asta'} back={{ href: resolve('/auctions'), label: 'Aste' }}>
+<PageHeader
+	compact
+	title={auction?.name ?? 'Asta'}
+	back={{ href: resolve('/auctions'), label: 'Aste' }}
+>
 	{#snippet meta()}
 		{#if auction}
 			<span class="status-badge" data-status={auction.status}
@@ -58,28 +66,59 @@
 						? 'In corso'
 						: 'Terminata'}</span
 			>
+			<span class="header-summary">
+				{auction.participants.length} partecipanti · {auction.initial_credits} crediti · {purchaseCount}/{purchaseCapacity}
+				acquisti
+			</span>
 		{/if}
 	{/snippet}
 	{#snippet actions()}
-		{#if auction?.status === 'draft'}
-			<Button onclick={() => auctionState.changeStatus('start')} disabled={auctionState.saving}
-				>Inizia asta</Button
+		{#if auction && auction.status !== 'draft'}
+			<Button
+				variant="secondary"
+				size="sm"
+				aria-haspopup="dialog"
+				onclick={() => (registryOpen = true)}
 			>
+				Registro ({purchaseCount})
+			</Button>
+		{/if}
+		{#if auction?.status === 'draft'}
+			<Button
+				size="sm"
+				onclick={() => auctionState.changeStatus('start')}
+				disabled={auctionState.saving}
+			>
+				Inizia asta
+			</Button>
 		{:else if auction?.status === 'live'}
 			<Button
 				variant="secondary"
+				size="sm"
+				onclick={() => auctionState.undoLastPurchase()}
+				disabled={auctionState.saving || purchaseCount === 0}
+			>
+				<span aria-hidden="true">↶</span> Annulla ultimo
+			</Button>
+			<Button
+				variant="danger"
+				size="sm"
 				onclick={() => auctionState.changeStatus('complete')}
 				disabled={auctionState.saving}
 			>
 				Termina asta
 			</Button>
 		{:else if auction?.status === 'completed'}
-			<Button onclick={() => auctionState.changeStatus('reopen')} disabled={auctionState.saving}
-				>Riapri asta</Button
+			<Button variant="secondary" size="sm" onclick={() => auctionState.downloadReport()}>
+				Scarica report
+			</Button>
+			<Button
+				size="sm"
+				onclick={() => auctionState.changeStatus('reopen')}
+				disabled={auctionState.saving}
 			>
-			<Button variant="secondary" onclick={() => auctionState.downloadReport()}
-				>Scarica report</Button
-			>
+				Riapri asta
+			</Button>
 		{/if}
 	{/snippet}
 </PageHeader>
@@ -87,34 +126,13 @@
 {#if auctionState.loading}<EmptyState>Caricamento dell'asta…</EmptyState>{/if}
 
 {#if auction && !auctionState.loading}
-	{#if auction.status === 'draft'}
-		<section class="draft-summary panel">
-			<h2>Configurazione</h2>
-			<p>{auction.participants.length} partecipanti · {auction.initial_credits} crediti a testa</p>
-			<div class="slot-summary">
-				{#each roles as role (role)}<span
-						><strong>{role}</strong> {auction.slot_totals[role]} slot</span
-					>{/each}
-			</div>
-			<ul>
-				{#each auction.participants as participant (participant.id)}<li>
-						{participant.name}
-					</li>{/each}
-			</ul>
-		</section>
-	{:else if auction.status === 'live'}
-		<div class="registry-trigger-row">
-			<Button onclick={() => (auctionState.registryOpen = true)}>
-				Apri registro acquisti{auctionState.allPurchases.length > 0
-					? ` (${auctionState.allPurchases.length})`
-					: ''}
-			</Button>
-		</div>
-	{/if}
-
 	<TeamsStrip {auctionState} />
 
-	{#if auction.status === 'live'}<CallBar {auctionState} />{/if}
+	{#if auction.status === 'live'}
+		<CallBar {auctionState} />
+	{:else}
+		<AuctionSummary {auction} {purchaseCount} />
+	{/if}
 
 	<div class="controls">
 		{#if auction.status !== 'draft'}
@@ -155,165 +173,16 @@
 		</div>
 	{/if}
 
-	<Dialog
-		bind:open={auctionState.registryOpen}
-		title="Registro acquisti"
-		width="760px"
-		closeLabel="Chiudi"
-		onclose={() => auctionState.resetRegistry()}
-	>
-		<Field label="Cerca calciatore">
-			<Input
-				bind:value={auctionState.registrySearch}
-				type="search"
-				placeholder="Nome del calciatore"
-				data-autofocus
-			/>
-		</Field>
-		{#if auctionState.allPurchases.length === 0}
-			<p class="registry-empty">Nessun acquisto registrato.</p>
-		{:else if auctionState.filteredRegistryPurchases.length === 0}
-			<p class="registry-empty">Nessun calciatore corrisponde alla ricerca.</p>
-		{:else}
-			<div class="registry-list">
-				{#each auctionState.filteredRegistryPurchases as { purchase, participant } (purchase.id)}
-					{@const purchaseTier = auctionState.tierForPlayer(purchase.player_id)}
-					<div
-						class="purchase-row registry-row"
-						class:editing={auctionState.editingPurchaseId === purchase.id}
-					>
-						{#if auctionState.editingPurchaseId === purchase.id}
-							<Select bind:value={auctionState.editedParticipantId} aria-label="Vincitore">
-								{#each auction.participants as option (option.id)}
-									<option value={option.id}>{option.name}</option>
-								{/each}
-							</Select>
-							<Input
-								bind:value={auctionState.editedPrice}
-								type="number"
-								min="1"
-								aria-label="Prezzo"
-							/>
-							<Button
-								variant="text"
-								size="sm"
-								onclick={() => auctionState.savePurchase(purchase.id)}
-								disabled={auctionState.saving}>Salva</Button
-							>
-							<Button
-								variant="text"
-								size="sm"
-								onclick={() => (auctionState.editingPurchaseId = '')}
-							>
-								Annulla
-							</Button>
-						{:else}
-							<span class="role-badge" data-role={purchase.role}>{purchase.role}</span><span
-								class="purchase-name"
-								><strong>{purchase.player_name}</strong><small
-									>{purchase.team}
-									<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
-								></span
-							><strong class="purchase-price">{purchase.price}</strong>
-							{#if purchaseTier}
-								<span class="purchase-tier">
-									<TierBadge name={purchaseTier.name} color={purchaseTier.color} compact />
-								</span>
-							{:else}
-								<span class="purchase-tier-spacer" aria-hidden="true"></span>
-							{/if}
-							<span class="registry-participant">{participant.name}</span>
-							<Button
-								variant="text"
-								size="sm"
-								onclick={() => auctionState.beginEdit(purchase, participant)}
-							>
-								Modifica
-							</Button>
-							<Button
-								variant="danger"
-								size="sm"
-								onclick={() => auctionState.deletePurchase(purchase)}
-							>
-								Elimina
-							</Button>
-						{/if}
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</Dialog>
+	<PurchaseRegistry {auctionState} bind:open={registryOpen} />
 {/if}
 
 <style>
-	.slot-summary {
-		display: flex;
-		align-items: center;
-	}
-	.panel {
-		margin-top: 2rem;
-	}
-	.draft-summary h2 {
-		margin: 0;
-	}
-	.draft-summary p {
-		color: var(--subdued);
-	}
-	.slot-summary {
-		flex-wrap: wrap;
-		gap: 0.45rem;
-	}
-	.slot-summary span {
-		padding: 0.35rem 0.55rem;
-		border-radius: var(--radius-xs);
-		background: var(--muted-bg);
-		font-size: 0.76rem;
-	}
-	.purchase-row {
-		display: grid;
-		grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem minmax(4.5rem, 8rem);
-		align-items: center;
-		gap: 0.45rem;
-		min-height: 2.25rem;
-		border-top: 1px solid var(--border);
-		font-size: 0.78rem;
-	}
-	.purchase-row.editing {
-		grid-template-columns: minmax(100px, 1fr) 4rem auto auto;
-	}
-	.purchase-row.registry-row:not(.editing) {
-		grid-template-columns:
-			1.5rem minmax(60px, 1fr) 2.5rem minmax(4.5rem, 7rem) minmax(70px, 8rem) auto
-			auto;
-	}
-	.registry-participant {
-		overflow: hidden;
-		font-weight: 700;
-		text-overflow: ellipsis;
+	.header-summary {
+		color: var(--muted);
+		font-size: 0.875rem;
 		white-space: nowrap;
 	}
-	.purchase-row :global(input),
-	.purchase-row :global(select) {
-		min-height: 2rem;
-	}
-	.purchase-name {
-		display: grid;
-		flex: 1;
-	}
-	.purchase-name small {
-		color: var(--subdued);
-	}
-	.purchase-price {
-		justify-self: end;
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-	.purchase-tier {
-		min-width: 0;
-	}
-	.purchase-tier :global(.tier-badge) {
-		max-width: 100%;
-	}
+
 	.controls,
 	.role-filter {
 		display: flex;
@@ -324,31 +193,5 @@
 	.controls {
 		gap: 0.75rem;
 		margin: 0.5rem 0 0.6rem;
-	}
-	.registry-trigger-row {
-		margin-bottom: 0.6rem;
-	}
-
-	.registry-empty {
-		margin: 0;
-		color: var(--subdued);
-		font-size: 0.85rem;
-	}
-	.registry-list {
-		display: grid;
-		align-content: start;
-		gap: 0;
-		min-height: 0;
-		overflow-y: auto;
-		overflow-x: auto;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-	}
-	.registry-row {
-		min-width: 34rem;
-		padding: 0 0.6rem;
-	}
-	.registry-list .registry-row:first-child {
-		border-top: 0;
 	}
 </style>

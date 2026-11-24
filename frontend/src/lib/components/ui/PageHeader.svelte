@@ -7,16 +7,18 @@
 		title,
 		back,
 		meta,
-		actions
+		actions,
+		compact = false
 	}: {
 		title: string;
 		back?: { href: ResolvedPathname; label: string };
 		meta?: Snippet;
 		actions?: Snippet;
+		compact?: boolean;
 	} = $props();
 </script>
 
-<header class="page-header">
+<header class="page-header" class:compact>
 	{#if back}<a class="back" href={back.href}>← {back.label}</a>{/if}
 	<h1>{title}</h1>
 	{#if meta}{@render meta()}{/if}
@@ -54,5 +56,29 @@
 		align-items: center;
 		gap: 0.6rem;
 		margin-left: auto;
+	}
+
+	.compact {
+		gap: 0.5rem 0.7rem;
+		min-height: 2.25rem;
+		margin-bottom: 0.65rem;
+	}
+
+	.compact .back {
+		white-space: nowrap;
+	}
+
+	.compact h1 {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	@media (min-width: 48rem) {
+		.compact,
+		.compact .actions {
+			flex-wrap: nowrap;
+		}
 	}
 </style>
