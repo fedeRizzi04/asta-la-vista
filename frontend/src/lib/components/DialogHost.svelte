@@ -30,13 +30,19 @@
 				/>
 			{/if}
 			<div class="actions">
-				<Button variant="secondary" onclick={dismissDialog}>
+				<!-- A stray Enter must not confirm a destructive action: focus starts on Cancel. -->
+				<Button
+					variant="secondary"
+					onclick={dismissDialog}
+					data-autofocus={dialogState.request.danger || undefined}
+				>
 					{dialogState.request.cancelLabel ?? 'Annulla'}
 				</Button>
 				<Button
 					type="submit"
 					variant={dialogState.request.danger ? 'danger' : 'primary'}
-					data-autofocus={dialogState.request.kind === 'confirm' || undefined}
+					data-autofocus={(dialogState.request.kind === 'confirm' && !dialogState.request.danger) ||
+						undefined}
 				>
 					{dialogState.request.confirmLabel ?? 'Conferma'}
 				</Button>
