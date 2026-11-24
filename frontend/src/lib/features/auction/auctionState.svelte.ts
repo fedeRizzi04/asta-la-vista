@@ -15,10 +15,9 @@ import {
 	type Purchase
 } from '$lib/auctions';
 import { confirmDialog } from '$lib/dialog.svelte';
-import { getPlayers, type Player, type Role } from '$lib/players';
+import { getPlayers, type Player } from '$lib/players';
 import { matchesSearch } from '$lib/search';
 import {
-	byMaxPercentageDesc,
 	getStrategies,
 	getStrategy,
 	percentageToCredits,
@@ -41,29 +40,14 @@ export class AuctionState {
 	editedPrice = $state(1);
 	registryOpen = $state(false);
 	registrySearch = $state('');
-	strategyRole = $state<Role>('P');
 	loading = $state(true);
 	saving = $state(false);
 
 	#playersById = $derived(new Map(this.players.map((player) => [player.id, player])));
 	#strategyIndex = $derived(this.viewedStrategy && strategyIndex(this.viewedStrategy));
+	sortedTiers = $derived(this.#strategyIndex?.sortedTiers ?? []);
 	purchasedIds = $derived(new Set(this.auction?.purchased_player_ids ?? []));
 
-	/** Tiers for the selected strategy role, with their entries resolved once. */
-	strategyRoleTiers = $derived.by(() => {
-		const strategy = this.viewedStrategy;
-		if (!strategy || !this.#strategyIndex) return [];
-		return this.#strategyIndex.sortedTiers.map((tier) => {
-			const entries = strategy.entries
-				.filter((entry) => entry.role === this.strategyRole && entry.tier_id === tier.id)
-				.sort(byMaxPercentageDesc((entry) => entry.maximum_price_percentage));
-			return {
-				tier,
-				entries,
-				availableCount: entries.filter((entry) => !this.purchasedIds.has(entry.player_id)).length
-			};
-		});
-	});
 	calledPlayer = $derived(this.#playersById.get(this.#calledPlayerId));
 	callablePlayers = $derived(
 		this.players.filter((player) => player.active && !this.purchasedIds.has(player.id))
@@ -77,6 +61,9 @@ export class AuctionState {
 			)
 			.sort((first, second) => (first.purchase.created_at < second.purchase.created_at ? 1 : -1));
 	});
+	#purchaseByPlayerId = $derived(
+		new Map(this.allPurchases.map((record) => [record.purchase.player_id, record]))
+	);
 	filteredRegistryPurchases = $derived(
 		this.allPurchases.filter(({ purchase }) =>
 			matchesSearch(this.registrySearch, purchase.player_name)
@@ -98,7 +85,7 @@ export class AuctionState {
 				getStrategies()
 			]);
 			this.viewingStrategyId = this.auction.strategy_id ?? '';
-			await this.#loadViewedStrategy();
+			await this.viewSelectedStrategy();
 		} catch (caught) {
 			pushErrorToast(caught);
 		} finally {
@@ -107,9 +94,14 @@ export class AuctionState {
 	}
 
 	async viewSelectedStrategy(): Promise<void> {
+		const strategyId = this.viewingStrategyId;
 		try {
-			await this.#loadViewedStrategy();
+			const strategy = strategyId ? await getStrategy(strategyId) : undefined;
+			// Another strategy may have been chosen while this one was loading.
+			if (this.viewingStrategyId === strategyId) this.viewedStrategy = strategy;
 		} catch (caught) {
+			if (this.viewingStrategyId !== strategyId) return;
+			this.viewingStrategyId = this.viewedStrategy?.id ?? '';
 			pushErrorToast(caught);
 		}
 	}
@@ -137,9 +129,16 @@ export class AuctionState {
 		});
 	}
 
+	canCall(playerId: string): boolean {
+		return (
+			this.auction?.status === 'live' &&
+			!!this.#playersById.get(playerId)?.active &&
+			!this.purchasedIds.has(playerId)
+		);
+	}
+
 	callPlayer(playerId: string): void {
-		if (this.auction?.status !== 'live' || this.purchasedIds.has(playerId)) return;
-		this.#calledPlayerId = playerId;
+		if (this.canCall(playerId)) this.#calledPlayerId = playerId;
 	}
 
 	cancelCall(): void {
@@ -162,6 +161,10 @@ export class AuctionState {
 	tierForPlayer(playerId: string) {
 		const tierId = this.entryForPlayer(playerId)?.tier_id;
 		return tierId == null ? undefined : this.#strategyIndex?.tierById.get(tierId);
+	}
+
+	purchaseOfPlayer(playerId: string) {
+		return this.#purchaseByPlayerId.get(playerId);
 	}
 
 	maximumPriceCredits(percentage: number | null | undefined): number | null {
@@ -207,12 +210,6 @@ export class AuctionState {
 		} catch (caught) {
 			pushErrorToast(caught);
 		}
-	}
-
-	async #loadViewedStrategy(): Promise<void> {
-		this.viewedStrategy = this.viewingStrategyId
-			? await getStrategy(this.viewingStrategyId)
-			: undefined;
 	}
 
 	async #runMutation(mutation: (auctionId: string) => Promise<unknown>): Promise<void> {

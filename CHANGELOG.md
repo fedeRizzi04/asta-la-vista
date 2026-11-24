@@ -31,6 +31,11 @@ who use the app.
 - The auction player list is now the **Svincolati** view, one click away from the tiers. Filter by
   several roles at once, search by player or team, sort by quotation, tier or name, and choose
   whether to show the players already taken.
+- During an auction, each tier shows the players left out of the total, and the players already
+  taken stay in their place, crossed out, with who bought them and the price. Collapse a tier into
+  a thin strip (the choice is remembered, and **Comprimi tutte** does it for all of them), or hide
+  the taken players with **Nascondi presi**. The role filter is shared by the tiers and Svincolati,
+  and inactive players no longer count as left.
 
 ## [0.4.1] - 2026-11-06
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 
+	/** A player's row in a tier. A taken player shows who bought them and the price paid. */
 	let {
 		name,
 		team,
@@ -9,8 +10,7 @@
 		maximumPriceCredits = null,
 		note = '',
 		inactive = false,
-		purchased = false,
-		compact = false
+		taken
 	}: {
 		name: string;
 		team: string;
@@ -19,82 +19,87 @@
 		maximumPriceCredits?: number | null;
 		note?: string;
 		inactive?: boolean;
-		purchased?: boolean;
-		compact?: boolean;
+		taken?: { buyer: string; price: number };
 	} = $props();
-
-	let maximumPriceText = $derived.by(() => {
-		if (maximumPricePercentage === null) return '';
-		const percentageText = `${maximumPricePercentage}%`;
-		return maximumPriceCredits === null
-			? `max ${percentageText}`
-			: `max ${maximumPriceCredits} cr (${percentageText})`;
-	});
 </script>
 
-<article class:inactive class:purchased class:compact>
-	<span class="name-row"
-		><strong>{name}</strong><MantraRoleBadges roles={mantraRoles} compact /></span
-	>
-	<small
-		>{team}{note ? ` · ${note}` : ''}{#if maximumPriceText}
-			· <span class="max-price">{maximumPriceText}</span>{/if}</small
-	>
-</article>
+<span class="tier-player" class:inactive class:taken>
+	<span class="identity">
+		<strong title={name}>{name}</strong>
+		{#if !taken}
+			<small>{team}</small>
+			<MantraRoleBadges roles={mantraRoles} compact />
+		{/if}
+	</span>
+	{#if taken}
+		<span class="price"><small>{taken.buyer}</small> {taken.price}</span>
+	{:else if maximumPricePercentage !== null}
+		<span class="price" title="Prezzo massimo">
+			<b>{maximumPricePercentage}%</b>
+			{#if maximumPriceCredits !== null}<small>{maximumPriceCredits}</small>{/if}
+		</span>
+	{/if}
+	{#if note && !taken}<em title={note}>{note}</em>{/if}
+</span>
 
 <style>
-	article {
+	.tier-player {
 		display: grid;
-		gap: 0.12rem;
-		padding: 0.5rem;
-		border-radius: var(--radius-xs);
-		background: var(--input-bg);
-		font-size: 0.8rem;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: baseline;
+		gap: 0 0.5rem;
+		padding: 0.25rem 0.45rem;
+		font-size: 0.875rem;
 	}
 
-	article.compact {
-		padding: 0.45rem 0.55rem;
-		font-size: 0.74rem;
+	.identity {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0 0.35rem;
+		min-width: 0;
 	}
 
-	article.inactive {
-		color: var(--disabled-text);
-		background: var(--muted-bg);
+	.identity strong,
+	em {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
-	article.purchased {
+	small,
+	em {
+		color: var(--muted);
+		font-size: 0.75rem;
+	}
+
+	em {
+		grid-column: 1 / -1;
+	}
+
+	.price {
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.price b {
+		font: 800 0.9rem/1 var(--font-display);
+	}
+
+	.taken,
+	.inactive,
+	.taken small,
+	.inactive small,
+	.inactive em {
 		color: var(--taken-text);
-		background: var(--muted-bg);
 	}
 
-	article.purchased strong {
+	.taken strong {
 		text-decoration: line-through;
 	}
 
-	article.purchased small,
-	article.purchased .max-price {
-		color: inherit;
-	}
-
-	small {
-		color: var(--subdued);
-	}
-
-	.name-row {
-		display: inline-flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.3rem;
-	}
-
-	.name-row strong {
-		font-size: 1.15em;
-	}
-
-	.max-price {
-		color: var(--primary-text);
+	.taken .price {
+		font-size: 0.75rem;
 		font-weight: 700;
-		text-decoration: overline;
-		text-decoration-color: var(--primary-text);
 	}
 </style>

@@ -43,3 +43,5 @@ export function panelVisibility(key: string, defaultVisible = true) {
 		}
 	};
 }
+
+export type PanelVisibility = ReturnType<typeof panelVisibility>;
