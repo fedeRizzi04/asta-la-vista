@@ -1,14 +1,16 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { ApiError, saveFile } from '$lib/api';
 	import FilePicker from '$lib/components/FilePicker.svelte';
 	import Message from '$lib/components/Message.svelte';
-	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import Menu from '$lib/components/ui/Menu.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
 	import { pushErrorToast } from '$lib/toast.svelte';
@@ -23,11 +25,14 @@
 		type StrategySummary
 	} from '$lib/strategies';
 
-	let strategies = $state<StrategySummary[]>([]);
+	let strategies = $state<StrategySummary[]>();
+	let createOpen = $state(false);
 	let newStrategyName = $state('');
 	let loading = $state(true);
 	let saving = $state(false);
+	let loadVersion = 0;
 
+	let importOpen = $state(false);
 	let importName = $state('');
 	let importFile = $state<File>();
 	let importing = $state(false);
@@ -36,25 +41,28 @@
 	onMount(loadStrategies);
 
 	async function loadStrategies(): Promise<void> {
+		const version = ++loadVersion;
 		loading = true;
 		try {
-			strategies = await getStrategies();
+			const result = await getStrategies();
+			if (version === loadVersion) strategies = result;
 		} catch (caught) {
-			pushErrorToast(caught);
+			if (version === loadVersion) pushErrorToast(caught);
 		} finally {
-			loading = false;
+			if (version === loadVersion) loading = false;
 		}
 	}
 
 	async function submitStrategy(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
 		const name = newStrategyName.trim();
-		if (!name) return;
+		if (!name || saving) return;
 		saving = true;
 		try {
-			await createStrategy(name);
+			const { id } = await createStrategy(name);
 			newStrategyName = '';
-			await loadStrategies();
+			createOpen = false;
+			await goto(resolve('/strategies/[strategyId]', { strategyId: id }));
 		} catch (caught) {
 			pushErrorToast(caught);
 		} finally {
@@ -64,28 +72,27 @@
 
 	async function submitImport(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
-		if (!importName.trim() || !importFile) return;
-		await runImport(false);
-	}
-
-	async function runImport(confirmUnmatched: boolean): Promise<void> {
 		const name = importName.trim();
-		if (!name || !importFile) return;
+		const file = importFile;
+		if (!name || !file || importing) return;
 		importing = true;
 		try {
-			importSummary = await importStrategy(name, importFile, confirmUnmatched);
+			const summary = await importStrategy(name, file).catch(async (caught: unknown) => {
+				if (!(caught instanceof ApiError) || caught.code !== 'confirmation_required') throw caught;
+				if (
+					importOpen &&
+					(await confirmDialog({ message: caught.message, confirmLabel: 'Continua comunque' }))
+				) {
+					return importStrategy(name, file, true);
+				}
+			});
+			if (!summary) return;
+			importSummary = summary;
 			importName = '';
 			importFile = undefined;
+			importOpen = false;
 			await loadStrategies();
 		} catch (caught) {
-			if (
-				caught instanceof ApiError &&
-				caught.code === 'confirmation_required' &&
-				(await confirmDialog({ message: caught.message, confirmLabel: 'Continua comunque' }))
-			) {
-				await runImport(true);
-				return;
-			}
 			pushErrorToast(caught);
 		} finally {
 			importing = false;
@@ -143,203 +150,207 @@
 	<title>Strategie | Asta la Vista</title>
 </svelte:head>
 
-<PageHeader title="Strategie">
+<PageHeader title="Strategie" compact>
 	{#snippet actions()}
-		<form class="create-form" onsubmit={submitStrategy}>
-			<Field label="Nuova strategia" for="strategy-name">
-				<div class="create-row">
-					<Input
-						id="strategy-name"
-						bind:value={newStrategyName}
-						placeholder="Ad esempio: Asta principale"
-					/>
-					<Button type="submit" loading={saving} disabled={!newStrategyName.trim()}>Crea</Button>
-				</div>
-			</Field>
-		</form>
+		<Button
+			variant="secondary"
+			size="sm"
+			aria-haspopup="dialog"
+			aria-disabled={importing || undefined}
+			onclick={() => {
+				if (!importing) importOpen = true;
+			}}
+			disabled={saving}
+		>
+			Importa CSV
+		</Button>
+		<Button
+			size="sm"
+			aria-haspopup="dialog"
+			onclick={() => (createOpen = true)}
+			disabled={saving || importing}
+		>
+			Nuova strategia
+		</Button>
 	{/snippet}
 </PageHeader>
 
-<section class="import-section">
-	<form class="import-form" onsubmit={submitImport}>
-		<div class="import-intro">
-			<label for="import-strategy-name">Importa una strategia da CSV</label>
-			<p>Crea una nuova strategia a partire dalle fasce che hai già preparato.</p>
-		</div>
-		<div class="import-fields">
-			<Input id="import-strategy-name" bind:value={importName} placeholder="Nome della strategia" />
-			<div class="file-row">
-				<FilePicker
-					id="strategy-import-file"
-					accept=".csv"
-					bind:selectedFile={importFile}
-					ariaLabel="File CSV della strategia"
-					onSelect={() => (importSummary = undefined)}
-				/>
-				<Button type="submit" loading={importing} disabled={!importName.trim() || !importFile}>
-					Importa
-				</Button>
-			</div>
-		</div>
-		<p class="hint">
-			Il file deve contenere le colonne <code>Nome,Fascia,MaxPrezzo%,Note</code>. Fascia, prezzo
-			massimo e nota sono facoltativi. Puoi aggiungere anche una colonna facoltativa
-			<code>Colore</code> con il colore della fascia in esadecimale (per esempio
-			<code>#ef4444</code>): è quello che trovi nei file esportati da qui. Se un nome non
-			corrisponde a nessun calciatore del Listone ti verrà chiesto se vuoi procedere comunque,
-			ignorando quel calciatore.
-		</p>
+<Dialog bind:open={createOpen} title="Nuova strategia" closeLabel="Chiudi">
+	<form onsubmit={submitStrategy}>
+		<Field label="Nome della strategia">
+			<Input bind:value={newStrategyName} required data-autofocus />
+		</Field>
+		<Button class="submit" type="submit" loading={saving} disabled={!newStrategyName.trim()}>
+			Crea
+		</Button>
 	</form>
-</section>
+</Dialog>
+
+<Dialog
+	bind:open={importOpen}
+	title="Importa CSV"
+	closeLabel="Chiudi"
+	onclose={() => (importFile = undefined)}
+>
+	<form onsubmit={submitImport}>
+		<Field label="Nome della strategia">
+			<Input bind:value={importName} required data-autofocus />
+		</Field>
+		<Field label="File CSV" for="strategy-import-file">
+			<FilePicker
+				id="strategy-import-file"
+				accept=".csv"
+				bind:selectedFile={importFile}
+				ariaLabel="File CSV"
+				onSelect={() => (importSummary = undefined)}
+			/>
+		</Field>
+		<details>
+			<summary>? Formato CSV</summary>
+			<p>
+				Colonne: <code>Nome,Fascia,MaxPrezzo%,Note</code>. Compila almeno il nome.
+				<code>Colore</code> è facoltativo (es. <code>#ef4444</code>). I nomi assenti dal Listone
+				vengono ignorati dopo la conferma.
+			</p>
+		</details>
+		<Button
+			class="submit"
+			type="submit"
+			loading={importing}
+			disabled={!importName.trim() || !importFile}
+		>
+			Importa
+		</Button>
+	</form>
+</Dialog>
 
 {#if importSummary}
-	<Message kind="success">
-		Strategia creata: {importSummary.tiers_created} fasce e {importSummary.players_assigned} calciatori
-		assegnati.
-		{#if importSummary.unmatched.length}
-			{importSummary.unmatched.length} non trovati e ignorati: {importSummary.unmatched.join(', ')}.
-		{/if}
-	</Message>
+	<div class="import-summary">
+		<Message kind="success">
+			Strategia creata: {importSummary.tiers_created} fasce e {importSummary.players_assigned} calciatori
+			assegnati.
+			{#if importSummary.unmatched.length}
+				{importSummary.unmatched.length} non trovati e ignorati: {importSummary.unmatched.join(
+					', '
+				)}.
+			{/if}
+		</Message>
+	</div>
 {/if}
 
-<section class="strategy-section" aria-live="polite" aria-busy={loading}>
-	<SectionHeading title="Le tue strategie">
-		{#snippet trailing()}
-			<span class="count-label">{loading ? 'Caricamento…' : `${strategies.length} strategie`}</span>
-		{/snippet}
-	</SectionHeading>
-
-	{#if !loading && strategies.length === 0}
-		<EmptyState>Non ci sono ancora strategie. Creane una per iniziare.</EmptyState>
+<div aria-busy={loading}>
+	{#if loading && !strategies?.length}
+		<p class="count-label">Caricamento…</p>
+	{:else if !strategies}
+		<EmptyState>Impossibile caricare le strategie.</EmptyState>
+	{:else if strategies.length === 0}
+		<EmptyState
+			>Nessuna strategia. Per iniziare, scegli «Nuova strategia» o «Importa CSV».</EmptyState
+		>
 	{:else}
 		<div class="strategy-list">
 			{#each strategies as strategy (strategy.id)}
 				<article>
-					<div>
-						<h3>{strategy.name}</h3>
+					<div class="details">
+						<h2>{strategy.name}</h2>
 						<p>
 							{strategy.tier_count} fasce · {strategy.assigned_player_count} calciatori assegnati
 						</p>
 					</div>
 					<div class="actions">
 						<Button
+							href={resolve('/strategies/[strategyId]', { strategyId: strategy.id })}
 							variant="secondary"
-							onclick={() => downloadStrategy(strategy)}
-							disabled={saving}
+							size="sm"
+							aria-label={`Apri ${strategy.name}`}
 						>
-							Esporta
-						</Button>
-						<Button variant="secondary" onclick={() => duplicate(strategy)} disabled={saving}>
-							Duplica
-						</Button>
-						<Button variant="danger" onclick={() => removeStrategy(strategy)} disabled={saving}>
-							Elimina
-						</Button>
-						<Button href={resolve('/strategies/[strategyId]', { strategyId: strategy.id })}>
 							Apri
 						</Button>
+						<Menu
+							label={`Azioni di ${strategy.name}`}
+							size="sm"
+							disabled={saving || importing}
+							items={[
+								{ label: 'Esporta CSV', onselect: () => downloadStrategy(strategy) },
+								{ label: 'Duplica…', onselect: () => duplicate(strategy) },
+								{ label: 'Elimina…', onselect: () => removeStrategy(strategy) }
+							]}
+						/>
 					</div>
 				</article>
 			{/each}
 		</div>
 	{/if}
-</section>
+</div>
 
 <style>
-	.create-form {
-		width: min(100%, 390px);
+	form {
+		display: grid;
+		gap: 0.8rem;
 	}
 
-	.create-row,
-	.actions {
-		display: flex;
-		gap: 0.65rem;
+	form :global(.submit) {
+		justify-self: end;
 	}
 
-	.import-section {
-		margin-top: 1.5rem;
-	}
-
-	.import-form {
-		width: min(100%, 560px);
-		padding: 1.2rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		background: var(--surface);
-	}
-
-	.import-intro label {
-		margin: 0;
-		font-size: 0.95rem;
-	}
-
-	.import-intro p {
-		margin: 0.3rem 0 0;
-		color: var(--subdued);
+	details {
+		color: var(--muted);
 		font-size: 0.8rem;
 	}
 
-	.import-fields {
-		display: grid;
-		gap: 0.65rem;
-		margin-top: 0.9rem;
+	summary {
+		width: fit-content;
+		font-weight: 700;
+		cursor: pointer;
 	}
 
-	.file-row {
-		display: flex;
-		align-items: center;
-		gap: 0.65rem;
+	details p {
+		margin: 0.35rem 0 0;
+		overflow-wrap: anywhere;
 	}
 
-	.import-form .hint {
-		margin: 0.8rem 0 0;
-		color: var(--subdued);
-		font-size: 0.76rem;
-	}
-
-	.import-form .hint code {
-		font-size: 0.74rem;
-	}
-
-	.strategy-section {
-		margin-top: 3rem;
+	.import-summary {
+		margin-bottom: 0.65rem;
+		overflow-wrap: anywhere;
 	}
 
 	.strategy-list {
 		display: grid;
-		gap: 0.75rem;
+		gap: 0.65rem;
 	}
 
 	article {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: 2rem;
-		padding: 1.25rem;
-		border: 1px solid var(--border);
+		gap: 0.6rem 1rem;
+		padding: 0.75rem;
+		border: var(--bw) solid var(--line);
 		border-radius: var(--radius-sm);
 		background: var(--surface);
 	}
 
-	article h3 {
+	.details {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	h2 {
 		margin: 0;
 		font-size: 1rem;
+		font-weight: 800;
 	}
 
 	article p {
-		margin: 0.4rem 0 0;
-		color: var(--subdued);
-		font-size: 0.84rem;
+		margin: 0.3rem 0 0;
+		color: var(--muted);
+		font-size: 0.85rem;
 	}
 
-	@media (max-width: 720px) {
-		article {
-			align-items: stretch;
-			flex-direction: column;
-		}
-
-		.actions > :global(*) {
-			flex: 1;
-		}
+	.actions {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
 	}
 </style>
