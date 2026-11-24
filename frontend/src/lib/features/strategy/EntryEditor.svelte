@@ -8,7 +8,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
-	import { percentageToCredits } from '$lib/strategies';
+	import { MAX_PERCENTAGE, percentageToCredits } from '$lib/strategies';
 	import { referenceBudget } from './referenceBudget.svelte';
 	import type { StrategyEditor } from './strategyEditor.svelte';
 
@@ -120,7 +120,7 @@
 						bind:value={draft.maximumPricePercentage}
 						type="number"
 						min="0.1"
-						max="100"
+						max={MAX_PERCENTAGE}
 						step="0.1"
 						oninput={() => editor.scheduleEntrySave(playerId)}
 						onblur={() => editor.flushEntrySave(playerId)}
