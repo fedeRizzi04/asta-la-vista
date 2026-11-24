@@ -4,12 +4,16 @@
 		accept,
 		selectedFile = $bindable<File | undefined>(),
 		ariaLabel = 'Scegli un file',
+		disabled = false,
+		'data-autofocus': autofocus,
 		onSelect
 	}: {
 		id: string;
 		accept: string;
 		selectedFile?: File;
 		ariaLabel?: string;
+		disabled?: boolean;
+		'data-autofocus'?: boolean;
 		onSelect?: (file: File | undefined) => void;
 	} = $props();
 
@@ -31,6 +35,8 @@
 	class="file-input"
 	type="file"
 	{accept}
+	{disabled}
+	data-autofocus={autofocus || undefined}
 	onchange={chooseFile}
 	aria-label={ariaLabel}
 />
@@ -73,6 +79,11 @@
 
 	.file-picker:hover {
 		border-color: var(--border-hover);
+	}
+
+	.file-input:disabled + .file-picker {
+		cursor: not-allowed;
+		opacity: 0.55;
 	}
 
 	.file-input:focus-visible + .file-picker {
