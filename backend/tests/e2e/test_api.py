@@ -99,6 +99,20 @@ def test_player_import_and_strategy_flow(client):
 
     response = client.put(
         f"/api/strategies/{strategy_id}/players/2764",
+        json={"tier_id": tier_id, "note": "", "maximum_price_percentage": 100.1},
+    )
+    assert response.status_code == 422
+    entry = client.get(f"/api/strategies/{strategy_id}").get_json()["entries"][0]
+    assert (entry["note"], entry["maximum_price_percentage"]) == ("Obiettivo principale", 15.5)
+
+    response = client.put(
+        f"/api/strategies/{strategy_id}/players/2764",
+        json={"tier_id": tier_id, "note": "", "maximum_price_percentage": 100},
+    )
+    assert response.status_code == 204
+
+    response = client.put(
+        f"/api/strategies/{strategy_id}/players/2764",
         json={"tier_id": None, "note": "Changed note", "maximum_price_percentage": 15.5},
     )
     assert response.status_code == 204
@@ -351,6 +365,22 @@ def test_strategy_import_requires_confirmation_when_a_player_is_not_found(client
     assert response.status_code == 201
     body = response.get_json()
     assert (body["players_assigned"], body["unmatched"]) == (1, ["Giocatore Ignoto"])
+
+
+def test_strategy_import_rejects_a_maximum_price_percentage_above_100(client):
+    client.post(
+        "/api/players/import",
+        data={"file": (io.BytesIO(b"Id,R,Nome,Squadra\n5841,P,Svilar,Roma"), "players.csv")},
+    )
+    file = {
+        "file": (io.BytesIO(b"Nome,Fascia,MaxPrezzo%,Note\nSvilar,Top,100.1,\n"), "fasce.csv"),
+    }
+
+    response = client.post("/api/strategies/import?name=Fasce", data=file)
+
+    assert response.status_code == 422
+    assert response.get_json()["code"] == "validation_error"
+    assert client.get("/api/strategies").get_json() == []
 
 
 def test_live_import_requires_confirmation(client):

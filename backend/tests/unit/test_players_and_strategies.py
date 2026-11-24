@@ -97,13 +97,22 @@ def test_strategy_player_can_have_an_optional_maximum_price_percentage():
     )
 
 
-@pytest.mark.parametrize("maximum_price_percentage", [0, -1, 100.1, 12.34, True])
+@pytest.mark.parametrize("maximum_price_percentage", [0, -1, 100.1, 150, 12.34, True])
 def test_strategy_rejects_invalid_maximum_price_percentages(maximum_price_percentage):
     strategy = Strategy("Main strategy")
     tier_id = strategy.add_tier("Top")
 
     with pytest.raises(ValidationError):
         strategy.update_player("player-1", Role.FORWARD, tier_id, "", maximum_price_percentage)
+
+
+def test_strategy_accepts_a_maximum_price_percentage_of_exactly_100():
+    strategy = Strategy("Main strategy")
+    tier_id = strategy.add_tier("Top")
+
+    strategy.update_player("player-1", Role.FORWARD, tier_id, "", 100)
+
+    assert strategy.entries[0].maximum_price_percentage == 100
 
 
 def test_strategy_player_can_have_a_maximum_price_percentage_without_a_tier():
