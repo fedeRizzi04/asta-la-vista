@@ -20,22 +20,43 @@ who use the app.
 - Page headers are compact, so more of the screen goes to your data, and buttons, fields, role
   tabs and filters look and behave the same on every page. Role tabs can be switched with the
   arrow keys.
-- Confirmations and the purchase registry open as proper modal windows: Esc closes only the
-  topmost one, and the registry search box is ready for typing as soon as it opens. When you
-  confirm a deletion, the cursor starts on **Annulla**, so a stray Enter does not delete anything.
+- Confirmations open as proper modal windows: Esc closes only the topmost one. When you confirm
+  a deletion or a cancellation, the cursor starts on the safe choice (**Annulla**, or **Lascia
+  stare**), so a stray Enter does not delete anything.
 - The app remembers which panels you show or hide when you reload the page.
+- The auction page is laid out as a control panel. The header stays on one line with the status
+  and the actions (start, end, reopen, download the report). Below it come the teams, the call
+  bar and the tiers or the free players, and the role and the view you chose are kept when you
+  reload the page.
+- The teams are on top of the auction page, side by side. **Rose** shows every roster (goalkeepers,
+  defenders, midfielders and forwards) with the credits left and the maximum bid, and
+  **Compatta** shows a bar of filled and empty slots for each role. Scroll the row with the arrows, hide it
+  with **Squadre** (the same button brings it back), or click a team to see its whole roster,
+  with prices and tiers, in a side panel.
 - During an auction, the called player, the winner and the price are in one bar that stays at the
   top while you scroll, below the teams. Pick a player from the search (arrows and Enter) or
   with a click anywhere in the lists, without the page jumping, and fill in the winner (type the
   initials) and the price when the bidding ends: they always start empty.
 - The auction player list is now the **Svincolati** view, one click away from the tiers. Filter by
-  several roles at once, search by player or team, sort by quotation, tier or name, and choose
-  whether to show the players already taken.
+  Mantra role, search by player or team, sort by quotation, tier or name, and choose whether to
+  show the players already taken.
 - During an auction, each tier shows the players left out of the total, and the players already
   taken stay in their place, crossed out, with who bought them and the price. Collapse a tier into
   a thin strip (the choice is remembered, and **Comprimi tutte** does it for all of them), or hide
-  the taken players with **Nascondi presi**. The role filter is shared by the tiers and Svincolati,
-  and inactive players no longer count as left.
+  the taken players with **Nascondi presi**. One strategy at a time is shown, and **Fissa per
+  l'asta** keeps working as before.
+- The role shown in the tiers and in Svincolati is one at a time, goalkeepers first. Calling a
+  player of another role switches to that role.
+- The purchase registry opens in a side panel, from **Registro** or with `⌘J`. Search it, edit the
+  winner and the price of a purchase (the cursor starts on the winner), or cancel a purchase after
+  confirming. Esc closes the panel.
+- **Annulla ultimo** (or `⌘Z`) cancels the most recent purchase, after asking you to confirm. A
+  draft auction shows its setup instead of the call bar, and a finished one is read-only with a
+  short summary, **Riapri asta** and **Scarica report** in the header.
+- Keyboard shortcuts for the auction, listed with `?`: `⌘K` or `/` to search for a player, `⌘⏎` to
+  go to the winner, `⏎` in the price to register, Esc to drop the call, `P` `D` `C` `A` to switch
+  role, `⌥1` and `⌥2` for the tiers and Svincolati, `⌘J` for the registry and `⌘Z` to undo the
+  last purchase. A player can be called and registered with the keyboard alone.
 
 ## [0.4.1] - 2026-11-06
 
