@@ -1,18 +1,20 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { getAbortSignal } from 'svelte';
 	import { ApiError } from '$lib/api';
 	import FilePicker from '$lib/components/FilePicker.svelte';
 	import Message from '$lib/components/Message.svelte';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
-	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import Field from '$lib/components/ui/Field.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
-	import Select from '$lib/components/ui/Select.svelte';
+	import Tabs from '$lib/components/ui/Tabs.svelte';
+	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
 	import { pushErrorToast } from '$lib/toast.svelte';
+	import { getUrlParams, setUrlParams } from '$lib/urlState';
 	import {
 		getPlayerCounts,
 		getPlayers,
@@ -22,43 +24,119 @@
 		type ImportSummary,
 		type Player,
 		type PlayerCounts,
+		type PlayerFilters,
 		type Role
 	} from '$lib/players';
+
+	type RoleFilter = Role | 'all';
+	type SortColumn = 'name' | 'team' | 'quotation';
 
 	let players = $state<Player[]>([]);
 	let counts = $state<PlayerCounts>({ P: 0, D: 0, C: 0, A: 0 });
 	let search = $state('');
-	let role = $state<Role | ''>('');
 	let includeInactive = $state(false);
-	let selectedFile = $state<File>();
 	let loading = $state(true);
+	let catalogRevision = $state(0);
+	let sort = $state<{ column: SortColumn; direction: 'ascending' | 'descending' }>();
+	let tablePanel: HTMLDivElement;
+	let importOpen = $state(false);
+	let selectedFile = $state<File>();
 	let importing = $state(false);
 	let importSummary = $state<ImportSummary>();
-	let total = $derived(Object.values(counts).reduce((sum, count) => sum + count, 0));
 
-	onMount(loadCatalog);
+	const role = $derived.by<RoleFilter>(() => {
+		const value = getUrlParams().get('role');
+		return roles.find((candidate) => candidate === value) ?? 'all';
+	});
+	const total = $derived(roles.reduce((sum, role) => sum + counts[role], 0));
+	const roleTabs = $derived([
+		{ value: 'all' as const, label: `Tutti ${total}`, title: 'Tutti i ruoli' },
+		...roles.map((value) => ({
+			value,
+			label: `${value} ${counts[value]}`,
+			title: roleLabels[value]
+		}))
+	]);
+	const sortedPlayers = $derived.by(() => {
+		if (!sort) return players;
+		const { column, direction } = sort;
+		const order = direction === 'ascending' ? 1 : -1;
+		return [...players].sort((first, second) => {
+			if (column === 'quotation') {
+				if (first.quotation === null) return second.quotation === null ? 0 : 1;
+				if (second.quotation === null) return -1;
+				return order * (first.quotation - second.quotation);
+			}
+			return order * first[column].localeCompare(second[column], 'it');
+		});
+	});
 
-	async function loadCatalog(): Promise<void> {
+	const searchFilter = $derived(search.trim() || undefined);
+	const immediateFilters = $derived({ role, includeInactive, catalogRevision });
+	let previousFilters: typeof immediateFilters | undefined;
+
+	$effect(() => {
+		const filters = immediateFilters;
+		const query: PlayerFilters = {
+			role: filters.role === 'all' ? undefined : filters.role,
+			includeInactive: filters.includeInactive,
+			search: searchFilter
+		};
+		const signal = getAbortSignal();
+		// Only search changes wait. A role change, toggle, or import uses the current search.
+		const debounce = previousFilters === filters;
+		previousFilters = filters;
 		loading = true;
+
+		if (!debounce) {
+			void loadPlayers(query, signal);
+			return;
+		}
+		const timer = setTimeout(() => void loadPlayers(query, signal), 250);
+		return () => clearTimeout(timer);
+	});
+
+	$effect(() => {
+		void catalogRevision;
+		const signal = getAbortSignal();
+		void loadCounts(signal);
+	});
+
+	function setRole(next: RoleFilter): void {
+		void setUrlParams({ role: next === 'all' ? null : next });
+	}
+
+	function sortBy(column: SortColumn): void {
+		const descending = sort?.column === column && sort.direction === 'ascending';
+		sort = { column, direction: descending ? 'descending' : 'ascending' };
+		tablePanel.scrollTop = 0;
+	}
+
+	async function loadPlayers(filters: PlayerFilters, signal: AbortSignal): Promise<void> {
 		try {
-			[players, counts] = await Promise.all([
-				getPlayers({
-					role: role || undefined,
-					search: search.trim() || undefined,
-					includeInactive
-				}),
-				getPlayerCounts()
-			]);
+			const result = await getPlayers(filters);
+			if (signal.aborted) return;
+			players = result;
+			tablePanel.scrollTop = 0;
 		} catch (caught) {
-			pushErrorToast(caught);
+			if (!signal.aborted) pushErrorToast(caught);
 		} finally {
-			loading = false;
+			if (!signal.aborted) loading = false;
+		}
+	}
+
+	async function loadCounts(signal: AbortSignal): Promise<void> {
+		try {
+			const result = await getPlayerCounts();
+			if (!signal.aborted) counts = result;
+		} catch (caught) {
+			if (!signal.aborted) pushErrorToast(caught);
 		}
 	}
 
 	async function submitImport(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
-		if (!selectedFile) return;
+		if (!selectedFile || importing) return;
 		await runImport(false);
 	}
 
@@ -68,7 +146,8 @@
 		try {
 			importSummary = await importPlayers(selectedFile, confirmLive);
 			selectedFile = undefined;
-			await loadCatalog();
+			importOpen = false;
+			catalogRevision += 1;
 		} catch (caught) {
 			if (
 				caught instanceof ApiError &&
@@ -89,24 +168,37 @@
 	<title>Listone | Asta la Vista</title>
 </svelte:head>
 
-<PageHeader title="Listone">
+<PageHeader title="Listone" compact>
 	{#snippet actions()}
-		<form class="import-form" onsubmit={submitImport}>
-			<Field label="File CSV o XLSX" for="player-file">
-				<div class="file-row">
-					<FilePicker
-						id="player-file"
-						accept=".csv,.xlsx"
-						bind:selectedFile
-						ariaLabel="File del Listone"
-						onSelect={() => (importSummary = undefined)}
-					/>
-					<Button type="submit" loading={importing} disabled={!selectedFile}>Importa</Button>
-				</div>
-			</Field>
-		</form>
+		<Button
+			variant="secondary"
+			size="sm"
+			aria-haspopup="dialog"
+			onclick={() => (importOpen = true)}
+		>
+			Importa
+		</Button>
 	{/snippet}
 </PageHeader>
+
+<Dialog bind:open={importOpen} title="Importa Listone" width="28rem" closeLabel="Chiudi">
+	<form onsubmit={submitImport}>
+		<Field label="File CSV o XLSX" for="player-file">
+			<div class="file-row">
+				<FilePicker
+					id="player-file"
+					accept=".csv,.xlsx"
+					bind:selectedFile
+					ariaLabel="File CSV o XLSX"
+					onSelect={() => (importSummary = undefined)}
+					disabled={importing}
+					data-autofocus
+				/>
+				<Button type="submit" loading={importing} disabled={!selectedFile}>Importa</Button>
+			</div>
+		</Field>
+	</form>
+</Dialog>
 
 {#if importSummary}
 	<Message kind="success">
@@ -115,153 +207,147 @@
 	</Message>
 {/if}
 
-<section class="counts" aria-label="Calciatori attivi per ruolo">
-	<div class="count-card total-card">
-		<span>Totale</span>
-		<strong>{total}</strong>
+<div class="filters">
+	<Tabs
+		items={roleTabs}
+		bind:value={() => role, setRole}
+		label="Ruolo"
+		id="player-role"
+		panelId="player-role-panel"
+	/>
+	<div class="search">
+		<Input
+			bind:value={search}
+			type="search"
+			aria-label="Nome o squadra"
+			placeholder="Nome o squadra"
+		/>
 	</div>
-	{#each roles as currentRole (currentRole)}
-		<div class="count-card">
-			<span>{roleLabels[currentRole]}</span>
-			<strong>{counts[currentRole]}</strong>
-		</div>
-	{/each}
-</section>
+	<ToggleChip pressed={includeInactive} onclick={() => (includeInactive = !includeInactive)}>
+		Mostra inattivi
+	</ToggleChip>
+	<span class="count-label" aria-live="polite" aria-atomic="true">
+		{loading
+			? 'Caricamento…'
+			: players.length === 1
+				? '1 risultato'
+				: `${players.length} risultati`}
+	</span>
+</div>
 
-<form
-	class="filters"
-	onsubmit={(event) => {
-		event.preventDefault();
-		loadCatalog();
-	}}
+{#snippet sortHeader(column: SortColumn, label: string)}
+	{@const direction = sort?.column === column ? sort.direction : undefined}
+	<th scope="col" aria-sort={direction}>
+		<button type="button" class="sort-button" onclick={() => sortBy(column)}>
+			{label}
+			{#if direction}
+				<span class="sort-direction" aria-hidden="true"
+					>{direction === 'ascending' ? '↑' : '↓'}</span
+				>
+			{/if}
+		</button>
+	</th>
+{/snippet}
+
+<div
+	bind:this={tablePanel}
+	class:table-scroll={loading || players.length > 0}
+	id="player-role-panel"
+	role="tabpanel"
+	tabindex="0"
+	aria-labelledby="player-role-{role}"
+	aria-busy={loading}
 >
-	<Field label="Cerca">
-		<Input bind:value={search} type="search" placeholder="Nome o squadra" />
-	</Field>
-	<Field label="Ruolo">
-		<Select bind:value={role}>
-			<option value="">Tutti i ruoli</option>
-			{#each roles as currentRole (currentRole)}
-				<option value={currentRole}>{roleLabels[currentRole]}</option>
-			{/each}
-		</Select>
-	</Field>
-	<label class="checkbox">
-		<input bind:checked={includeInactive} type="checkbox" />
-		<span>Mostra inattivi</span>
-	</label>
-	<Button type="submit" disabled={loading}>Applica filtri</Button>
-</form>
-
-<section class="table-section" aria-live="polite" aria-busy={loading}>
-	<SectionHeading title="Calciatori">
-		{#snippet trailing()}
-			<span class="count-label">{loading ? 'Caricamento…' : `${players.length} risultati`}</span>
-		{/snippet}
-	</SectionHeading>
-
 	{#if !loading && players.length === 0}
 		<EmptyState>Nessun calciatore corrisponde ai filtri selezionati.</EmptyState>
 	{:else}
-		<div class="table-scroll">
-			<table>
-				<thead>
-					<tr>
-						<th scope="col">Ruolo</th>
-						<th scope="col">Calciatore</th>
-						<th scope="col">Squadra</th>
-						<th scope="col">Quotazione</th>
-						<th scope="col">Stato</th>
+		<table>
+			<thead>
+				<tr>
+					<th scope="col">Ruolo</th>
+					{@render sortHeader('name', 'Calciatore')}
+					{@render sortHeader('team', 'Squadra')}
+					{@render sortHeader('quotation', 'Quotazione')}
+					<th scope="col">Stato</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each sortedPlayers as player (player.id)}
+					<tr class:inactive={!player.active}>
+						<td><span class="role-badge" data-role={player.role}>{player.role}</span></td>
+						<td class="player-name">
+							{player.name}
+							<MantraRoleBadges roles={player.mantra_roles} compact />
+						</td>
+						<td>{player.team}</td>
+						<td class="quotation">{player.quotation ?? '—'}</td>
+						<td>{player.active ? 'Disponibile' : 'Inattivo'}</td>
 					</tr>
-				</thead>
-				<tbody>
-					{#each players as player (player.id)}
-						<tr class:inactive={!player.active}>
-							<td><span class="role-badge" data-role={player.role}>{player.role}</span></td>
-							<td class="player-name"
-								>{player.name}
-								<MantraRoleBadges roles={player.mantra_roles} compact /></td
-							>
-							<td>{player.team}</td>
-							<td class="quotation">{player.quotation ?? '—'}</td>
-							<td>{player.active ? 'Disponibile' : 'Inattivo'}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
+				{/each}
+			</tbody>
+		</table>
 	{/if}
-</section>
+</div>
 
 <style>
-	.import-form {
-		width: min(100%, 390px);
-	}
-
 	.file-row {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
 	}
 
-	.counts {
-		display: grid;
-		grid-template-columns: repeat(5, 1fr);
-		gap: 0.75rem;
-		margin-top: 1.5rem;
-	}
-
-	.count-card {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 1rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface);
-	}
-
-	.count-card span {
-		color: var(--muted);
-		font-size: 0.78rem;
-		font-weight: 700;
-	}
-
-	.count-card strong {
-		font-size: 1.35rem;
-	}
-
-	.total-card {
-		border-color: var(--border-hover);
-	}
-
 	.filters {
-		display: grid;
-		grid-template-columns: minmax(220px, 1fr) 220px auto auto;
-		align-items: end;
-		gap: 1rem;
-		margin-top: 2rem;
-		padding: 1rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		background: var(--surface);
-	}
-
-	.checkbox {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem;
-		min-height: var(--control-height);
-		font-size: 0.85rem;
+		gap: 0.75rem;
+		margin: 0.75rem 0;
 	}
 
-	.checkbox span {
-		margin: 0;
+	.search {
+		width: min(100%, 16rem);
 	}
 
-	.table-section {
-		margin-top: 2.5rem;
+	.count-label {
+		margin-left: auto;
+		color: var(--muted);
+		font-size: 0.8rem;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.table-scroll {
+		max-height: max(12rem, calc(100dvh - var(--header-height) - 10rem));
+		overflow: auto;
+	}
+
+	table {
+		border-collapse: separate;
+		border-spacing: 0;
+	}
+
+	th {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+	}
+
+	.sort-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		min-height: 1.5rem;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		cursor: pointer;
+	}
+
+	.sort-button:hover {
+		text-decoration: underline;
+	}
+
+	.sort-direction {
+		font-size: 0.8em;
 	}
 
 	tbody tr.inactive {
@@ -276,22 +362,5 @@
 	.quotation {
 		font-variant-numeric: tabular-nums;
 		font-weight: 700;
-	}
-
-	@media (max-width: 900px) {
-		.counts {
-			grid-template-columns: repeat(2, 1fr);
-		}
-
-		.filters {
-			grid-template-columns: 1fr 1fr;
-		}
-	}
-
-	@media (max-width: 560px) {
-		.counts,
-		.filters {
-			grid-template-columns: 1fr;
-		}
 	}
 </style>
