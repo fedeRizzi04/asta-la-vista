@@ -120,6 +120,8 @@ export function updateTier(
 ): Promise<void> {
 	return apiRequest<void>(`/api/strategies/${strategyId}/tiers/${tierId}`, {
 		method: 'PATCH',
+		// Let autosaves started on pagehide finish after the page unloads.
+		keepalive: true,
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ name, color })
 	});
@@ -146,6 +148,7 @@ export function updateStrategyEntry(
 ): Promise<void> {
 	return apiRequest<void>(`/api/strategies/${strategyId}/players/${playerId}`, {
 		method: 'PUT',
+		keepalive: true, // as in updateTier
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
 			tier_id: tierId,
