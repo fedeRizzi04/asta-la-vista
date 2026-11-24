@@ -175,7 +175,8 @@ export class AuctionState {
 	async deletePurchase(purchase: Purchase): Promise<void> {
 		await this.#confirmPurchaseCancellation(purchase.id, {
 			title: 'Annulla acquisto',
-			message: `Annullare l'acquisto di ${purchase.player_name}?`
+			message: `Annullare l'acquisto di ${purchase.player_name}?`,
+			cancelLabel: 'Lascia stare'
 		});
 	}
 
