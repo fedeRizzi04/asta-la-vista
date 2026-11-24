@@ -15,9 +15,9 @@
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Tabs from '$lib/components/ui/Tabs.svelte';
-	import { purchasesForRole } from '$lib/auctions';
 	import CallBar from '$lib/features/auction/CallBar.svelte';
 	import PlayerBrowser from '$lib/features/auction/PlayerBrowser.svelte';
+	import TeamsStrip from '$lib/features/auction/TeamsStrip.svelte';
 	import { AuctionState } from '$lib/features/auction/auctionState.svelte';
 	import { roleLabels, roles } from '$lib/players';
 	import { getUrlParams, setUrlParams } from '$lib/urlState';
@@ -102,69 +102,7 @@
 		</div>
 	{/if}
 
-	<section class="teams-section">
-		<CollapsibleSection
-			storageKey={`auction:${auction.id}:teams`}
-			eyebrow="Situazione squadre"
-			title="Crediti, slot e rose"
-		>
-			<HorizontalScroller ariaLabel="Rose dei partecipanti">
-				<div class="team-grid">
-					{#each auction.participants as participant (participant.id)}
-						<article class="team-card">
-							<header>
-								<h3>{participant.name}</h3>
-								<div><strong>{participant.credits_remaining}</strong><span>crediti</span></div>
-							</header>
-							<div class="maximum-bid">
-								Puntata massima <strong>{participant.maximum_bid}</strong>
-							</div>
-							<div class="slots">
-								{#each roles as role (role)}<span
-										class:full={participant.slots[role].filled === participant.slots[role].total}
-										><strong>{role}</strong>
-										{participant.slots[role].filled}/{participant.slots[role].total}</span
-									>{/each}
-							</div>
-							<div class="roster">
-								{#if participant.purchases.length === 0}<p>Nessun acquisto.</p>{/if}
-								{#each roles as role (role)}
-									{@const rolePurchases = purchasesForRole(participant, role)}
-									{#if rolePurchases.length > 0}
-										<div class="purchase-group" data-role={role} aria-label={roleLabels[role]}>
-											{#each rolePurchases as purchase (purchase.id)}
-												{@const purchaseTier = auctionState.tierForPlayer(purchase.player_id)}
-												<div class="purchase-row">
-													<span class="role-badge" data-role={purchase.role}>{purchase.role}</span
-													><span class="purchase-name"
-														><strong>{purchase.player_name}</strong><small
-															>{purchase.team}
-															<MantraRoleBadges roles={purchase.mantra_roles} compact /></small
-														></span
-													><strong class="purchase-price">{purchase.price}</strong>
-													{#if purchaseTier}
-														<span class="purchase-tier">
-															<TierBadge
-																name={purchaseTier.name}
-																color={purchaseTier.color}
-																compact
-															/>
-														</span>
-													{:else}
-														<span class="purchase-tier-spacer" aria-hidden="true"></span>
-													{/if}
-												</div>
-											{/each}
-										</div>
-									{/if}
-								{/each}
-							</div>
-						</article>
-					{/each}
-				</div>
-			</HorizontalScroller>
-		</CollapsibleSection>
-	</section>
+	<TeamsStrip {auctionState} />
 
 	{#if auction.status === 'live'}<CallBar {auctionState} />{/if}
 
@@ -377,21 +315,9 @@
 {/if}
 
 <style>
-	.team-card header,
-	.slots,
 	.slot-summary {
 		display: flex;
 		align-items: center;
-	}
-	.team-card header {
-		justify-content: space-between;
-	}
-	.team-card {
-		container-type: inline-size;
-		container-name: team-card;
-		border: var(--bw) solid var(--line);
-		border-radius: var(--radius);
-		background: var(--surface);
 	}
 	.panel {
 		margin-top: 2rem;
@@ -402,19 +328,16 @@
 	.draft-summary p {
 		color: var(--subdued);
 	}
-	.slot-summary,
-	.slots {
+	.slot-summary {
 		flex-wrap: wrap;
 		gap: 0.45rem;
 	}
-	.slot-summary span,
-	.slots span {
+	.slot-summary span {
 		padding: 0.35rem 0.55rem;
 		border-radius: var(--radius-xs);
 		background: var(--muted-bg);
 		font-size: 0.76rem;
 	}
-	.teams-section,
 	.strategy-section {
 		margin-top: 3rem;
 	}
@@ -427,59 +350,6 @@
 		width: auto;
 		min-width: 9rem;
 	}
-	.team-grid {
-		display: flex;
-		align-items: stretch;
-		gap: 0.8rem;
-		width: max-content;
-		min-width: 100%;
-		margin-top: 1rem;
-	}
-	.team-card {
-		flex: 0 0 min(22.5rem, calc(100vw - 4rem));
-		padding: 1rem;
-	}
-	.team-card h3 {
-		margin: 0;
-	}
-	.team-card header div {
-		display: grid;
-		justify-items: end;
-	}
-	.team-card header div strong {
-		font-size: 1.6rem;
-	}
-	.team-card header div span {
-		color: var(--subdued);
-		font-size: 0.7rem;
-	}
-	.maximum-bid {
-		margin: 0.7rem 0;
-		padding: 0.6rem;
-		border-radius: var(--radius-sm);
-		background: var(--primary-soft);
-		color: var(--primary-soft-text);
-		font-size: 0.78rem;
-	}
-	.slots span.full {
-		background: var(--muted-bg);
-		color: var(--disabled-text);
-	}
-	.roster {
-		display: grid;
-		gap: 0.9rem;
-		margin-top: 0.8rem;
-	}
-	.roster > p {
-		color: var(--subdued);
-		font-size: 0.8rem;
-	}
-	.purchase-group {
-		padding: 0.25rem 0.45rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--input-bg);
-	}
 	.purchase-row {
 		display: grid;
 		grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem minmax(4.5rem, 8rem);
@@ -488,9 +358,6 @@
 		min-height: 2.25rem;
 		border-top: 1px solid var(--border);
 		font-size: 0.78rem;
-	}
-	.purchase-group .purchase-row:first-child {
-		border-top: 0;
 	}
 	.purchase-row.editing {
 		grid-template-columns: minmax(100px, 1fr) 4rem auto auto;
@@ -527,22 +394,6 @@
 	}
 	.purchase-tier :global(.tier-badge) {
 		max-width: 100%;
-	}
-	/* A team card can end up narrower than the tier badge needs, regardless of viewport size
-	   (e.g. many participants forcing extra grid columns) — reflow the badge onto its own row
-	   whenever the card itself is tight, not just when the whole page is. */
-	@container team-card (max-width: 380px) {
-		.purchase-row:not(.registry-row) {
-			grid-template-columns: 1.5rem minmax(60px, 1fr) 2.5rem;
-		}
-		.purchase-tier {
-			grid-row: 2;
-			grid-column: 2 / 4;
-			justify-self: start;
-		}
-		.purchase-tier-spacer {
-			display: none;
-		}
 	}
 
 	.strategy-roles {
