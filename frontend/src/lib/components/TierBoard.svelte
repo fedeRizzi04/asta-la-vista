@@ -2,8 +2,8 @@
 	import type { PanelVisibility } from '$lib/panelVisibility.svelte';
 	import type { Tier } from '$lib/strategies';
 
-	/** The players of one tier. */
-	export type TierColumn = { key: string; tier: Tier; panel: PanelVisibility };
+	/** The players of one tier. A column without a `panel` is always open. */
+	export type TierColumn = { key: string; tier: Tier; panel?: PanelVisibility };
 </script>
 
 <script lang="ts" generics="Column extends TierColumn">
@@ -14,50 +14,75 @@
 	 * The tiers of a strategy as columns in one scrollable row. A closed column shrinks to a
 	 * vertical strip. The board only lays the columns out: the caller renders what goes in them
 	 * (`players`) and next to the tier name (`summary`).
+	 *
+	 * To edit the tiers, pass a whole `header` for the columns instead. The board then fills its
+	 * container and scrolls in it both ways, with the headers always in view; `dragReorder` can
+	 * move the columns, and `trailing` comes after the last one.
 	 */
 	let {
 		columns,
 		label,
 		summary,
-		players
+		header,
+		players,
+		trailing
 	}: {
 		columns: Column[];
 		label: string;
-		summary: Snippet<[Column]>;
+		summary?: Snippet<[Column]>;
+		header?: Snippet<[Column]>;
 		players: Snippet<[Column]>;
+		trailing?: Snippet;
 	} = $props();
 </script>
 
-<HorizontalScroller ariaLabel={label}>
+{#snippet board()}
 	<div class="tier-board">
 		{#each columns as column (column.key)}
 			{@const { tier, panel } = column}
-			<section class="tier" class:closed={!panel.visible}>
-				<h3>
-					<button
-						type="button"
-						class="tier-header"
-						aria-expanded={panel.visible}
-						title={tier.name}
-						onclick={() => panel.toggle()}
-					>
-						<span class="chevron" aria-hidden="true">▾</span>
-						<span
-							class="tier-color"
-							style:background={tier.color ?? 'var(--tier-default)'}
-							aria-hidden="true"
-						></span>
-						<span class="tier-name">{tier.name}</span>
-						<span class="tier-summary">{@render summary(column)}</span>
-					</button>
-				</h3>
-				{#if panel.visible}
+			{@const visible = panel?.visible ?? true}
+			<section
+				class="tier"
+				class:closed={!visible}
+				aria-label={header ? tier.name : undefined}
+				data-drag-id={header ? tier.id : undefined}
+			>
+				{#if header}
+					<div class="edit-header">{@render header(column)}</div>
+				{:else}
+					<h3>
+						<button
+							type="button"
+							class="tier-header"
+							aria-expanded={visible}
+							title={tier.name}
+							onclick={() => panel?.toggle()}
+						>
+							<span class="chevron" aria-hidden="true">▾</span>
+							<span
+								class="tier-color"
+								style:background={tier.color ?? 'var(--tier-default)'}
+								aria-hidden="true"
+							></span>
+							<span class="tier-name">{tier.name}</span>
+							<span class="tier-summary">{@render summary?.(column)}</span>
+						</button>
+					</h3>
+				{/if}
+				{#if visible}
 					<div class="tier-players">{@render players(column)}</div>
 				{/if}
 			</section>
 		{/each}
+		{@render trailing?.()}
 	</div>
-</HorizontalScroller>
+{/snippet}
+
+{#if header}
+	<div class="edit-viewport" role="region" aria-label={label}>{@render board()}</div>
+{:else}
+	<HorizontalScroller ariaLabel={label}>{@render board()}</HorizontalScroller>
+{/if}
 
 <style>
 	.tier-board {
@@ -145,6 +170,36 @@
 		display: grid;
 		align-content: start;
 		padding: 0.25rem;
+	}
+
+	.edit-viewport {
+		height: 100%;
+		overflow: auto;
+	}
+
+	.edit-viewport .tier-board {
+		width: max-content;
+		min-height: 100%;
+	}
+
+	.edit-viewport .tier {
+		flex-basis: min(15.5rem, calc(100vw - 4rem));
+		/* Unlike hidden, it lets the header stick to the viewport. */
+		overflow: clip;
+	}
+
+	.edit-header {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		border-bottom: var(--bw) solid var(--line);
+		background: var(--head-bg);
+	}
+
+	.tier:global(.is-dragging) {
+		position: relative;
+		z-index: 2;
+		box-shadow: var(--shadow);
 	}
 
 	.closed h3 {

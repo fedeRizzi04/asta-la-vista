@@ -1,5 +1,5 @@
 /**
- * Pure helpers for a vertical drag-to-reorder list (the tier list in the
+ * Pure helpers for a drag-to-reorder list (the tier list in the
  * strategy editor). No DOM, no Svelte — the component owns pointer events and
  * spring wiring; this module only does the array/geometry math, so it's easy to
  * reason about and to unit-test in isolation.

@@ -8,6 +8,7 @@ import {
 	renameStrategy,
 	reorderTiers,
 	strategyIndex,
+	tierColors,
 	updateStrategyEntry,
 	updateTier,
 	type Strategy,
@@ -107,6 +108,10 @@ export class StrategyEditor {
 		}
 	}
 
+	tierOfPlayer(playerId: string): Tier | undefined {
+		return this.index?.tierById.get(this.entryDrafts[playerId]?.tierId);
+	}
+
 	entriesForTier(tierId: string, role: Role) {
 		return this.players
 			.filter((player) => player.role === role && this.entryDrafts[player.id]?.tierId === tierId)
@@ -124,19 +129,18 @@ export class StrategyEditor {
 		});
 	}
 
-	/** Returns whether the tier was added, even if the refresh that follows fails. */
-	async addTier(draftName: string, color: string): Promise<boolean> {
+	/** Adds a tier to rename in place. Returns its id, or undefined if the addition failed. */
+	async addTier(): Promise<string | undefined> {
 		const strategyId = this.strategy?.id;
-		const name = draftName.trim();
-		if (!strategyId || !name) return false;
-		let added = false;
+		if (!strategyId) return;
+		let tierId: string | undefined;
 		await this.#runMutation(async () => {
 			await this.flushAll();
-			await addTier(strategyId, name, color);
-			added = true;
+			const color = tierColors[this.orderedTiers.length % tierColors.length];
+			tierId = (await addTier(strategyId, this.#newTierName(), color)).id;
 			this.#applyStrategy(await getStrategy(strategyId));
 		});
-		return added;
+		return tierId;
 	}
 
 	async deleteTier(tier: Tier): Promise<void> {
@@ -190,6 +194,15 @@ export class StrategyEditor {
 	/** Persists the waiting autosaves, e.g. before a full re-fetch overwrites the local state. */
 	async flushAll(): Promise<void> {
 		await Promise.all([this.#entrySaves.flushAll(), this.#tierSaves.flushAll()]);
+	}
+
+	/** The backend wants the tier names of a strategy to be unique. */
+	#newTierName(): string {
+		const taken = this.orderedTiers.map((tier) => tier.name.trim().toLowerCase());
+		const base = 'Nuova fascia';
+		let name = base;
+		for (let number = 2; taken.includes(name.toLowerCase()); number++) name = `${base} ${number}`;
+		return name;
 	}
 
 	async #persistEntry(playerId: string): Promise<void> {
