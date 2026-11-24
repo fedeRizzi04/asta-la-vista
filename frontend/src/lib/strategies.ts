@@ -15,6 +15,18 @@ export type Tier = {
 	color: string | null;
 };
 
+/** The colors given to new tiers, in turn. */
+export const tierColors = [
+	'#8e6cf0',
+	'#2fa596',
+	'#d9a531',
+	'#5b8fd9',
+	'#e0709f',
+	'#9a8f80',
+	'#e2763b',
+	'#4caf50'
+];
+
 export type StrategyEntry = {
 	player_id: string;
 	name: string;
