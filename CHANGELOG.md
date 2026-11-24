@@ -21,7 +21,8 @@ who use the app.
   tabs and filters look and behave the same on every page. Role tabs can be switched with the
   arrow keys.
 - Confirmations and the purchase registry open as proper modal windows: Esc closes only the
-  topmost one, and the registry search box is ready for typing as soon as it opens.
+  topmost one, and the registry search box is ready for typing as soon as it opens. When you
+  confirm a deletion, the cursor starts on **Annulla**, so a stray Enter does not delete anything.
 - The app remembers which panels you show or hide when you reload the page.
 
 ## [0.4.1] - 2026-11-06
