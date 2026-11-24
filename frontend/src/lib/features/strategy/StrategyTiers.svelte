@@ -6,18 +6,23 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import type { Role } from '$lib/players';
+	import type { PlayerDrag } from './playerDrag.svelte';
+	import PlayerList from './PlayerList.svelte';
+	import { tierTitle } from './SelectionBar.svelte';
 	import type { StrategyEditor } from './strategyEditor.svelte';
 
 	/** The tiers of the edited strategy, with the players of one role. */
-	let { editor, role }: { editor: StrategyEditor; role: Role } = $props();
+	let { editor, drag, role }: { editor: StrategyEditor; drag: PlayerDrag; role: Role } = $props();
 
 	let addButton = $state<HTMLButtonElement>();
 
 	let columns = $derived(
-		editor.orderedTiers.map((tier) => ({
+		editor.orderedTiers.map((tier, index) => ({
 			key: tier.id,
 			tier,
-			entries: editor.entriesForTier(tier.id, role)
+			title: tierTitle(tier, index),
+			dropTarget: drag.target === tier.id,
+			players: editor.playersInTier(tier.id, role, (id) => drag.landsIn(tier.id, id))
 		}))
 	);
 
@@ -44,7 +49,7 @@
 	}}
 >
 	<TierBoard {columns} label="Fasce della strategia">
-		{#snippet header({ tier, entries })}
+		{#snippet header({ tier, title, players })}
 			<div class="header">
 				<button
 					type="button"
@@ -69,7 +74,7 @@
 					id={nameId(tier.id)}
 					class="name"
 					bind:value={tier.name}
-					title={tier.name}
+					{title}
 					oninput={() => editor.scheduleTierSave(tier.id)}
 					onblur={() => editor.flushTierSave(tier.id)}
 					onkeydown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
@@ -81,7 +86,7 @@
 						<span role="img" aria-label="Salvato" title="Salvato">✓</span>
 					{/if}
 				</span>
-				<span class="count" title="Calciatori">{entries.length}</span>
+				<span class="count" title="Calciatori">{players.length}</span>
 				<Button
 					variant="text"
 					size="sm"
@@ -95,19 +100,20 @@
 				</Button>
 			</div>
 		{/snippet}
-		{#snippet players({ entries })}
-			{#each entries as { player, draft } (player.id)}
-				<TierPlayerCard
-					name={player.name}
-					team={player.active ? player.team : `${player.team} · inattivo`}
-					mantraRoles={player.mantra_roles}
-					maximumPricePercentage={draft.maximumPricePercentage ?? null}
-					note={draft.note}
-					inactive={!player.active}
-				/>
-			{:else}
-				<p class="empty">Nessun calciatore</p>
-			{/each}
+		{#snippet players({ tier, players })}
+			<PlayerList {editor} {drag} {players} tierId={tier.id} label={tier.name}>
+				{#snippet row(player)}
+					{@const draft = editor.entryDrafts[player.id]}
+					<TierPlayerCard
+						name={player.name}
+						team={player.active ? player.team : `${player.team} · inattivo`}
+						mantraRoles={player.mantra_roles}
+						maximumPricePercentage={draft.maximumPricePercentage ?? null}
+						note={draft.note}
+						inactive={!player.active}
+					/>
+				{/snippet}
+			</PlayerList>
 		{/snippet}
 		{#snippet trailing()}
 			<button
@@ -200,13 +206,6 @@
 		color: var(--muted);
 		font: 800 0.8rem var(--font-display);
 		font-variant-numeric: tabular-nums;
-	}
-
-	.empty {
-		margin: 0;
-		padding: 0.45rem;
-		color: var(--muted);
-		font-size: 0.8rem;
 	}
 
 	.add {

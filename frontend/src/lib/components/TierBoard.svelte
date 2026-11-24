@@ -3,7 +3,13 @@
 	import type { Tier } from '$lib/strategies';
 
 	/** The players of one tier. A column without a `panel` is always open. */
-	export type TierColumn = { key: string; tier: Tier; panel?: PanelVisibility };
+	export type TierColumn = {
+		key: string;
+		tier: Tier;
+		panel?: PanelVisibility;
+		/** Highlights the column as the place where the dragged players would go. */
+		dropTarget?: boolean;
+	};
 </script>
 
 <script lang="ts" generics="Column extends TierColumn">
@@ -17,7 +23,8 @@
 	 *
 	 * To edit the tiers, pass a whole `header` for the columns instead. The board then fills its
 	 * container and scrolls in it both ways, with the headers always in view; `dragReorder` can
-	 * move the columns, and `trailing` comes after the last one.
+	 * move the columns, `PlayerDrag` can drop players in them, and `trailing` comes after the last
+	 * one.
 	 */
 	let {
 		columns,
@@ -44,8 +51,10 @@
 			<section
 				class="tier"
 				class:closed={!visible}
+				class:drop-target={column.dropTarget}
 				aria-label={header ? tier.name : undefined}
 				data-drag-id={header ? tier.id : undefined}
+				data-drop-tier={header ? tier.id : undefined}
 			>
 				{#if header}
 					<div class="edit-header">{@render header(column)}</div>
@@ -79,7 +88,9 @@
 {/snippet}
 
 {#if header}
-	<div class="edit-viewport" role="region" aria-label={label}>{@render board()}</div>
+	<div class="edit-viewport" role="region" aria-label={label} data-drag-scroll>
+		{@render board()}
+	</div>
 {:else}
 	<HorizontalScroller ariaLabel={label}>{@render board()}</HorizontalScroller>
 {/if}
@@ -194,6 +205,12 @@
 		z-index: 1;
 		border-bottom: var(--bw) solid var(--line);
 		background: var(--head-bg);
+	}
+
+	.drop-target {
+		border-color: var(--focus);
+		background: color-mix(in srgb, var(--selected-bg) 45%, var(--surface));
+		box-shadow: 0 0 0 2px var(--focus);
 	}
 
 	.tier:global(.is-dragging) {
