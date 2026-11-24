@@ -17,7 +17,7 @@ import {
 import { confirmDialog } from '$lib/dialog.svelte';
 import { sortMantraRoles } from '$lib/mantraRoles';
 import { getPlayers, type Player, type Role } from '$lib/players';
-import { matchesSearch, nameMatchRank } from '$lib/search';
+import { matchesSearch } from '$lib/search';
 import {
 	byMaxPercentageDesc,
 	getStrategies,
@@ -38,10 +38,7 @@ export class AuctionState {
 	strategies = $state<StrategySummary[]>([]);
 	viewedStrategy = $state<Strategy>();
 	viewingStrategyId = $state('');
-	playerSearch = $state('');
-	selectedPlayerId = $state('');
-	selectedParticipantId = $state('');
-	price = $state(1);
+	#calledPlayerId = $state('');
 	editingPurchaseId = $state('');
 	editedParticipantId = $state('');
 	editedPrice = $state(1);
@@ -73,20 +70,10 @@ export class AuctionState {
 			};
 		});
 	});
-	matchingPlayers = $derived.by(() => {
-		const search = this.playerSearch;
-		return this.players
-			.filter(
-				(player) =>
-					player.active &&
-					!this.purchasedIds.has(player.id) &&
-					matchesSearch(search, player.name, player.team)
-			)
-			.sort(
-				(first, second) => nameMatchRank(first.name, search) - nameMatchRank(second.name, search)
-			)
-			.slice(0, 20);
-	});
+	calledPlayer = $derived(this.#playersById.get(this.#calledPlayerId));
+	callablePlayers = $derived(
+		this.players.filter((player) => player.active && !this.purchasedIds.has(player.id))
+	);
 	/** All purchases across every participant, newest first, for the purchase registry. */
 	allPurchases = $derived.by(() => {
 		if (!this.auction) return [];
@@ -101,12 +88,6 @@ export class AuctionState {
 			matchesSearch(this.registrySearch, purchase.player_name)
 		)
 	);
-	selectedPlayer = $derived(this.#playersById.get(this.selectedPlayerId));
-	selectedStrategyEntry = $derived(this.#strategyIndex?.entryByPlayerId.get(this.selectedPlayerId));
-	selectedMaximumPriceCredits = $derived(
-		this.maximumPriceCredits(this.selectedStrategyEntry?.maximum_price_percentage)
-	);
-	selectedTier = $derived(this.tierForPlayer(this.selectedPlayerId));
 	#catalogRolePlayers = $derived(
 		this.players.filter(
 			(player) =>
@@ -149,7 +130,6 @@ export class AuctionState {
 				getPlayers({ includeInactive: true }),
 				getStrategies()
 			]);
-			this.selectedParticipantId ||= this.auction.participants[0]?.id ?? '';
 			this.viewingStrategyId = this.auction.strategy_id ?? '';
 			await this.#loadViewedStrategy();
 		} catch (caught) {
@@ -190,41 +170,30 @@ export class AuctionState {
 		});
 	}
 
-	async registerPurchase(): Promise<void> {
-		if (!this.selectedPlayerId || !this.selectedParticipantId) return;
+	callPlayer(playerId: string): void {
+		if (this.auction?.status !== 'live' || this.purchasedIds.has(playerId)) return;
+		this.#calledPlayerId = playerId;
+	}
+
+	cancelCall(): void {
+		this.#calledPlayerId = '';
+	}
+
+	async registerPurchase(participantId: string, price: number): Promise<void> {
+		const playerId = this.#calledPlayerId;
 		await this.#runMutation(async (auctionId) => {
-			await recordPurchase(
-				auctionId,
-				this.selectedPlayerId,
-				this.selectedParticipantId,
-				this.price
-			);
-			this.selectedPlayerId = '';
-			this.playerSearch = '';
-			this.price = 1;
+			await recordPurchase(auctionId, playerId, participantId, price);
+			// Another player may have been called in the meantime.
+			if (this.#calledPlayerId === playerId) this.cancelCall();
 		});
 	}
 
-	selectPlayer(player: Player): void {
-		this.selectedPlayerId = player.id;
-		this.playerSearch = player.name;
-	}
-
-	selectTopMatch(): void {
-		const [topMatch] = this.matchingPlayers;
-		if (topMatch) this.selectPlayer(topMatch);
-	}
-
-	callPlayer(playerId: string): boolean {
-		if (this.auction?.status !== 'live' || this.purchasedIds.has(playerId)) return false;
-		const player = this.#playersById.get(playerId);
-		if (!player) return false;
-		this.selectPlayer(player);
-		return true;
+	entryForPlayer(playerId: string) {
+		return this.#strategyIndex?.entryByPlayerId.get(playerId);
 	}
 
 	tierForPlayer(playerId: string) {
-		const tierId = this.#strategyIndex?.entryByPlayerId.get(playerId)?.tier_id;
+		const tierId = this.entryForPlayer(playerId)?.tier_id;
 		return tierId == null ? undefined : this.#strategyIndex?.tierById.get(tierId);
 	}
 

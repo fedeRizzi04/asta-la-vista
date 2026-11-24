@@ -256,6 +256,11 @@ h3 {
 	background: var(--input-bg);
 }
 
+:where(.control:disabled) {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
 :where(.control[type='color']) {
 	width: 2.75rem;
 	padding: 0.2rem;

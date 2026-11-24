@@ -1,0 +1,205 @@
+<script lang="ts">
+	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
+	import TierBadge from '$lib/components/TierBadge.svelte';
+	import Combobox from '$lib/components/ui/Combobox.svelte';
+	import { matchesSearch, nameMatchRank } from '$lib/search';
+	import type { AuctionState } from './auctionState.svelte';
+	import PurchaseForm from './PurchaseForm.svelte';
+
+	/**
+	 * The call of a live auction: find a player, see what the strategy says about them and, when
+	 * the bidding ends, record the winner and the price. Sticky, so calling a player from the
+	 * lists below never needs scrolling.
+	 */
+	let { auctionState }: { auctionState: AuctionState } = $props();
+
+	const RESULT_LIMIT = 20;
+
+	let searchInput = $state<HTMLInputElement>();
+	let player = $derived(auctionState.calledPlayer);
+	let entry = $derived(player && auctionState.entryForPlayer(player.id));
+	let tier = $derived(player && auctionState.tierForPlayer(player.id));
+	let maximumCredits = $derived(auctionState.maximumPriceCredits(entry?.maximum_price_percentage));
+
+	/** The name of the called player, until the user types something else. */
+	let query = $derived(player?.name ?? '');
+	let results = $derived(
+		query.trim()
+			? auctionState.callablePlayers
+					.filter((candidate) => matchesSearch(query, candidate.name, candidate.team))
+					.sort(
+						(first, second) =>
+							nameMatchRank(first.name, query) - nameMatchRank(second.name, query) ||
+							(second.quotation ?? -1) - (first.quotation ?? -1)
+					)
+					.slice(0, RESULT_LIMIT)
+			: []
+	);
+
+	function search(text: string): void {
+		// Before setting the text: a change of call resets it.
+		auctionState.cancelCall();
+		query = text;
+	}
+
+	async function registerPurchase(participantId: string, price: number): Promise<void> {
+		await auctionState.registerPurchase(participantId, price);
+		if (!auctionState.calledPlayer) searchInput?.focus();
+	}
+</script>
+
+<section class="call-bar" aria-label="Chiamata">
+	<div class="panel">
+		<Combobox
+			bind:value={() => query, search}
+			bind:element={searchInput}
+			items={results}
+			emptyMessage={query.trim() ? 'Nessun calciatore trovato' : undefined}
+			placeholder="Cerca calciatore o squadra"
+			aria-label="Cerca calciatore"
+			onchoose={(result) => auctionState.callPlayer(result.id)}
+			--combobox-width="36rem"
+		>
+			{#snippet option(result)}
+				{@const resultTier = auctionState.tierForPlayer(result.id)}
+				{@const percentage = auctionState.entryForPlayer(result.id)?.maximum_price_percentage}
+				<span class="result">
+					<span class="role-badge" data-role={result.role}>{result.role}</span>
+					<span class="result-name"
+						><strong>{result.name}</strong> <small>{result.team}</small></span
+					>
+					<MantraRoleBadges roles={result.mantra_roles} compact />
+					{#if resultTier}<TierBadge name={resultTier.name} color={resultTier.color} compact />{/if}
+					<small>Q. {result.quotation ?? '—'}</small>
+					{#if auctionState.viewedStrategy}
+						<span class="result-percentage">{percentage != null ? `${percentage}%` : '—'}</span>
+					{/if}
+				</span>
+			{/snippet}
+		</Combobox>
+
+		<div class="called-player">
+			{#if player}
+				<div class="identity">
+					<strong class="name">{player.name}</strong>
+					<span class="role-badge" data-role={player.role}>{player.role}</span>
+					<MantraRoleBadges roles={player.mantra_roles} compact />
+					{#if tier}
+						<TierBadge name={tier.name} color={tier.color} compact />
+					{:else if auctionState.viewedStrategy}
+						<span class="no-tier">Senza fascia</span>
+					{/if}
+				</div>
+				<div class="details">
+					<span>{player.team} · Q. {player.quotation ?? '—'}</span>
+					{#if maximumCredits !== null}
+						<strong>max {maximumCredits} cr · {entry?.maximum_price_percentage}%</strong>
+					{/if}
+					{#if entry?.note}<em title={entry.note}>{entry.note}</em>{/if}
+				</div>
+			{/if}
+		</div>
+
+		<!-- A new call starts with no winner and no price. -->
+		{#key auctionState.calledPlayer}
+			<PurchaseForm
+				{player}
+				participants={auctionState.auction?.participants ?? []}
+				saving={auctionState.saving}
+				onregister={registerPurchase}
+			/>
+		{/key}
+	</div>
+</section>
+
+<style>
+	.call-bar {
+		position: sticky;
+		top: var(--header-height);
+		z-index: 80;
+		margin-top: 1rem;
+		/* Room for the panel's hard shadow above the content scrolling underneath. */
+		padding: 0.5rem 0 0.6rem;
+		background: var(--page-bg);
+	}
+
+	.panel {
+		display: grid;
+		grid-template-columns: 17rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 1rem;
+		min-height: 5.4rem;
+		padding: 0.65rem 0.8rem;
+	}
+
+	.called-player {
+		display: grid;
+		gap: 0.3rem;
+		min-width: 0;
+	}
+
+	.identity,
+	.details,
+	.result {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+	}
+
+	.identity {
+		flex-wrap: wrap;
+	}
+
+	.name {
+		font: 800 1.25rem/1.1 var(--font-display);
+	}
+
+	.no-tier,
+	.details {
+		color: var(--muted);
+		font-size: 0.82rem;
+	}
+
+	.details > span,
+	.details strong {
+		flex: none;
+	}
+
+	.details strong {
+		color: var(--text);
+	}
+
+	.details em,
+	.result-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.result-name {
+		flex: 1;
+	}
+
+	.result small {
+		color: var(--muted);
+		white-space: nowrap;
+	}
+
+	.result-percentage {
+		min-width: 2.75rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		text-align: right;
+	}
+
+	@media (max-width: 950px) {
+		.call-bar {
+			position: static;
+		}
+
+		.panel {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>

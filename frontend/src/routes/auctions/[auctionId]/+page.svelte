@@ -5,7 +5,6 @@
 	import CollapsibleSection from '$lib/components/CollapsibleSection.svelte';
 	import HorizontalScroller from '$lib/components/HorizontalScroller.svelte';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
-	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -18,6 +17,7 @@
 	import Tabs from '$lib/components/ui/Tabs.svelte';
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
 	import { purchasesForRole } from '$lib/auctions';
+	import CallBar from '$lib/features/auction/CallBar.svelte';
 	import { AuctionState } from '$lib/features/auction/auctionState.svelte';
 	import { mantraRoleLabel } from '$lib/mantraRoles';
 	import { roleLabels, roles } from '$lib/players';
@@ -25,26 +25,8 @@
 	const roleTabs = roles.map((role) => ({ value: role, label: roleLabels[role] }));
 	const auctionState = new AuctionState(() => page.params.auctionId);
 	const auction = $derived(auctionState.auction);
-	let callPanel = $state<HTMLElement>();
 
 	onMount(() => auctionState.load());
-
-	function submitPurchase(event: SubmitEvent): void {
-		event.preventDefault();
-		void auctionState.registerPurchase();
-	}
-
-	function handleSearchKeydown(event: KeyboardEvent): void {
-		if (event.key !== 'Enter' || auctionState.selectedPlayerId) return;
-		event.preventDefault();
-		auctionState.selectTopMatch();
-	}
-
-	function callPlayer(playerId: string): void {
-		if (auctionState.callPlayer(playerId)) {
-			callPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		}
-	}
 </script>
 
 <svelte:head><title>{auction?.name ?? 'Asta'} | Asta la Vista</title></svelte:head>
@@ -111,94 +93,6 @@
 					: ''}
 			</Button>
 		</div>
-		<section class="call-panel panel" bind:this={callPanel}>
-			<SectionHeading eyebrow="Calciatore chiamato" title="Registra l'acquisto">
-				{#snippet trailing()}
-					{@const selectedPlayer = auctionState.selectedPlayer}
-					{#if selectedPlayer}<span class="selected-player"
-							><strong>{selectedPlayer.name}</strong> · {selectedPlayer.team} · {selectedPlayer.role}
-							<MantraRoleBadges
-								roles={selectedPlayer.mantra_roles}
-								compact
-							/>{typeof selectedPlayer.quotation === 'number'
-								? ` · Q. ${selectedPlayer.quotation}`
-								: ''}</span
-						>{/if}
-				{/snippet}
-			</SectionHeading>
-			<form onsubmit={submitPurchase}>
-				<Field label="Calciatore">
-					<Input
-						bind:value={auctionState.playerSearch}
-						type="search"
-						placeholder="Cerca per nome o squadra"
-						oninput={() => (auctionState.selectedPlayerId = '')}
-						onkeydown={handleSearchKeydown}
-					/>
-				</Field>
-				<Field label="Vincitore">
-					<Select bind:value={auctionState.selectedParticipantId}>
-						{#each auction.participants as participant (participant.id)}
-							<option value={participant.id}
-								>{participant.name} · max {participant.maximum_bid}</option
-							>
-						{/each}
-					</Select>
-				</Field>
-				<Field label="Prezzo">
-					<Input bind:value={auctionState.price} type="number" min="1" required />
-				</Field>
-				<Button
-					type="submit"
-					disabled={!auctionState.selectedPlayerId ||
-						!auctionState.selectedParticipantId ||
-						auctionState.saving}
-				>
-					Registra
-				</Button>
-			</form>
-			{#if auctionState.selectedPlayer && auctionState.viewedStrategy}
-				{@const selectedTier = auctionState.selectedTier}
-				{@const selectedStrategyEntry = auctionState.selectedStrategyEntry}
-				{@const selectedMaximumPriceCredits = auctionState.selectedMaximumPriceCredits}
-				<div class="called-player-strategy">
-					<div>
-						<span class="strategy-label">Fascia</span>
-						{#if selectedTier}
-							<TierBadge name={selectedTier.name} color={selectedTier.color} />
-						{:else}
-							<span class="no-tier-note">Senza fascia</span>
-						{/if}
-					</div>
-					<div>
-						<span class="strategy-label">Prezzo massimo</span>
-						<strong
-							>{selectedMaximumPriceCredits !== null
-								? `${selectedMaximumPriceCredits} (${selectedStrategyEntry?.maximum_price_percentage}%)`
-								: 'Non indicato'}</strong
-						>
-					</div>
-					<div class="called-note">
-						<span class="strategy-label">Note</span>
-						<strong>{selectedStrategyEntry?.note || 'Nessuna nota'}</strong>
-					</div>
-				</div>
-			{/if}
-			{#if auctionState.playerSearch && !auctionState.selectedPlayerId}
-				<div class="search-results">
-					{#each auctionState.matchingPlayers as player (player.id)}<button
-							type="button"
-							onclick={() => auctionState.selectPlayer(player)}
-							><strong>{player.name}</strong><span
-								>{player.team} · {player.role}{typeof player.quotation === 'number'
-									? ` · Q. ${player.quotation}`
-									: ''}
-								<MantraRoleBadges roles={player.mantra_roles} compact /></span
-							></button
-						>{/each}
-				</div>
-			{/if}
-		</section>
 	{/if}
 
 	<section class="teams-section">
@@ -265,6 +159,8 @@
 		</CollapsibleSection>
 	</section>
 
+	{#if auction.status === 'live'}<CallBar {auctionState} />{/if}
+
 	{#if auctionState.strategies.length > 0}
 		<section class="strategy-section">
 			<CollapsibleSection
@@ -325,7 +221,7 @@
 														class="tier-player-button"
 														disabled={auction.status !== 'live' ||
 															auctionState.purchasedIds.has(entry.player_id)}
-														onclick={() => callPlayer(entry.player_id)}
+														onclick={() => auctionState.callPlayer(entry.player_id)}
 													>
 														<TierPlayerCard
 															name={entry.name}
@@ -415,7 +311,7 @@
 								class="catalog-player"
 								class:purchased={auctionState.purchasedIds.has(player.id)}
 								disabled={auction.status !== 'live' || auctionState.purchasedIds.has(player.id)}
-								onclick={() => callPlayer(player.id)}
+								onclick={() => auctionState.callPlayer(player.id)}
 							>
 								<span class="catalog-player-heading">
 									<strong>{player.name}</strong>
@@ -566,77 +462,6 @@
 		border-radius: var(--radius-xs);
 		background: var(--muted-bg);
 		font-size: 0.76rem;
-	}
-	.call-panel form {
-		display: grid;
-		grid-template-columns: minmax(260px, 1.4fr) minmax(210px, 1fr) 110px auto;
-		align-items: end;
-		gap: 0.75rem;
-		margin-top: 1rem;
-	}
-
-	.selected-player {
-		padding: 0.5rem 0.7rem;
-		border-radius: var(--radius-sm);
-		background: var(--primary-soft);
-		color: var(--primary-soft-text);
-		font-size: 0.82rem;
-	}
-	.called-player-strategy {
-		display: grid;
-		grid-template-columns: minmax(140px, 0.6fr) minmax(140px, 0.5fr) minmax(220px, 1.5fr);
-		gap: 0.7rem;
-		margin-top: 0.8rem;
-		padding: 0.8rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--input-bg);
-	}
-	.called-player-strategy > div {
-		display: grid;
-		align-content: start;
-		gap: 0.25rem;
-	}
-	.strategy-label {
-		color: var(--subdued);
-		font-size: 0.68rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-	}
-	.called-player-strategy strong {
-		font-size: 0.82rem;
-	}
-	.no-tier-note {
-		color: var(--subdued);
-		font-size: 0.82rem;
-	}
-	.search-results {
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 0.45rem;
-		margin-top: 0.7rem;
-	}
-	.search-results button {
-		display: grid;
-		justify-items: start;
-		gap: 0.2rem;
-		padding: 0.6rem;
-		border: var(--bw) solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--input-bg);
-		color: var(--text);
-		font-size: 0.875rem;
-		font-weight: 700;
-		text-align: left;
-		cursor: pointer;
-	}
-	.search-results button:hover {
-		border-color: var(--border-hover);
-	}
-	.search-results span {
-		color: var(--subdued);
-		font-size: 0.72rem;
 	}
 	.teams-section,
 	.strategy-section {
@@ -968,20 +793,7 @@
 	.registry-list .registry-row:first-child {
 		border-top: 0;
 	}
-	@media (max-width: 950px) {
-		.call-panel form {
-			grid-template-columns: 1fr 1fr;
-		}
-		.search-results {
-			grid-template-columns: repeat(2, 1fr);
-		}
-	}
 	@media (max-width: 620px) {
-		.call-panel form,
-		.called-player-strategy,
-		.search-results {
-			grid-template-columns: 1fr;
-		}
 		.catalog-toolbar {
 			align-items: stretch;
 			flex-direction: column;

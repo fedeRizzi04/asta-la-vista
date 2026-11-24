@@ -24,6 +24,10 @@ who use the app.
   topmost one, and the registry search box is ready for typing as soon as it opens. When you
   confirm a deletion, the cursor starts on **Annulla**, so a stray Enter does not delete anything.
 - The app remembers which panels you show or hide when you reload the page.
+- During an auction, the called player, the winner and the price are in one bar that stays at the
+  top while you scroll, below the teams. Pick a player from the search (arrows and Enter) or
+  with a click anywhere in the lists, without the page jumping, and fill in the winner (type the
+  initials) and the price when the bidding ends: they always start empty.
 
 ## [0.4.1] - 2026-11-06
 
