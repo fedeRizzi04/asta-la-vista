@@ -10,7 +10,7 @@
 		actions,
 		compact = false
 	}: {
-		title: string;
+		title: string | Snippet;
 		back?: { href: ResolvedPathname; label: string };
 		meta?: Snippet;
 		actions?: Snippet;
@@ -20,7 +20,9 @@
 
 <header class="page-header" class:compact>
 	{#if back}<a class="back" href={back.href}>← {back.label}</a>{/if}
-	<h1>{title}</h1>
+	<h1 class:custom-title={typeof title !== 'string'}>
+		{#if typeof title === 'string'}{title}{:else}{@render title()}{/if}
+	</h1>
 	{#if meta}{@render meta()}{/if}
 	{#if actions}<div class="actions">{@render actions()}</div>{/if}
 </header>
@@ -70,6 +72,9 @@
 
 	.compact h1 {
 		min-width: 0;
+	}
+
+	.compact h1:not(.custom-title) {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
