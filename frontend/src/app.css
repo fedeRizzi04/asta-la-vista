@@ -275,6 +275,29 @@ h3 {
 	resize: vertical;
 }
 
+.inline-name {
+	padding: 0 0.3rem;
+	border-color: transparent;
+	border-radius: var(--radius-xs);
+	background: transparent;
+	text-overflow: ellipsis;
+}
+
+.inline-name:hover {
+	border-color: var(--line-soft);
+}
+
+.inline-name:focus {
+	border-color: var(--line);
+	background: var(--input-bg);
+}
+
+.save-status {
+	color: var(--success-text);
+	font-size: 0.78rem;
+	font-weight: 700;
+}
+
 .table-scroll {
 	overflow-x: auto;
 	border: var(--bw) solid var(--line);

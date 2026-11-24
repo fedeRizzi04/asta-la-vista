@@ -1,8 +1,11 @@
-import { confirmDialog } from '$lib/dialog.svelte';
+import { saveFile } from '$lib/api';
+import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
 import { getPlayers, type Player, type Role } from '$lib/players';
 import {
 	addTier,
 	byMaxPercentageDesc,
+	duplicateStrategy,
+	exportStrategy,
 	getStrategy,
 	removeTier,
 	renameStrategy,
@@ -26,6 +29,7 @@ type EntryDraft = {
 // Every field saves itself shortly after the user stops changing it.
 const ENTRY_SAVE_DEBOUNCE_MS = 500;
 const TIER_SAVE_DEBOUNCE_MS = 400;
+const NAME_SAVE_DEBOUNCE_MS = 600;
 
 /**
  * Delays the save of each id until its changes settle, and saves an id again only after its
@@ -97,42 +101,73 @@ class DebouncedSaver {
 export class StrategyEditor {
 	strategy = $state<Strategy>();
 	players = $state<Player[]>([]);
-	strategyName = $state('');
 	entryDrafts = $state<Record<string, EntryDraft>>({});
 	entrySaved = $state<Record<string, boolean>>({});
+	tierNameDrafts = $state<Record<string, string>>({});
 	tierSaved = $state<Record<string, boolean>>({});
+	strategySaved = $state<Record<string, boolean>>({});
 	loading = $state(true);
 	saving = $state(false);
 	orderedTiers = $state<Tier[]>([]);
 	/** The last move of players, for screen readers. */
 	lastMove = $state('');
 	index = $derived(this.strategy && strategyIndex(this.strategy));
+	// The same player can appear in the pool and in a tier; anchor to the row that opened it.
+	detail = $state<{ playerId: string; anchor: HTMLElement }>();
 
 	readonly selection = new PlayerSelection();
 	readonly #entrySaves = new DebouncedSaver(ENTRY_SAVE_DEBOUNCE_MS, (id) => this.#persistEntry(id));
 	readonly #tierSaves = new DebouncedSaver(TIER_SAVE_DEBOUNCE_MS, (id) => this.#persistTier(id));
+	readonly #nameSaves = new DebouncedSaver(NAME_SAVE_DEBOUNCE_MS, (id) => this.#persistName(id));
 	readonly #getStrategyId: () => string | undefined;
+	#strategyNameDraft = $state<string>();
+	#loadVersion = 0;
 
 	constructor(getStrategyId: () => string | undefined) {
 		this.#getStrategyId = getStrategyId;
 	}
 
 	async load(): Promise<void> {
+		const strategyId = this.#getStrategyId();
+		const version = ++this.#loadVersion;
+		const isCurrent = () => version === this.#loadVersion && strategyId === this.#getStrategyId();
 		this.loading = true;
 		try {
-			const strategyId = this.#getStrategyId();
+			await this.flushAll();
+			if (!isCurrent()) return;
+			this.selection.clear();
+			this.closeDetail();
+			this.lastMove = '';
+			this.strategy = undefined;
 			if (!strategyId) throw new Error('Strategia non trovata.');
 			const [strategy, players] = await Promise.all([
 				getStrategy(strategyId),
 				getPlayers({ includeInactive: true })
 			]);
+			if (!isCurrent()) return;
 			this.players = players;
 			this.#applyStrategy(strategy);
 		} catch (caught) {
-			pushErrorToast(caught);
+			if (isCurrent()) pushErrorToast(caught);
 		} finally {
-			this.loading = false;
+			if (isCurrent()) this.loading = false;
 		}
+	}
+
+	get strategyName(): string {
+		return this.#strategyNameDraft ?? this.strategy?.name ?? '';
+	}
+
+	set strategyName(name: string) {
+		this.#strategyNameDraft = name;
+	}
+
+	openDetail(playerId: string, anchor: HTMLElement): void {
+		this.detail = { playerId, anchor };
+	}
+
+	closeDetail(): void {
+		this.detail = undefined;
 	}
 
 	tierOfPlayer(playerId: string): Tier | undefined {
@@ -156,7 +191,7 @@ export class StrategyEditor {
 		if (movedIds.length === 0) return;
 		for (const id of movedIds) {
 			this.entryDrafts[id].tierId = tierId;
-			void this.saveEntryNow(id);
+			void this.#entrySaves.saveNow(id);
 		}
 		this.selection.clear();
 		const moved =
@@ -166,44 +201,59 @@ export class StrategyEditor {
 		this.lastMove = `${moved}: ${this.index?.tierById.get(tierId)?.name ?? 'senza fascia'}`;
 	}
 
-	async rename(): Promise<void> {
-		const name = this.strategyName.trim();
+	async exportCsv(): Promise<void> {
+		const strategyId = this.strategy?.id;
+		if (!strategyId) return;
+		try {
+			await this.flushAll();
+			saveFile(await exportStrategy(strategyId));
+		} catch (caught) {
+			pushErrorToast(caught);
+		}
+	}
+
+	async duplicate(): Promise<string | undefined> {
 		const strategy = this.strategy;
-		if (!strategy || !name) return;
-		await this.#runMutation(async () => {
-			await renameStrategy(strategy.id, name);
-			strategy.name = name;
+		if (!strategy) return;
+		const name = await promptDialog({
+			title: 'Duplica strategia',
+			message: 'Nome della nuova strategia',
+			defaultValue: `${this.strategyName.trim() || strategy.name} - copia`,
+			confirmLabel: 'Duplica'
+		});
+		if (!name || this.strategy !== strategy) return;
+		return this.#runMutation(async () => {
+			await this.flushAll();
+			return (await duplicateStrategy(strategy.id, name)).id;
 		});
 	}
 
 	/** Adds a tier to rename in place. Returns its id, or undefined if the addition failed. */
 	async addTier(): Promise<string | undefined> {
-		const strategyId = this.strategy?.id;
-		if (!strategyId) return;
-		let tierId: string | undefined;
-		await this.#runMutation(async () => {
+		const strategy = this.strategy;
+		if (!strategy) return;
+		return this.#runMutation(async () => {
 			await this.flushAll();
 			const color = tierColors[this.orderedTiers.length % tierColors.length];
-			tierId = (await addTier(strategyId, this.#newTierName(), color)).id;
-			this.#applyStrategy(await getStrategy(strategyId));
+			const { id } = await addTier(strategy.id, this.#newTierName(), color);
+			if (await this.#refreshStrategy(strategy)) return id;
 		});
-		return tierId;
 	}
 
 	async deleteTier(tier: Tier): Promise<void> {
-		const strategyId = this.strategy?.id;
-		if (!strategyId) return;
+		const strategy = this.strategy;
+		if (!strategy) return;
 		const confirmed = await confirmDialog({
 			title: 'Elimina fascia',
 			message: `Eliminare la fascia “${tier.name}”?`,
 			confirmLabel: 'Elimina',
 			danger: true
 		});
-		if (!confirmed) return;
+		if (!confirmed || this.strategy !== strategy) return;
 		await this.#runMutation(async () => {
 			await this.flushAll();
-			await removeTier(strategyId, tier.id);
-			this.#applyStrategy(await getStrategy(strategyId));
+			await removeTier(strategy.id, tier.id);
+			await this.#refreshStrategy(strategy);
 		});
 	}
 
@@ -221,11 +271,6 @@ export class StrategyEditor {
 		this.#entrySaves.schedule(playerId);
 	}
 
-	/** For a discrete, deliberate choice like a tier pick. */
-	saveEntryNow(playerId: string): Promise<void> {
-		return this.#entrySaves.saveNow(playerId);
-	}
-
 	flushEntrySave(playerId: string): Promise<void> {
 		return this.#entrySaves.flush(playerId);
 	}
@@ -238,15 +283,29 @@ export class StrategyEditor {
 		return this.#tierSaves.flush(tierId);
 	}
 
+	scheduleNameSave(): void {
+		if (this.strategy) this.#nameSaves.schedule(this.strategy.id);
+	}
+
+	async flushNameSave(): Promise<void> {
+		if (!this.strategyName.trim()) this.#strategyNameDraft = undefined;
+		if (this.strategy) await this.#nameSaves.flush(this.strategy.id);
+	}
+
 	/** Persists the waiting autosaves, e.g. before a full re-fetch overwrites the local state. */
 	async flushAll(): Promise<void> {
-		await Promise.all([this.#entrySaves.flushAll(), this.#tierSaves.flushAll()]);
+		await Promise.all([
+			this.#entrySaves.flushAll(),
+			this.#tierSaves.flushAll(),
+			this.#nameSaves.flushAll()
+		]);
 	}
 
 	/** As `flushAll`, for a page that is reloading or closing. */
 	flushOnUnload(): void {
 		this.#entrySaves.flushOnUnload();
 		this.#tierSaves.flushOnUnload();
+		this.#nameSaves.flushOnUnload();
 	}
 
 	/** The backend wants the tier names of a strategy to be unique. */
@@ -277,11 +336,30 @@ export class StrategyEditor {
 
 	async #persistTier(tierId: string): Promise<void> {
 		const tier = this.index?.tierById.get(tierId);
-		const name = tier?.name.trim();
-		if (!this.strategy || !tier || !name) return;
+		if (!this.strategy || !tier) return;
+		const draft = this.tierNameDrafts[tierId];
+		const name = (draft ?? tier.name).trim();
+		if (!name) return;
 		try {
 			await updateTier(this.strategy.id, tierId, name, tier.color);
+			tier.name = name;
+			if (this.tierNameDrafts[tierId] === draft) delete this.tierNameDrafts[tierId];
 			this.#flashSaved(this.tierSaved, tierId);
+		} catch (caught) {
+			pushErrorToast(caught);
+		}
+	}
+
+	async #persistName(strategyId: string): Promise<void> {
+		const strategy = this.strategy;
+		const draft = this.#strategyNameDraft;
+		const name = draft?.trim();
+		if (!strategy || strategy.id !== strategyId || !name || name === strategy.name) return;
+		try {
+			await renameStrategy(strategyId, name);
+			strategy.name = name;
+			if (this.#strategyNameDraft === draft) this.#strategyNameDraft = undefined;
+			this.#flashSaved(this.strategySaved, strategyId);
 		} catch (caught) {
 			pushErrorToast(caught);
 		}
@@ -294,9 +372,22 @@ export class StrategyEditor {
 		}, 1200);
 	}
 
+	async #refreshStrategy(previous: Strategy): Promise<boolean> {
+		const strategy = await getStrategy(previous.id);
+		if (this.strategy !== previous || this.#getStrategyId() !== previous.id) return false;
+		this.#applyStrategy(strategy);
+		return true;
+	}
+
 	#applyStrategy(strategy: Strategy): void {
-		this.strategy = strategy;
-		this.strategyName = strategy.name;
+		if (this.strategy?.id === strategy.id) {
+			this.strategy.tiers = strategy.tiers;
+			this.strategy.entries = strategy.entries;
+		} else {
+			this.strategy = strategy;
+			this.#strategyNameDraft = undefined;
+		}
+		this.tierNameDrafts = {};
 		const index = this.index;
 		this.entryDrafts = Object.fromEntries(
 			this.players.map((player) => {
@@ -314,10 +405,10 @@ export class StrategyEditor {
 		this.orderedTiers = index?.sortedTiers ?? [];
 	}
 
-	async #runMutation(mutation: () => Promise<void>): Promise<void> {
+	async #runMutation<T>(mutation: () => Promise<T>): Promise<T | undefined> {
 		this.saving = true;
 		try {
-			await mutation();
+			return await mutation();
 		} catch (caught) {
 			pushErrorToast(caught);
 		} finally {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick, type Snippet } from 'svelte';
 	import type { Player } from '$lib/players';
+	import { entryTierFieldId } from './EntryEditor.svelte';
 	import type { PlayerDrag } from './playerDrag.svelte';
 	import type { StrategyEditor } from './strategyEditor.svelte';
 
@@ -56,13 +57,31 @@
 		(target as HTMLElement | undefined)?.focus();
 	}
 
-	function onclick(event: MouseEvent, id: string): void {
-		if (event.shiftKey) editor.selection.extendTo(id, ids);
-		else if (event.metaKey || event.ctrlKey) editor.selection.toggle(id);
-		else editor.selection.selectOnly(id);
+	function openDetail(id: string, row: HTMLElement): void {
+		editor.selection.selectOnly(id);
+		editor.openDetail(id, row);
 	}
 
-	function onkeydown(event: KeyboardEvent, id: string): void {
+	function onclick(event: MouseEvent & { currentTarget: HTMLElement }, id: string): void {
+		if (event.shiftKey) editor.selection.extendTo(id, ids);
+		else if (event.metaKey || event.ctrlKey) editor.selection.toggle(id);
+		else openDetail(id, event.currentTarget);
+	}
+
+	async function onkeydown(
+		event: KeyboardEvent & { currentTarget: HTMLElement },
+		id: string
+	): Promise<void> {
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			const row = event.currentTarget;
+			openDetail(id, row);
+			await tick();
+			if (editor.detail?.anchor === row) {
+				document.getElementById(entryTierFieldId)?.focus({ preventScroll: true });
+			}
+			return;
+		}
 		if (event.key === ' ') {
 			event.preventDefault();
 			editor.selection.toggle(id);

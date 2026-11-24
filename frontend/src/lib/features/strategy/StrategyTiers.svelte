@@ -6,8 +6,10 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import type { Role } from '$lib/players';
+	import { percentageToCredits } from '$lib/strategies';
 	import type { PlayerDrag } from './playerDrag.svelte';
 	import PlayerList from './PlayerList.svelte';
+	import { referenceBudget } from './referenceBudget.svelte';
 	import { tierTitle } from './SelectionBar.svelte';
 	import type { StrategyEditor } from './strategyEditor.svelte';
 
@@ -72,11 +74,17 @@
 				/>
 				<Input
 					id={nameId(tier.id)}
-					class="name"
-					bind:value={tier.name}
+					class="inline-name"
+					bind:value={
+						() => editor.tierNameDrafts[tier.id] ?? tier.name,
+						(name) => (editor.tierNameDrafts[tier.id] = name)
+					}
 					{title}
 					oninput={() => editor.scheduleTierSave(tier.id)}
-					onblur={() => editor.flushTierSave(tier.id)}
+					onblur={() => {
+						void editor.flushTierSave(tier.id);
+						if (!editor.tierNameDrafts[tier.id]?.trim()) delete editor.tierNameDrafts[tier.id];
+					}}
 					onkeydown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
 					autocomplete="off"
 					aria-label="Nome fascia"
@@ -104,11 +112,15 @@
 			<PlayerList {editor} {drag} {players} tierId={tier.id} label={tier.name}>
 				{#snippet row(player)}
 					{@const draft = editor.entryDrafts[player.id]}
+					{@const pct = draft.maximumPricePercentage}
 					<TierPlayerCard
 						name={player.name}
 						team={player.active ? player.team : `${player.team} · inattivo`}
 						mantraRoles={player.mantra_roles}
-						maximumPricePercentage={draft.maximumPricePercentage ?? null}
+						maximumPricePercentage={pct ?? null}
+						maximumPriceCredits={pct === undefined
+							? null
+							: percentageToCredits(pct, referenceBudget.value)}
 						note={draft.note}
 						inactive={!player.active}
 					/>
@@ -173,23 +185,9 @@
 		cursor: pointer;
 	}
 
-	.header :global(.name) {
+	.header :global(.inline-name) {
 		min-height: 1.75rem;
-		padding: 0 0.3rem;
-		border-color: transparent;
-		border-radius: var(--radius-xs);
-		background: transparent;
 		font: 800 0.95rem var(--font-display);
-		text-overflow: ellipsis;
-	}
-
-	.header :global(.name:hover) {
-		border-color: var(--line-soft);
-	}
-
-	.header :global(.name:focus) {
-		border-color: var(--line);
-		background: var(--input-bg);
 	}
 
 	.header :global(.delete) {

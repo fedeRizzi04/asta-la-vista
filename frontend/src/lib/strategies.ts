@@ -107,6 +107,8 @@ export function duplicateStrategy(strategyId: string, name: string): Promise<Ent
 export function renameStrategy(strategyId: string, name: string): Promise<void> {
 	return apiRequest<void>(`/api/strategies/${strategyId}`, {
 		method: 'PATCH',
+		// Let autosaves started on pagehide finish after the page unloads.
+		keepalive: true,
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ name })
 	});
