@@ -507,54 +507,6 @@ main {
 	text-align: right;
 }
 
-.page-heading {
-	max-width: 760px;
-}
-
-.page-heading p:last-child {
-	max-width: 650px;
-	margin: 0.35rem 0 0;
-	color: var(--muted);
-}
-
-.feature-grid {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 1rem;
-	margin-top: 1.5rem;
-}
-
-.feature-card {
-	padding: 1.25rem;
-	border: var(--bw) solid var(--line);
-	border-radius: var(--radius);
-	background: var(--surface);
-	color: var(--text);
-	text-decoration: none;
-	box-shadow: var(--shadow);
-	transition: background-color 140ms ease;
-}
-
-.feature-card:hover {
-	background: var(--hover);
-}
-
-.feature-card span {
-	display: none;
-}
-
-.feature-card h2 {
-	margin: 0 0 0.45rem;
-	font-size: 1.2rem;
-}
-
-.feature-card p {
-	margin: 0;
-	color: var(--muted);
-	font-size: 0.94rem;
-	line-height: 1.55;
-}
-
 .count-label {
 	color: var(--subdued);
 	font-size: 0.8rem;
@@ -616,10 +568,6 @@ main {
 	.app-footer {
 		width: min(100% - 2rem, 1180px);
 	}
-
-	.feature-grid {
-		grid-template-columns: 1fr;
-	}
 }
 
 /* Reduced motion: keep status/feedback (opacity, color) but drop transform-based
@@ -643,7 +591,6 @@ main {
 /* Higher contrast: trade soft borders/shadows for a clearly defined edge. */
 @media (prefers-contrast: more) {
 	.panel,
-	.feature-card,
 	.app-header {
 		border-color: var(--border-strong);
 		box-shadow: none;
