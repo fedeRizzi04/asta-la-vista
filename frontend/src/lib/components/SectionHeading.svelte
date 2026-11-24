@@ -2,12 +2,10 @@
 	import type { Snippet } from 'svelte';
 
 	let {
-		eyebrow,
 		title,
 		subtitle,
 		trailing
 	}: {
-		eyebrow?: string;
 		title: string;
 		subtitle?: string;
 		trailing?: Snippet;
@@ -16,7 +14,6 @@
 
 <div class="section-heading">
 	<div>
-		{#if eyebrow}<p class="eyebrow">{eyebrow}</p>{/if}
 		<h2>{title}</h2>
 		{#if subtitle}<p class="subtitle">{subtitle}</p>{/if}
 	</div>

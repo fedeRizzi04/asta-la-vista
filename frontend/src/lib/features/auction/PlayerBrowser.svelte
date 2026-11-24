@@ -6,15 +6,14 @@
 	import Select from '$lib/components/ui/Select.svelte';
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
 	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
-	import { roleLabels, roles, type Role } from '$lib/players';
+	import type { Role } from '$lib/players';
 	import { matchesSearch } from '$lib/search';
 	import type { AuctionState } from './auctionState.svelte';
 
 	type Sort = 'quotation' | 'tier' | 'name';
 
-	let { auctionState }: { auctionState: AuctionState } = $props();
+	let { auctionState, roles }: { auctionState: AuctionState; roles: Role[] } = $props();
 
-	let selectedRoles = $state<Role[]>([]);
 	let selectedMantraRoles = $state<string[]>([]);
 	let search = $state('');
 	let sort = $state<Sort>('quotation');
@@ -26,8 +25,7 @@
 	let rolePlayers = $derived(
 		auctionState.players.filter(
 			(player) =>
-				(selectedRoles.length === 0 || selectedRoles.includes(player.role)) &&
-				(player.active || auctionState.purchasedIds.has(player.id))
+				roles.includes(player.role) && (player.active || auctionState.purchasedIds.has(player.id))
 		)
 	);
 	let mantraCodes = $derived(
@@ -61,27 +59,14 @@
 			})
 	);
 
-	function toggle<T>(selection: T[], item: T): T[] {
-		return selection.includes(item)
-			? selection.filter((value) => value !== item)
-			: [...selection, item];
+	function toggleMantraRole(code: string): void {
+		selectedMantraRoles = selectedMantraRoles.includes(code)
+			? selectedMantraRoles.filter((selected) => selected !== code)
+			: [...selectedMantraRoles, code];
 	}
 </script>
 
 <div class="filters">
-	<div class="filter-row" role="group" aria-label="Ruoli calciatori">
-		<ToggleChip pressed={selectedRoles.length === 0} onclick={() => (selectedRoles = [])}>
-			Tutti
-		</ToggleChip>
-		{#each roles as role (role)}
-			<ToggleChip
-				pressed={selectedRoles.includes(role)}
-				onclick={() => (selectedRoles = toggle(selectedRoles, role))}
-			>
-				{roleLabels[role]}
-			</ToggleChip>
-		{/each}
-	</div>
 	{#if mantraCodes.length > 0}
 		<div class="filter-row" role="group" aria-label="Sotto-ruoli Mantra">
 			<ToggleChip
@@ -93,7 +78,7 @@
 			{#each mantraCodes as code (code)}
 				<ToggleChip
 					pressed={effectiveMantraRoles.includes(code)}
-					onclick={() => (selectedMantraRoles = toggle(selectedMantraRoles, code))}
+					onclick={() => toggleMantraRole(code)}
 				>
 					{mantraRoleLabel(code)}
 				</ToggleChip>

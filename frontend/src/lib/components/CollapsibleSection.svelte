@@ -11,7 +11,6 @@
 	 */
 	let {
 		storageKey,
-		eyebrow,
 		title,
 		subtitle,
 		defaultVisible = true,
@@ -19,7 +18,6 @@
 		children
 	}: {
 		storageKey: string;
-		eyebrow?: string;
 		title: string;
 		subtitle?: string;
 		defaultVisible?: boolean;
@@ -39,7 +37,7 @@
 	</div>
 {/snippet}
 
-<SectionHeading {eyebrow} {title} {subtitle} trailing={trailingContent} />
+<SectionHeading {title} {subtitle} trailing={trailingContent} />
 {#if panel.visible}
 	{@render children()}
 {/if}

@@ -494,13 +494,6 @@ main {
 	color: var(--muted);
 }
 
-.eyebrow {
-	margin: 0 0 0.2rem;
-	color: var(--muted);
-	font-size: 0.8rem;
-	font-weight: 700;
-}
-
 .feature-grid {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
