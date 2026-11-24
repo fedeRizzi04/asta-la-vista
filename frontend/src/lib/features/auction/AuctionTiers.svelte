@@ -86,39 +86,41 @@
 </div>
 
 {#if columns.length > 0}
-	<TierBoard {columns} label="Fasce della strategia">
-		{#snippet summary({ entries, leftCount })}
-			rimasti <b>{leftCount}</b>/{entries.length}
-		{/snippet}
-		{#snippet players({ entries })}
-			{@const shownEntries = takenPlayers.visible
-				? entries
-				: entries.filter((entry) => !auctionState.purchasedIds.has(entry.player_id))}
-			{#each shownEntries as entry (entry.player_id)}
-				{@const record = auctionState.purchaseOfPlayer(entry.player_id)}
-				<button
-					type="button"
-					class="player"
-					disabled={!auctionState.canCall(entry.player_id)}
-					aria-current={auctionState.calledPlayer?.id === entry.player_id || undefined}
-					onclick={() => auctionState.callPlayer(entry.player_id)}
-				>
-					<TierPlayerCard
-						name={entry.name}
-						team={entry.team}
-						mantraRoles={entry.mantra_roles}
-						maximumPricePercentage={entry.maximum_price_percentage}
-						maximumPriceCredits={auctionState.maximumPriceCredits(entry.maximum_price_percentage)}
-						note={entry.note}
-						inactive={!entry.active}
-						taken={record && { buyer: record.participant.name, price: record.purchase.price }}
-					/>
-				</button>
-			{:else}
-				<p class="empty">{entries.length > 0 ? 'Tutti presi' : 'Nessun calciatore'}</p>
-			{/each}
-		{/snippet}
-	</TierBoard>
+	<div class="board">
+		<TierBoard {columns} label="Fasce della strategia">
+			{#snippet summary({ entries, leftCount })}
+				rimasti <b>{leftCount}</b>/{entries.length}
+			{/snippet}
+			{#snippet players({ entries })}
+				{@const shownEntries = takenPlayers.visible
+					? entries
+					: entries.filter((entry) => !auctionState.purchasedIds.has(entry.player_id))}
+				{#each shownEntries as entry (entry.player_id)}
+					{@const record = auctionState.purchaseOfPlayer(entry.player_id)}
+					<button
+						type="button"
+						class="player"
+						disabled={!auctionState.canCall(entry.player_id)}
+						aria-current={auctionState.calledPlayer?.id === entry.player_id || undefined}
+						onclick={() => auctionState.callPlayer(entry.player_id)}
+					>
+						<TierPlayerCard
+							name={entry.name}
+							team={entry.team}
+							mantraRoles={entry.mantra_roles}
+							maximumPricePercentage={entry.maximum_price_percentage}
+							maximumPriceCredits={auctionState.maximumPriceCredits(entry.maximum_price_percentage)}
+							note={entry.note}
+							inactive={!entry.active}
+							taken={record && { buyer: record.participant.name, price: record.purchase.price }}
+						/>
+					</button>
+				{:else}
+					<p class="empty">{entries.length > 0 ? 'Tutti presi' : 'Nessun calciatore'}</p>
+				{/each}
+			{/snippet}
+		</TierBoard>
+	</div>
 {:else}
 	<EmptyState compact>
 		{strategy ? 'La strategia non ha fasce' : 'Nessuna strategia selezionata'}
@@ -145,7 +147,25 @@
 	}
 
 	.board-actions {
-		margin-left: auto;
+		min-height: var(--control-height);
+		/* On the right, room for the board's scroll buttons. */
+		margin: 0 4.5rem 0 auto;
+	}
+
+	/* Put the scroll buttons in the toolbar, where they cover no player. */
+	.board :global(.rail-button) {
+		top: calc(-0.6rem - var(--control-height) / 2);
+		width: 1.75rem;
+		height: 1.75rem;
+	}
+
+	.board :global(.rail-button.previous) {
+		right: 2.25rem;
+		left: auto;
+	}
+
+	.board :global(.rail-button.next) {
+		right: 0;
 	}
 
 	.fixed {
