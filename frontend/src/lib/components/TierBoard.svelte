@@ -1,10 +1,9 @@
 <script lang="ts" module>
 	import type { PanelVisibility } from '$lib/panelVisibility.svelte';
-	import type { Role } from '$lib/players';
 	import type { Tier } from '$lib/strategies';
 
-	/** The players of one role in one tier. */
-	export type TierColumn = { key: string; tier: Tier; role: Role; panel: PanelVisibility };
+	/** The players of one tier. */
+	export type TierColumn = { key: string; tier: Tier; panel: PanelVisibility };
 </script>
 
 <script lang="ts" generics="Column extends TierColumn">
@@ -19,14 +18,11 @@
 	let {
 		columns,
 		label,
-		showRoles = false,
 		summary,
 		players
 	}: {
 		columns: Column[];
 		label: string;
-		/** Mark each column with its role, for boards with more than one. */
-		showRoles?: boolean;
 		summary: Snippet<[Column]>;
 		players: Snippet<[Column]>;
 	} = $props();
@@ -35,7 +31,7 @@
 <HorizontalScroller ariaLabel={label}>
 	<div class="tier-board">
 		{#each columns as column (column.key)}
-			{@const { tier, role, panel } = column}
+			{@const { tier, panel } = column}
 			<section class="tier" class:closed={!panel.visible}>
 				<h3>
 					<button
@@ -51,7 +47,6 @@
 							style:background={tier.color ?? 'var(--tier-default)'}
 							aria-hidden="true"
 						></span>
-						{#if showRoles}<span class="role-badge" data-role={role}>{role}</span>{/if}
 						<span class="tier-name">{tier.name}</span>
 						<span class="tier-summary">{@render summary(column)}</span>
 					</button>
@@ -120,7 +115,6 @@
 
 	.chevron,
 	.tier-color,
-	.role-badge,
 	.tier-summary {
 		flex: none;
 	}

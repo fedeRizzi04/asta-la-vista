@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Tabs from '$lib/components/ui/Tabs.svelte';
-	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
 	import AuctionSummary from '$lib/features/auction/AuctionSummary.svelte';
 	import AuctionTiers from '$lib/features/auction/AuctionTiers.svelte';
 	import CallBar from '$lib/features/auction/CallBar.svelte';
@@ -31,17 +30,20 @@
 	);
 	const view = $derived<AuctionView>(getUrlParams().get('view') === 'free' ? 'free' : 'tiers');
 
-	/** The role filter of both views: no role selected means all of them. */
-	const selectedRoles = $derived.by(() => {
-		const selected = getUrlParams().getAll('roles');
-		return roles.filter((role) => selected.includes(role));
-	});
-	const shownRoles = $derived(selectedRoles.length > 0 ? selectedRoles : roles);
+	/** The role filter shared by both views: one role at a time, goalkeepers by default. */
+	const role = $derived(
+		roles.find((candidate) => candidate === getUrlParams().get('role')) ?? roles[0]
+	);
 
-	function toggleRole(toggled: Role): void {
-		const next = roles.filter((role) => selectedRoles.includes(role) !== (role === toggled));
-		void setUrlParams({ roles: next });
+	function setRole(next: Role): void {
+		void setUrlParams({ role: next === roles[0] ? null : next });
 	}
+
+	// Calling a player of another role (from the search) shows that role's tiers.
+	$effect(() => {
+		const calledRole = auctionState.calledPlayer?.role;
+		if (calledRole) untrack(() => setRole(calledRole));
+	});
 
 	function setView(next: AuctionView): void {
 		void setUrlParams({ view: next === 'free' ? next : null });
@@ -147,31 +149,21 @@
 				panelId="auction-view-panel"
 			/>
 		{/if}
-		<div class="role-filter" role="group" aria-label="Ruoli">
-			<ToggleChip
-				pressed={selectedRoles.length === 0}
-				onclick={() => void setUrlParams({ roles: null })}
-			>
-				Tutti
-			</ToggleChip>
-			{#each roles as role (role)}
-				<ToggleChip pressed={selectedRoles.includes(role)} onclick={() => toggleRole(role)}>
-					{roleLabels[role]}
-				</ToggleChip>
-			{/each}
-		</div>
+		<Tabs
+			items={roles.map((value) => ({ value, label: roleLabels[value] }))}
+			bind:value={() => role, setRole}
+			label="Ruolo"
+			id="auction-role"
+			panelId="auction-view-panel"
+		/>
 	</div>
-	{#if auction.status === 'draft'}
-		<AuctionTiers {auctionState} roles={shownRoles} />
-	{:else}
-		<div id="auction-view-panel" role="tabpanel" tabindex="0" aria-labelledby="auction-view-{view}">
-			{#if view === 'free'}
-				<PlayerBrowser {auctionState} roles={shownRoles} />
-			{:else}
-				<AuctionTiers {auctionState} roles={shownRoles} />
-			{/if}
-		</div>
-	{/if}
+	<div id="auction-view-panel" role="tabpanel" tabindex="0" aria-labelledby="auction-role-{role}">
+		{#if view === 'free' && auction.status !== 'draft'}
+			<PlayerBrowser {auctionState} {role} />
+		{:else}
+			<AuctionTiers {auctionState} {role} />
+		{/if}
+	</div>
 
 	<PurchaseRegistry {auctionState} bind:open={registryOpen} />
 {/if}
@@ -183,14 +175,10 @@
 		white-space: nowrap;
 	}
 
-	.controls,
-	.role-filter {
+	.controls {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem;
-	}
-	.controls {
 		gap: 0.75rem;
 		margin: 0.5rem 0 0.6rem;
 	}
