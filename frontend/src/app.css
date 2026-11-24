@@ -377,6 +377,7 @@ tbody tr:last-child td {
 	color: var(--status-text);
 	font-size: 0.75rem;
 	font-weight: 700;
+	white-space: nowrap;
 }
 
 .status-badge[data-status='live'] {
