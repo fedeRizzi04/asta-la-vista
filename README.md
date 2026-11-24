@@ -17,19 +17,24 @@ The user interface is in Italian.
 ## Features
 
 - **Player list (Listone)**: import the official fantacalcio.it file and keep track of every
-  player's role, team, price and availability.
-- **Strategies**: create custom global tiers (colour, order, maximum spending percentage) and
-  assign each role's players to them, so you always know at a glance whom to buy and for how much.
-- **Live auctions**: follow every participant's remaining credits, free slots and squad in real
-  time while you record purchases. Your tiers stay visible, so you can see who has already been
-  taken. A 360-degree view of each role shows the players already bought and those still
-  available to call.
+  player's role, team, quotation and availability. Filter by role (with the counts in the tabs),
+  search by name or team and sort by column.
+- **Strategies**: create custom global tiers (colour, order) and assign each role's players to
+  them by dragging, or with the keyboard. For each player you can add a note and a maximum
+  spending percentage, shown in credits too, so you always know at a glance whom to buy and for
+  how much.
+- **Live auctions**: the teams sit on top of the page, with every participant's credits, maximum
+  bid, free slots and roster. A call bar takes the player being called, the winner and the price,
+  and below it you see your tiers (the players already taken stay in place, greyed out and crossed
+  out) or the players still available. A purchase registry lets you correct or cancel a purchase.
+- **Keyboard first**: calling a player and recording the purchase takes only the keyboard, and
+  [every shortcut](#keyboard-shortcuts) is one `?` away.
 - **Final report**: when the auction ends, download an HTML summary. It opens in any browser,
   with no server or internet connection.
 
 <p align="center">
-  <img src="assets/screenshots/strategies.jpg" alt="Tier management" width="49%" />
-  <img src="assets/screenshots/live-auction.jpg" alt="Auction in progress" width="49%" />
+  <img src="assets/screenshots/strategies.jpg" alt="Strategy editor, with the players without a tier on the left and the tiers on the right" width="49%" />
+  <img src="assets/screenshots/live-auction.jpg" alt="An auction in progress, with the teams, the call bar and the tiers" width="49%" />
 </p>
 
 There is also a dark theme, for auctions that run late into the night (we know a thing or two
@@ -38,6 +43,47 @@ about that):
 <p align="center">
   <img src="assets/screenshots/dark-theme.jpg" alt="Player list in the dark theme" width="70%" />
 </p>
+
+## Keyboard shortcuts
+
+Press `?` to see the shortcuts of the page you are on. There is no button for it, only the key.
+
+<p align="center">
+  <img src="assets/screenshots/shortcuts.jpg" alt="The keyboard shortcuts panel, open on an auction" width="70%" />
+</p>
+
+The keys below are the macOS ones. On Windows, `⌘` is `Ctrl` and `⌥` is `Alt`. The keys with
+a single letter or digit only work while you are not typing in a field.
+
+**Auction**
+
+| Keys | What it does |
+|---|---|
+| `⌘K` or `/` | Go to the player search |
+| `↑` `↓` and `⏎` | Move through the results and call the highlighted player |
+| `⌘⏎` | Go to the winner field |
+| `⏎` in the winner field | Choose the highlighted participant and go to the price |
+| `⏎` in the price field | Record the purchase |
+| `Esc` | Drop the player being called |
+| `P` `D` `C` `A` | Show goalkeepers, defenders, midfielders or forwards |
+| `⌥1` `⌥2` | Show the tiers or the free players |
+| `⌘J` | Open or close the purchase registry |
+| `⌘Z` | Cancel the last purchase, after asking you to confirm |
+
+A player can be called and recorded with the keyboard alone: `⌘K`, the name, `⏎`, `⌘⏎`, the
+winner, `⏎`, the price and `⏎`.
+
+**Strategy**
+
+| Keys | What it does |
+|---|---|
+| `↑` `↓`, `Home` `End` | Move through a list of players (with `⇧`, extend the selection) |
+| `Space` | Add or remove the focused player from the selection |
+| `⏎` | Open the details of the focused player |
+| `1`-`9` | Move the selected players (or the focused one) to that tier |
+| `0` | Take them out of their tier |
+| `Esc` | Clear the selection |
+| `←` `→` on a tier's grip | Move the tier |
 
 ## Why
 
@@ -286,8 +332,8 @@ from fantacalcio.it and import it once. You can import it again whenever it chan
 
 ### Importing it
 
-1. Open the **Listone** section of the app.
-2. Choose the file and click **Importa**.
+1. Open the **Listone** section of the app and click **Importa**.
+2. Choose the file and click **Importa** again.
 3. A message tells you how many players were added, updated or deactivated, and how many changed
    role. The counts per role are shown right below it, so you can check them at a glance.
 
@@ -298,7 +344,7 @@ transfer market. Players are matched by their `Id`, so nothing already set up is
 
 - new players are added, and existing ones get their name, team, role and quotation updated;
 - players missing from the new file are **deactivated**, not deleted. They disappear from the
-  list, unless you tick **Mostra inattivi**;
+  list, unless you turn on **Mostra inattivi**;
 - if a player changed role, the strategies that contain them follow the new role;
 - if an auction is in progress, the app asks you to confirm before importing.
 
@@ -465,8 +511,9 @@ The code is in `backend/src/asta_la_vista/entrypoints/desktop/`, and the build r
    using the auction's starting budget.
 3. Create the auction, with credits, slots, participants and, optionally, a strategy.
 4. Start the auction and record each purchase. The screen updates every participant's remaining
-   credits, maximum bid, slots and squad. The player panel lets you filter by role, sort by tier
-   or price, and pick the next player to call.
+   credits, maximum bid, slots and squad. Pick the next player from the search or from your tiers
+   (or from the free players, which you can sort by quotation, tier or name), then enter the
+   winner and the price.
 5. When the auction ends, download the report in HTML format. It opens in any browser.
 
 ## Releasing a new version
