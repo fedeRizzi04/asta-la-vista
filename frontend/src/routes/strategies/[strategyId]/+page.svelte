@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onDestroy, onMount } from 'svelte';
-	import { SvelteMap } from 'svelte/reactivity';
+	import { dragReorder } from '$lib/actions/dragReorder';
 	import CollapsibleSection from '$lib/components/CollapsibleSection.svelte';
 	import HorizontalScroller from '$lib/components/HorizontalScroller.svelte';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
@@ -16,284 +16,42 @@
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Tabs from '$lib/components/ui/Tabs.svelte';
-	import { confirmDialog } from '$lib/dialog.svelte';
-	import { dragReorder } from '$lib/actions/dragReorder';
-	import { getPlayers, roleLabels, roles, type Player, type Role } from '$lib/players';
+	import { StrategyEditor } from '$lib/features/strategy/strategyEditor.svelte';
+	import { roleLabels, roles, type Role } from '$lib/players';
 	import { matchesSearch } from '$lib/search';
-	import { pushErrorToast } from '$lib/toast.svelte';
-	import {
-		addTier,
-		byMaxPercentageDesc,
-		getStrategy,
-		removeTier,
-		renameStrategy,
-		reorderTiers,
-		strategyIndex,
-		updateStrategyEntry,
-		updateTier,
-		type Strategy,
-		type Tier
-	} from '$lib/strategies';
 
-	type EntryDraft = {
-		tierId: string;
-		note: string;
-		maximumPricePercentage: number | undefined;
-	};
-
-	/** A player row paired with its current (possibly unsaved-for-a-moment) draft, for the tier board. */
-	type BoardEntry = { player: Player; draft: EntryDraft };
-
+	const editor = new StrategyEditor(() => page.params.strategyId);
+	const strategy = $derived(editor.strategy);
 	const roleTabs = roles.map((role) => ({ value: role, label: roleLabels[role] }));
 
-	// Every field autosaves shortly after the user stops changing it (see §Response/§Direct
-	// manipulation in apple-design): no "Salva" button, no page-wide lock while one field settles.
-	const ENTRY_SAVE_DEBOUNCE_MS = 500;
-	const TIER_SAVE_DEBOUNCE_MS = 400;
-
-	let strategy = $state<Strategy>();
-	let players = $state<Player[]>([]);
-	let strategyName = $state('');
 	let selectedRole = $state<Role>('P');
 	let playerSearch = $state('');
 	let newTierName = $state('');
 	let newTierColor = $state('#d8ded9');
-	let entryDrafts = $state<Record<string, EntryDraft>>({});
-	let entrySaved = $state<Record<string, boolean>>({});
-	let tierSaved = $state<Record<string, boolean>>({});
-	let loading = $state(true);
-	let saving = $state(false);
-	let orderedTiers = $state<Tier[]>([]);
-	let index = $derived(strategy && strategyIndex(strategy));
 
-	const pendingEntrySaves = new SvelteMap<string, ReturnType<typeof setTimeout>>();
-	const pendingTierSaves = new SvelteMap<string, ReturnType<typeof setTimeout>>();
-
-	let visiblePlayers = $derived(
-		players.filter(
+	const visiblePlayers = $derived(
+		editor.players.filter(
 			(player) =>
 				player.role === selectedRole && matchesSearch(playerSearch, player.name, player.team)
 		)
 	);
 
-	function entriesForTier(tierId: string): BoardEntry[] {
-		return players
-			.filter((player) => player.role === selectedRole && entryDrafts[player.id]?.tierId === tierId)
-			.map((player) => ({ player, draft: entryDrafts[player.id] }))
-			.sort(byMaxPercentageDesc((entry) => entry.draft.maximumPricePercentage));
-	}
-
-	onMount(loadData);
-
-	async function loadData(): Promise<void> {
-		loading = true;
-		try {
-			[strategy, players] = await Promise.all([
-				getStrategy(currentStrategyId()),
-				getPlayers({ includeInactive: true })
-			]);
-			strategyName = strategy.name;
-			buildEntryDrafts();
-			syncOrderedTiers();
-		} catch (caught) {
-			pushErrorToast(caught);
-		} finally {
-			loading = false;
-		}
-	}
-
-	function buildEntryDrafts(): void {
-		const entries = index?.entryByPlayerId;
-		entryDrafts = Object.fromEntries(
-			players.map((player) => {
-				const entry = entries?.get(player.id);
-				return [
-					player.id,
-					{
-						tierId: entry?.tier_id ?? '',
-						note: entry?.note ?? '',
-						maximumPricePercentage: entry?.maximum_price_percentage ?? undefined
-					}
-				];
-			})
-		);
-	}
-
-	async function submitName(event: SubmitEvent): Promise<void> {
+	function submitName(event: SubmitEvent): void {
 		event.preventDefault();
-		const name = strategyName.trim();
-		const currentStrategy = strategy;
-		if (!currentStrategy || !name) return;
-		await runMutation(async () => {
-			await renameStrategy(currentStrategy.id, name);
-			currentStrategy.name = name;
-		});
+		void editor.rename();
 	}
 
 	async function submitTier(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
-		const name = newTierName.trim();
-		if (!strategy || !name) return;
-		await runMutation(async () => {
-			await flushAllPending();
-			await addTier(strategy!.id, name, newTierColor);
-			newTierName = '';
-			await refreshStrategy();
-		});
+		if (await editor.addTier(newTierName, newTierColor)) newTierName = '';
 	}
 
-	async function deleteTier(tier: Tier): Promise<void> {
-		if (!strategy) return;
-		const confirmed = await confirmDialog({
-			title: 'Elimina fascia',
-			message: `Eliminare la fascia “${tier.name}”?`,
-			confirmLabel: 'Elimina',
-			danger: true
-		});
-		if (!confirmed) return;
-		await runMutation(async () => {
-			await flushAllPending();
-			await removeTier(strategy!.id, tier.id);
-			await refreshStrategy();
-		});
-	}
-
-	/** Called once by the drag/keyboard reorder gesture, with the final tier order. */
-	async function commitTierOrder(nextIds: string[]): Promise<void> {
-		if (!strategy || !index) return;
-		const { tierById } = index;
-		orderedTiers = nextIds.map((id) => tierById.get(id)).filter((tier) => tier !== undefined);
-		await runMutation(() => reorderTiers(strategy!.id, nextIds));
-	}
-
-	/**
-	 * Schedules an autosave for a player's tier/note/max-price draft. A tier pick is a discrete,
-	 * deliberate choice and saves right away; free-text fields debounce so we don't fire a
-	 * request per keystroke.
-	 */
-	function scheduleEntrySave(playerId: string, options: { immediate?: boolean } = {}): void {
-		const pending = pendingEntrySaves.get(playerId);
-		if (pending) clearTimeout(pending);
-		if (options.immediate) {
-			pendingEntrySaves.delete(playerId);
-			void persistEntry(playerId);
-			return;
-		}
-		pendingEntrySaves.set(
-			playerId,
-			setTimeout(() => {
-				pendingEntrySaves.delete(playerId);
-				void persistEntry(playerId);
-			}, ENTRY_SAVE_DEBOUNCE_MS)
-		);
-	}
-
-	/** Saves immediately if an autosave is pending (e.g. on blur), otherwise a no-op. */
-	function flushEntrySave(playerId: string): Promise<void> {
-		const pending = pendingEntrySaves.get(playerId);
-		if (!pending) return Promise.resolve();
-		clearTimeout(pending);
-		pendingEntrySaves.delete(playerId);
-		return persistEntry(playerId);
-	}
-
-	async function persistEntry(playerId: string): Promise<void> {
-		const draft = entryDrafts[playerId];
-		if (!strategy || !draft) return;
-		try {
-			await updateStrategyEntry(
-				strategy.id,
-				playerId,
-				draft.tierId || null,
-				draft.note,
-				draft.maximumPricePercentage ?? null
-			);
-			flashSaved(entrySaved, playerId);
-		} catch (caught) {
-			pushErrorToast(caught);
-		}
-	}
-
-	/** Same autosave shape as entries: debounced text/color, flushed on blur/change. */
-	function scheduleTierSave(tierId: string): void {
-		const pending = pendingTierSaves.get(tierId);
-		if (pending) clearTimeout(pending);
-		pendingTierSaves.set(
-			tierId,
-			setTimeout(() => {
-				pendingTierSaves.delete(tierId);
-				void persistTier(tierId);
-			}, TIER_SAVE_DEBOUNCE_MS)
-		);
-	}
-
-	function flushTierSave(tierId: string): Promise<void> {
-		const pending = pendingTierSaves.get(tierId);
-		if (!pending) return Promise.resolve();
-		clearTimeout(pending);
-		pendingTierSaves.delete(tierId);
-		return persistTier(tierId);
-	}
-
-	async function persistTier(tierId: string): Promise<void> {
-		const tier = index?.tierById.get(tierId);
-		if (!strategy || !tier || !tier.name.trim()) return;
-		try {
-			await updateTier(strategy.id, tier.id, tier.name.trim(), tier.color);
-			flashSaved(tierSaved, tierId);
-		} catch (caught) {
-			pushErrorToast(caught);
-		}
-	}
-
-	function flashSaved(flags: Record<string, boolean>, id: string): void {
-		flags[id] = true;
-		setTimeout(() => {
-			flags[id] = false;
-		}, 1200);
-	}
-
-	/** Persists any autosave still waiting on its debounce, before a full re-fetch overwrites local state. */
-	async function flushAllPending(): Promise<void> {
-		await Promise.all([
-			...[...pendingEntrySaves.keys()].map(flushEntrySave),
-			...[...pendingTierSaves.keys()].map(flushTierSave)
-		]);
-	}
-
-	onDestroy(() => {
-		for (const playerId of pendingEntrySaves.keys()) void flushEntrySave(playerId);
-		for (const tierId of pendingTierSaves.keys()) void flushTierSave(tierId);
-	});
-
-	async function refreshStrategy(): Promise<void> {
-		strategy = await getStrategy(currentStrategyId());
-		strategyName = strategy.name;
-		buildEntryDrafts();
-		syncOrderedTiers();
-	}
-
-	function syncOrderedTiers(): void {
-		orderedTiers = index?.sortedTiers ?? [];
-	}
-
-	function currentStrategyId(): string {
-		const strategyId = page.params.strategyId;
-		if (!strategyId) throw new Error('Strategia non trovata.');
-		return strategyId;
-	}
-
-	async function runMutation(mutation: () => Promise<void>): Promise<void> {
-		saving = true;
-		try {
-			await mutation();
-		} catch (caught) {
-			pushErrorToast(caught);
-		} finally {
-			saving = false;
-		}
-	}
+	onMount(() => editor.load());
+	onDestroy(() => void editor.flushAll());
 </script>
+
+<!-- A reload or a closed window does not destroy the component. -->
+<svelte:window onpagehide={() => void editor.flushAll()} />
 
 <svelte:head>
 	<title>{strategy?.name ?? 'Strategia'} | Asta la Vista</title>
@@ -306,14 +64,14 @@
 	{#snippet actions()}
 		<form class="name-form" onsubmit={submitName}>
 			<Field label="Nome" inline>
-				<Input bind:value={strategyName} />
+				<Input bind:value={editor.strategyName} />
 			</Field>
-			<Button type="submit" disabled={!strategyName.trim() || saving}>Salva</Button>
+			<Button type="submit" disabled={!editor.strategyName.trim() || editor.saving}>Salva</Button>
 		</form>
 	{/snippet}
 </PageHeader>
 
-{#if loading}
+{#if editor.loading}
 	<EmptyState>Caricamento della strategia…</EmptyState>
 {:else if strategy}
 	<section class="panel">
@@ -331,22 +89,22 @@
 						aria-label="Nome nuova fascia"
 					/>
 					<Input bind:value={newTierColor} type="color" aria-label="Colore nuova fascia" />
-					<Button type="submit" disabled={!newTierName.trim() || saving}>Aggiungi</Button>
+					<Button type="submit" disabled={!newTierName.trim() || editor.saving}>Aggiungi</Button>
 				</form>
 			{/snippet}
 
-			{#if orderedTiers.length === 0}
+			{#if editor.orderedTiers.length === 0}
 				<EmptyState compact>Non hai ancora creato nessuna fascia.</EmptyState>
 			{:else}
 				<div
 					class="tier-list"
 					use:dragReorder={{
-						ids: () => orderedTiers.map((tier) => tier.id),
-						onCommit: commitTierOrder,
-						disabled: () => saving
+						ids: () => editor.orderedTiers.map((tier) => tier.id),
+						onCommit: (ids) => editor.commitTierOrder(ids),
+						disabled: () => editor.saving
 					}}
 				>
-					{#each orderedTiers as tier (tier.id)}
+					{#each editor.orderedTiers as tier (tier.id)}
 						<div
 							class="tier-row"
 							data-drag-id={tier.id}
@@ -363,8 +121,8 @@
 							<span class="color-marker"></span>
 							<Input
 								bind:value={tier.name}
-								oninput={() => scheduleTierSave(tier.id)}
-								onblur={() => flushTierSave(tier.id)}
+								oninput={() => editor.scheduleTierSave(tier.id)}
+								onblur={() => editor.flushTierSave(tier.id)}
 								aria-label="Nome fascia"
 							/>
 							<Input
@@ -372,16 +130,20 @@
 								value={tier.color ?? '#d8ded9'}
 								oninput={(event) => {
 									tier.color = event.currentTarget.value;
-									scheduleTierSave(tier.id);
+									editor.scheduleTierSave(tier.id);
 								}}
-								onchange={() => flushTierSave(tier.id)}
+								onchange={() => editor.flushTierSave(tier.id)}
 								aria-label="Colore fascia"
 							/>
 							<div class="tier-actions">
-								<span class="save-status" class:visible={tierSaved[tier.id]} role="status"
-									>{tierSaved[tier.id] ? 'Salvato' : ''}</span
+								<span class="save-status" class:visible={editor.tierSaved[tier.id]} role="status"
+									>{editor.tierSaved[tier.id] ? 'Salvato' : ''}</span
 								>
-								<Button variant="danger" onclick={() => deleteTier(tier)} disabled={saving}>
+								<Button
+									variant="danger"
+									onclick={() => editor.deleteTier(tier)}
+									disabled={editor.saving}
+								>
 									Elimina
 								</Button>
 							</div>
@@ -415,16 +177,16 @@
 				title={`Fasce per ${roleLabels[selectedRole].toLowerCase()}`}
 				subtitle="Vista raggruppata dei calciatori già assegnati."
 			>
-				{#if orderedTiers.length === 0}
+				{#if editor.orderedTiers.length === 0}
 					<EmptyState compact>Crea almeno una fascia per organizzare i calciatori.</EmptyState>
 				{:else}
 					<HorizontalScroller ariaLabel={`Fasce per ${roleLabels[selectedRole].toLowerCase()}`}>
 						<div class="tier-board">
-							{#each orderedTiers as tier (tier.id)}
+							{#each editor.orderedTiers as tier (tier.id)}
 								<div class="tier-column" style:--tier-color={tier.color ?? 'var(--tier-default)'}>
 									<h3><TierBadge name={tier.name} color={tier.color} /></h3>
 									<div>
-										{#each entriesForTier(tier.id) as entry (entry.player.id)}
+										{#each editor.entriesForTier(tier.id, selectedRole) as entry (entry.player.id)}
 											<TierPlayerCard
 												name={entry.player.name}
 												team={entry.player.team}
@@ -466,7 +228,9 @@
 			{:else}
 				<div class="player-list">
 					{#each visiblePlayers as player (player.id)}
-						{@const selectedPlayerTier = index?.tierById.get(entryDrafts[player.id].tierId)}
+						{@const selectedPlayerTier = editor.index?.tierById.get(
+							editor.entryDrafts[player.id].tierId
+						)}
 						<div class:inactive={!player.active} class="player-row">
 							<div class="player-info">
 								<span class="name-row"
@@ -479,41 +243,41 @@
 							</div>
 							<div class="tier-selector">
 								<Select
-									bind:value={entryDrafts[player.id].tierId}
+									bind:value={editor.entryDrafts[player.id].tierId}
 									style="--tier-color: {selectedPlayerTier?.color ?? 'var(--tier-default)'}"
 									class={selectedPlayerTier ? 'has-tier' : ''}
 									aria-label={`Fascia di ${player.name}`}
-									onchange={() => scheduleEntrySave(player.id, { immediate: true })}
+									onchange={() => editor.saveEntryNow(player.id)}
 								>
 									<option value="">Senza fascia</option>
-									{#each orderedTiers as tier (tier.id)}
+									{#each editor.orderedTiers as tier (tier.id)}
 										<option value={tier.id}>{tier.name}</option>
 									{/each}
 								</Select>
 							</div>
 							<Input
-								bind:value={entryDrafts[player.id].note}
+								bind:value={editor.entryDrafts[player.id].note}
 								placeholder="Nota"
 								aria-label={`Nota per ${player.name}`}
-								oninput={() => scheduleEntrySave(player.id)}
-								onblur={() => flushEntrySave(player.id)}
+								oninput={() => editor.scheduleEntrySave(player.id)}
+								onblur={() => editor.flushEntrySave(player.id)}
 							/>
 							<div class="percentage-field">
 								<Input
-									bind:value={entryDrafts[player.id].maximumPricePercentage}
+									bind:value={editor.entryDrafts[player.id].maximumPricePercentage}
 									type="number"
 									min="0.1"
 									max="100"
 									step="0.1"
 									placeholder="% max"
 									aria-label={`Percentuale massima per ${player.name}`}
-									oninput={() => scheduleEntrySave(player.id)}
-									onblur={() => flushEntrySave(player.id)}
+									oninput={() => editor.scheduleEntrySave(player.id)}
+									onblur={() => editor.flushEntrySave(player.id)}
 								/>
 								<span class="percentage-suffix">%</span>
 							</div>
-							<span class="save-status" class:visible={entrySaved[player.id]} role="status"
-								>{entrySaved[player.id] ? 'Salvato' : ''}</span
+							<span class="save-status" class:visible={editor.entrySaved[player.id]} role="status"
+								>{editor.entrySaved[player.id] ? 'Salvato' : ''}</span
 							>
 						</div>
 					{/each}
