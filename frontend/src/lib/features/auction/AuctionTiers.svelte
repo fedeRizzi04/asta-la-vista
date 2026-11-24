@@ -12,7 +12,7 @@
 	import type { AuctionState } from './auctionState.svelte';
 
 	/** The tiers of one strategy during the auction, with the players left and the taken ones. */
-	let { auctionState, roles }: { auctionState: AuctionState; roles: Role[] } = $props();
+	let { auctionState, role }: { auctionState: AuctionState; role: Role } = $props();
 
 	let auction = $derived(auctionState.auction);
 	let strategy = $derived(auctionState.viewedStrategy);
@@ -21,25 +21,22 @@
 	let columns = $derived.by(() => {
 		if (!strategy) return [];
 		const { id: strategyId, entries: strategyEntries } = strategy;
-		return roles.flatMap((role) =>
-			auctionState.sortedTiers.map((tier) => {
-				const key = `${strategyId}:${role}:${tier.id}`;
-				const entries = strategyEntries
-					.filter((entry) => entry.role === role && entry.tier_id === tier.id)
-					.sort(byMaxPercentageDesc((entry) => entry.maximum_price_percentage));
-				return {
-					key,
-					tier,
-					role,
-					entries,
-					leftCount: entries.filter(
-						(entry) => entry.active && !auctionState.purchasedIds.has(entry.player_id)
-					).length,
-					// A tier with no players of this role starts closed.
-					panel: panelVisibility(`tier:${key}`, entries.length > 0)
-				};
-			})
-		);
+		return auctionState.sortedTiers.map((tier) => {
+			const key = `${strategyId}:${role}:${tier.id}`;
+			const entries = strategyEntries
+				.filter((entry) => entry.role === role && entry.tier_id === tier.id)
+				.sort(byMaxPercentageDesc((entry) => entry.maximum_price_percentage));
+			return {
+				key,
+				tier,
+				entries,
+				leftCount: entries.filter(
+					(entry) => entry.active && !auctionState.purchasedIds.has(entry.player_id)
+				).length,
+				// A tier with no players of this role starts closed.
+				panel: panelVisibility(`tier:${key}`, entries.length > 0)
+			};
+		});
 	});
 	let allClosed = $derived(columns.every((column) => !column.panel.visible));
 
@@ -89,7 +86,7 @@
 </div>
 
 {#if columns.length > 0}
-	<TierBoard {columns} label="Fasce della strategia" showRoles={roles.length > 1}>
+	<TierBoard {columns} label="Fasce della strategia">
 		{#snippet summary({ entries, leftCount })}
 			rimasti <b>{leftCount}</b>/{entries.length}
 		{/snippet}

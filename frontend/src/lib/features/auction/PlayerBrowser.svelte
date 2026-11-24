@@ -12,7 +12,7 @@
 
 	type Sort = 'quotation' | 'tier' | 'name';
 
-	let { auctionState, roles }: { auctionState: AuctionState; roles: Role[] } = $props();
+	let { auctionState, role }: { auctionState: AuctionState; role: Role } = $props();
 
 	let selectedMantraRoles = $state<string[]>([]);
 	let search = $state('');
@@ -25,7 +25,7 @@
 	let rolePlayers = $derived(
 		auctionState.players.filter(
 			(player) =>
-				roles.includes(player.role) && (player.active || auctionState.purchasedIds.has(player.id))
+				player.role === role && (player.active || auctionState.purchasedIds.has(player.id))
 		)
 	);
 	let mantraCodes = $derived(
