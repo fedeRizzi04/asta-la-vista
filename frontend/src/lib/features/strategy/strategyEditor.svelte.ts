@@ -7,6 +7,7 @@ import {
 	duplicateStrategy,
 	exportStrategy,
 	getStrategy,
+	MAX_PERCENTAGE,
 	removeTier,
 	renameStrategy,
 	reorderTiers,
@@ -283,8 +284,15 @@ export class StrategyEditor {
 		await this.#runMutation(() => reorderTiers(strategyId, nextIds));
 	}
 
-	/** For free text: one request when the typing settles, not one per keystroke. */
+	/**
+	 * For free text: one request when the typing settles, not one per keystroke. A percentage
+	 * above the maximum (typed or pasted) is brought back to it before it is shown or saved.
+	 */
 	scheduleEntrySave(playerId: string): void {
+		const draft = this.entryDrafts[playerId];
+		if ((draft.maximumPricePercentage ?? 0) > MAX_PERCENTAGE) {
+			draft.maximumPricePercentage = MAX_PERCENTAGE;
+		}
 		this.#entrySaves.schedule(playerId);
 	}
 

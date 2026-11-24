@@ -172,6 +172,9 @@ export function updateStrategyEntry(
 	});
 }
 
+/** The backend accepts a maximum-price percentage above 0 and up to this value. */
+export const MAX_PERCENTAGE = 100;
+
 /**
  * Converts a strategy entry's maximum-price percentage into an absolute credit amount
  * for a specific auction budget, using standard rounding.

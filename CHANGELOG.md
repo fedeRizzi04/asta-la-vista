@@ -98,6 +98,8 @@ who use the app.
   players missing from a strategy CSV, are now in Italian. Cancelling the first one no longer
   shows an error.
 - A tier badge in a narrow list is cut with an ellipsis instead of shrinking to a single letter.
+- The maximum price percentage of a player cannot go above 100%: a larger value, typed or
+  pasted, is brought back to 100% before it is shown on the card or saved, and the credits follow.
 
 ## [0.4.1] - 2026-11-06
 
