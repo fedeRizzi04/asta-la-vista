@@ -196,6 +196,7 @@
 	}
 
 	.handle {
+		min-width: 1.5rem;
 		padding: 0.3rem 0.25rem;
 		border: 0;
 		border-radius: var(--radius-xs);
@@ -216,7 +217,7 @@
 	}
 
 	.header :global(.color) {
-		width: 1.35rem;
+		width: 1.5rem;
 		min-height: 1.5rem;
 		height: 1.5rem;
 		padding: 0.05rem;

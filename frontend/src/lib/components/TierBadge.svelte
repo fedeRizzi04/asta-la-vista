@@ -10,7 +10,12 @@
 	} = $props();
 </script>
 
-<span class="tier-badge" class:compact style:--tier-color={color ?? 'var(--tier-default)'}>
+<span
+	class="tier-badge"
+	class:compact
+	title={name}
+	style:--tier-color={color ?? 'var(--tier-default)'}
+>
 	<span class="tier-badge-accent" aria-hidden="true"></span>
 	<span class="tier-badge-name">{name}</span>
 </span>
@@ -42,8 +47,12 @@
 		background: var(--tier-color);
 	}
 
+	/* One line cut with an ellipsis: wrapping anywhere shrank the badge to a single letter. */
 	.tier-badge-name {
-		overflow-wrap: anywhere;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.tier-badge.compact {

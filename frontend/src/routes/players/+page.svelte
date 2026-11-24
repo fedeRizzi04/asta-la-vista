@@ -13,6 +13,7 @@
 	import Tabs from '$lib/components/ui/Tabs.svelte';
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
+	import { plural } from '$lib/plural';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import { getUrlParams, setUrlParams } from '$lib/urlState';
 	import {
@@ -149,12 +150,13 @@
 			importOpen = false;
 			catalogRevision += 1;
 		} catch (caught) {
-			if (
-				caught instanceof ApiError &&
-				caught.code === 'confirmation_required' &&
-				(await confirmDialog({ message: caught.message, confirmLabel: 'Continua comunque' }))
-			) {
-				await runImport(true);
+			if (caught instanceof ApiError && caught.code === 'confirmation_required') {
+				const confirmed = await confirmDialog({
+					message:
+						"C'è un'asta in corso: importare il Listone adesso può cambiare i calciatori disponibili. Vuoi continuare?",
+					confirmLabel: 'Continua comunque'
+				});
+				if (confirmed) await runImport(true);
 				return;
 			}
 			pushErrorToast(caught);
@@ -202,8 +204,11 @@
 
 {#if importSummary}
 	<Message kind="success">
-		Importazione completata: {importSummary.added} nuovi, {importSummary.updated} aggiornati,
-		{importSummary.deactivated} disattivati e {importSummary.role_changes} cambi di ruolo.
+		Importazione completata: {importSummary.added}
+		{plural(importSummary.added, 'nuovo', 'nuovi')}, {importSummary.updated}
+		{plural(importSummary.updated, 'aggiornato', 'aggiornati')}, {importSummary.deactivated}
+		{plural(importSummary.deactivated, 'disattivato', 'disattivati')} e {importSummary.role_changes}
+		{plural(importSummary.role_changes, 'cambio', 'cambi')} di ruolo.
 	</Message>
 {/if}
 

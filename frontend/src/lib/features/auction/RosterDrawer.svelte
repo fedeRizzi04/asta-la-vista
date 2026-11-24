@@ -5,6 +5,7 @@
 	import Drawer from '$lib/components/ui/Drawer.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { roleLabels, roles } from '$lib/players';
+	import { plural } from '$lib/plural';
 	import type { AuctionState } from './auctionState.svelte';
 
 	let {
@@ -16,7 +17,10 @@
 
 <Drawer open title={participant.name} {onclose}>
 	<p class="budget">
-		<span><strong>{participant.credits_remaining}</strong> crediti residui</span>
+		<span
+			><strong>{participant.credits_remaining}</strong>
+			{plural(participant.credits_remaining, 'credito residuo', 'crediti residui')}</span
+		>
 		<span>max <strong>{participant.maximum_bid}</strong></span>
 	</p>
 	{#if participant.purchases.length === 0}

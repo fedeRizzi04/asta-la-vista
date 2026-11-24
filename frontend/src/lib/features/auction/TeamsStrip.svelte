@@ -5,6 +5,7 @@
 	import Tabs from '$lib/components/ui/Tabs.svelte';
 	import { panelVisibility } from '$lib/panelVisibility.svelte';
 	import { roleLabels, roles } from '$lib/players';
+	import { plural } from '$lib/plural';
 	import type { AuctionState } from './auctionState.svelte';
 	import RosterDrawer from './RosterDrawer.svelte';
 
@@ -74,7 +75,7 @@
 									type="button"
 									class="team-header"
 									aria-haspopup="dialog"
-									aria-label={`Rosa di ${participant.name}, ${participant.credits_remaining} crediti residui, puntata massima ${participant.maximum_bid}`}
+									aria-label={`Rosa di ${participant.name}, ${participant.credits_remaining} ${plural(participant.credits_remaining, 'credito residuo', 'crediti residui')}, puntata massima ${participant.maximum_bid}`}
 									onclick={() => (selectedId = participant.id)}
 								>
 									<span class="team-name" title={participant.name}>{participant.name}</span>
@@ -104,8 +105,11 @@
 													class="mini-bar"
 													style:--slot-count={auction.slot_totals[role]}
 													role="img"
-													aria-label="{participant.slots[role].filled} slot occupati su {auction
-														.slot_totals[role]}"
+													aria-label="{participant.slots[role].filled} {plural(
+														participant.slots[role].filled,
+														'slot occupato',
+														'slot occupati'
+													)} su {auction.slot_totals[role]}"
 												>
 													{#each { length: auction.slot_totals[role] }, index (index)}
 														<span class:filled={index < participant.slots[role].filled}></span>

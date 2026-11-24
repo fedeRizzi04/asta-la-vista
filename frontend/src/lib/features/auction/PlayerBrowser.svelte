@@ -8,6 +8,7 @@
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
 	import { mantraRolesOf } from '$lib/mantraRoles';
 	import type { Role } from '$lib/players';
+	import { plural } from '$lib/plural';
 	import { matchesSearch } from '$lib/search';
 	import type { AuctionState } from './auctionState.svelte';
 
@@ -87,7 +88,7 @@
 
 <p class="count" aria-live="polite">
 	{playerRows.length}
-	{playerRows.length === 1 ? 'calciatore' : 'calciatori'}
+	{plural(playerRows.length, 'calciatore', 'calciatori')}
 </p>
 {#if playerRows.length === 0}
 	<EmptyState compact>Nessun calciatore</EmptyState>

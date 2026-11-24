@@ -59,7 +59,7 @@
 				{#if header}
 					<div class="edit-header">{@render header(column)}</div>
 				{:else}
-					<h3>
+					<h2>
 						<button
 							type="button"
 							class="tier-header"
@@ -76,7 +76,7 @@
 							<span class="tier-name">{tier.name}</span>
 							<span class="tier-summary">{@render summary?.(column)}</span>
 						</button>
-					</h3>
+					</h2>
 				{/if}
 				{#if visible}
 					<div class="tier-players">{@render players(column)}</div>
@@ -122,9 +122,10 @@
 		flex-basis: 2.75rem;
 	}
 
-	h3 {
+	h2 {
 		margin: 0;
 		font-size: 0.95rem;
+		font-weight: 600;
 	}
 
 	.tier-header {
@@ -219,7 +220,7 @@
 		box-shadow: var(--shadow);
 	}
 
-	.closed h3 {
+	.closed h2 {
 		flex: 1;
 		min-height: 0;
 	}

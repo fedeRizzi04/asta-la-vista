@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import { auctionStatusLabels, type AuctionSummary } from '$lib/auctions';
+	import { plural } from '$lib/plural';
 	import Button from '$lib/components/ui/Button.svelte';
 
 	let {
@@ -28,7 +29,9 @@
 			</span>
 		</div>
 		<p>
-			{auction.participant_count} partecipanti · {auction.purchase_count} acquisti ·
+			{auction.participant_count}
+			{plural(auction.participant_count, 'partecipante', 'partecipanti')} · {auction.purchase_count}
+			{plural(auction.purchase_count, 'acquisto', 'acquisti')} ·
 			{auction.initial_credits} crediti iniziali
 		</p>
 	</div>

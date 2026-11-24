@@ -184,7 +184,7 @@
 		color: var(--muted);
 		font-size: 0.8rem;
 		line-height: 1;
-		opacity: 0.55;
+		opacity: 0.8;
 		touch-action: none;
 	}
 

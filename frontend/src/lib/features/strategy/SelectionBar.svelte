@@ -81,8 +81,14 @@
 	}
 </script>
 
-{#if selectedPlayers.length > 0}
-	<div class="selection-bar" role="group" aria-label="Selezione">
+<!-- Always in the layout: in a narrow window it wraps under the tabs, and appearing would push the lists down. -->
+<div
+	class="selection-bar"
+	class:idle={selectedPlayers.length === 0}
+	role="group"
+	aria-label="Selezione"
+>
+	{#if selectedPlayers.length > 0}
 		<span class="selected">
 			{selectedPlayers.length === 1
 				? selectedPlayers[0].name
@@ -122,8 +128,8 @@
 		>
 			✕
 		</Button>
-	</div>
-{/if}
+	{/if}
+</div>
 <p class="announcement" role="status">{editor.lastMove}</p>
 
 <style>
@@ -134,6 +140,11 @@
 		justify-content: flex-end;
 		gap: 0.35rem;
 		min-width: 0;
+		min-height: var(--control-height);
+	}
+
+	.idle {
+		visibility: hidden;
 	}
 
 	.selected {
