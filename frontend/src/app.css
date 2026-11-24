@@ -50,6 +50,8 @@
 	--shadow-xs: 2px 2px 0 var(--line);
 	--control-height: 2.25rem;
 	--header-height: 3rem;
+	/* The least a name keeps when something has to be cut: see `.name-line`. */
+	--name-min: 6ch;
 
 	--line: #1f1a14;
 	--line-soft: #dccdb3;
@@ -276,6 +278,36 @@ h3 {
 :where(textarea.control) {
 	padding-block: 0.5rem;
 	resize: vertical;
+}
+
+/*
+ * Names (players, fantasy teams, tiers) are never cut down to a bare ellipsis: they take the room
+ * that the secondary data around them leaves free, and carry the full text in a `title`.
+ * `.name-line` cuts a single line; `.name-lines` wraps and cuts after two. On top of them, a name
+ * keeps at least `--name-min` (`.name-min`) or, when it is short, is not cut at all (`.name-keep`):
+ * `nameFit()` in `$lib/names` picks one by length, so a short name is never padded to the minimum.
+ */
+.name-line {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.name-lines {
+	display: -webkit-box;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+}
+
+.name-min {
+	min-width: var(--name-min);
+}
+
+.name-keep {
+	flex-shrink: 0;
 }
 
 .inline-name {

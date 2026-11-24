@@ -299,6 +299,8 @@
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
+		/* A long file name is cut inside the picker instead of widening the window. */
+		min-width: 0;
 	}
 
 	.filters {

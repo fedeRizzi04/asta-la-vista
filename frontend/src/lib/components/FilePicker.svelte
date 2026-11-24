@@ -46,7 +46,9 @@
 		<path d="M14.5 3.5V8H19" />
 		<path d="M8 12h8M8 15.5h8M11.5 12v6.5" />
 	</svg>
-	<span class="file-picker-text">{selectedFile ? selectedFile.name : 'Scegli file…'}</span>
+	<span class="file-picker-text name-line name-min" title={selectedFile?.name}
+		>{selectedFile ? selectedFile.name : 'Scegli file…'}</span
+	>
 </label>
 
 <style>
@@ -105,11 +107,5 @@
 		stroke-width: 1.6;
 		stroke-linecap: round;
 		stroke-linejoin: round;
-	}
-
-	.file-picker-text {
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
 	}
 </style>

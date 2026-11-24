@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { nameFit } from '$lib/names';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 
 	/** A player's row in a tier. A taken player shows who bought them and the price paid. */
@@ -25,14 +26,17 @@
 
 <span class="tier-player" class:inactive class:taken>
 	<span class="identity">
-		<strong title={name}>{name}</strong>
+		<strong class={['name-line', nameFit(name)]} title={name}>{name}</strong>
 		{#if !taken}
 			<small>{team}</small>
 			<MantraRoleBadges roles={mantraRoles} compact />
 		{/if}
 	</span>
 	{#if taken}
-		<span class="price"><small>{taken.buyer}</small> {taken.price}</span>
+		<span class="price"
+			><small class={['name-line', nameFit(taken.buyer)]} title={taken.buyer}>{taken.buyer}</small>
+			<span>{taken.price}</span></span
+		>
 	{:else if maximumPricePercentage !== null}
 		<span class="price" title="Prezzo massimo">
 			<b>{maximumPricePercentage}%</b>
@@ -45,7 +49,7 @@
 <style>
 	.tier-player {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-columns: minmax(var(--name-min), 1fr) auto;
 		align-items: baseline;
 		gap: 0 0.5rem;
 		padding: 0.25rem 0.45rem;
@@ -60,7 +64,6 @@
 		min-width: 0;
 	}
 
-	.identity strong,
 	em {
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -98,7 +101,16 @@
 		text-decoration: line-through;
 	}
 
+	/* The player keeps the room he needs; the buyer's name gives way first. */
+	.taken {
+		grid-template-columns: minmax(var(--name-min), max-content) minmax(9ch, 1fr);
+	}
+
 	.taken .price {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.25rem;
+		min-width: 0;
 		font-size: 0.75rem;
 		font-weight: 700;
 	}

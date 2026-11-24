@@ -157,6 +157,11 @@
 		min-height: 0;
 	}
 
+	/* The name takes the room between the back link and the budget. */
+	.editor :global(h1.custom-title) {
+		flex: 1 1 16rem;
+	}
+
 	.strategy-title {
 		display: flex;
 		align-items: center;
@@ -164,7 +169,8 @@
 	}
 
 	.strategy-title :global(.inline-name) {
-		width: min(25rem, 100%);
+		flex: 1;
+		min-width: var(--name-min);
 		font: inherit;
 	}
 
