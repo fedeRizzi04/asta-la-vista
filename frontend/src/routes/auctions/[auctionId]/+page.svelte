@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { onMount, untrack } from 'svelte';
+	import { auctionStatusLabels } from '$lib/auctions';
 	import Button from '$lib/components/ui/Button.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
@@ -115,11 +116,7 @@
 	{#snippet meta()}
 		{#if auction}
 			<span class="status-badge" data-status={auction.status}
-				>{auction.status === 'draft'
-					? 'Da iniziare'
-					: auction.status === 'live'
-						? 'In corso'
-						: 'Terminata'}</span
+				>{auctionStatusLabels[auction.status]}</span
 			>
 			<span class="header-summary">
 				{auction.participants.length} partecipanti · {auction.initial_credits} crediti · {purchaseCount}/{purchaseCapacity}

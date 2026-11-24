@@ -3,6 +3,12 @@ import type { Role } from './players';
 
 export type AuctionStatus = 'draft' | 'live' | 'completed';
 
+export const auctionStatusLabels: Record<AuctionStatus, string> = {
+	draft: 'Da iniziare',
+	live: 'In corso',
+	completed: 'Terminata'
+};
+
 export type AuctionSummary = {
 	id: string;
 	name: string;
