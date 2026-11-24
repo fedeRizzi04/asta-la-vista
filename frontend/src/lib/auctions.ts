@@ -59,6 +59,13 @@ export type AuctionInput = {
 	strategy_id: string | null;
 };
 
+/** A participant's purchases in one role, oldest first. */
+export function purchasesForRole(participant: Participant, role: Role): Purchase[] {
+	return participant.purchases
+		.filter((purchase) => purchase.role === role)
+		.sort((first, second) => (first.created_at < second.created_at ? -1 : 1));
+}
+
 type EntityId = { id: string };
 
 export function getAuctions(): Promise<AuctionSummary[]> {
