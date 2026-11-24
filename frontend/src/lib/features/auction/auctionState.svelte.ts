@@ -15,7 +15,6 @@ import {
 	type Purchase
 } from '$lib/auctions';
 import { confirmDialog } from '$lib/dialog.svelte';
-import { sortMantraRoles } from '$lib/mantraRoles';
 import { getPlayers, type Player, type Role } from '$lib/players';
 import { matchesSearch } from '$lib/search';
 import {
@@ -28,8 +27,6 @@ import {
 	type StrategySummary
 } from '$lib/strategies';
 import { pushErrorToast } from '$lib/toast.svelte';
-
-type CatalogSort = 'tier' | 'quotation';
 
 /** The state and the actions of the auction page; the page only lays them out. */
 export class AuctionState {
@@ -45,9 +42,6 @@ export class AuctionState {
 	registryOpen = $state(false);
 	registrySearch = $state('');
 	strategyRole = $state<Role>('P');
-	catalogRole = $state<Role>('P');
-	catalogMantraRoles = $state<string[]>([]);
-	catalogSort = $state<CatalogSort>('tier');
 	loading = $state(true);
 	saving = $state(false);
 
@@ -88,33 +82,6 @@ export class AuctionState {
 			matchesSearch(this.registrySearch, purchase.player_name)
 		)
 	);
-	#catalogRolePlayers = $derived(
-		this.players.filter(
-			(player) =>
-				player.role === this.catalogRole && (player.active || this.purchasedIds.has(player.id))
-		)
-	);
-	catalogMantraCodes = $derived(
-		sortMantraRoles([...new Set(this.#catalogRolePlayers.flatMap((player) => player.mantra_roles))])
-	);
-	catalogPlayers = $derived.by(() => {
-		return this.#catalogRolePlayers
-			.filter(
-				(player) =>
-					this.catalogMantraRoles.length === 0 ||
-					this.catalogMantraRoles.some((role) => player.mantra_roles.includes(role))
-			)
-			.sort((first, second) => {
-				if (this.catalogSort === 'tier' && this.viewedStrategy) {
-					const firstPosition = this.#tierPosition(first.id);
-					const secondPosition = this.#tierPosition(second.id);
-					if (firstPosition < secondPosition) return -1;
-					if (firstPosition > secondPosition) return 1;
-				}
-				const quotationDifference = (second.quotation ?? -1) - (first.quotation ?? -1);
-				return quotationDifference || first.name.localeCompare(second.name, 'it');
-			});
-	});
 
 	readonly #getAuctionId: () => string | undefined;
 
@@ -203,12 +170,6 @@ export class AuctionState {
 			: null;
 	}
 
-	toggleCatalogMantraRole(code: string): void {
-		this.catalogMantraRoles = this.catalogMantraRoles.includes(code)
-			? this.catalogMantraRoles.filter((role) => role !== code)
-			: [...this.catalogMantraRoles, code];
-	}
-
 	resetRegistry(): void {
 		this.registrySearch = '';
 		this.editingPurchaseId = '';
@@ -252,11 +213,6 @@ export class AuctionState {
 		this.viewedStrategy = this.viewingStrategyId
 			? await getStrategy(this.viewingStrategyId)
 			: undefined;
-		if (!this.viewedStrategy) this.catalogSort = 'quotation';
-	}
-
-	#tierPosition(playerId: string): number {
-		return this.tierForPlayer(playerId)?.position ?? Number.POSITIVE_INFINITY;
 	}
 
 	async #runMutation(mutation: (auctionId: string) => Promise<unknown>): Promise<void> {

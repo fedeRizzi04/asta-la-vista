@@ -28,6 +28,9 @@ who use the app.
   top while you scroll, below the teams. Pick a player from the search (arrows and Enter) or
   with a click anywhere in the lists, without the page jumping, and fill in the winner (type the
   initials) and the price when the bidding ends: they always start empty.
+- The auction player list is now the **Svincolati** view, one click away from the tiers. Filter by
+  several roles at once, search by player or team, sort by quotation, tier or name, and choose
+  whether to show the players already taken.
 
 ## [0.4.1] - 2026-11-06
 

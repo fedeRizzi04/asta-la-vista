@@ -15,16 +15,23 @@
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import Tabs from '$lib/components/ui/Tabs.svelte';
-	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
 	import { purchasesForRole } from '$lib/auctions';
 	import CallBar from '$lib/features/auction/CallBar.svelte';
+	import PlayerBrowser from '$lib/features/auction/PlayerBrowser.svelte';
 	import { AuctionState } from '$lib/features/auction/auctionState.svelte';
-	import { mantraRoleLabel } from '$lib/mantraRoles';
 	import { roleLabels, roles } from '$lib/players';
+	import { getUrlParams, setUrlParams } from '$lib/urlState';
+
+	type AuctionView = 'tiers' | 'free';
 
 	const roleTabs = roles.map((role) => ({ value: role, label: roleLabels[role] }));
 	const auctionState = new AuctionState(() => page.params.auctionId);
 	const auction = $derived(auctionState.auction);
+	const view = $derived<AuctionView>(getUrlParams().get('view') === 'free' ? 'free' : 'tiers');
+
+	function setView(next: AuctionView): void {
+		void setUrlParams({ view: next === 'free' ? next : null });
+	}
 
 	onMount(() => auctionState.load());
 </script>
@@ -161,7 +168,7 @@
 
 	{#if auction.status === 'live'}<CallBar {auctionState} />{/if}
 
-	{#if auctionState.strategies.length > 0}
+	{#snippet strategySection()}
 		<section class="strategy-section">
 			<CollapsibleSection
 				storageKey={`auction:${auction.id}:strategy`}
@@ -247,92 +254,36 @@
 				{/if}
 			</CollapsibleSection>
 		</section>
-	{/if}
+	{/snippet}
 
 	{#if auction.status !== 'draft'}
-		<section class="catalog-section">
-			<details open>
-				<summary>
-					<span>
-						<span class="eyebrow">Supporto alla chiamata</span>
-						<strong>Calciatori</strong>
-					</span>
-					<small>{auctionState.catalogPlayers.length} nel ruolo</small>
-				</summary>
-				<div class="catalog-content">
-					<div class="catalog-toolbar">
-						<div class="catalog-tabs-group">
-							<Tabs
-								items={roleTabs}
-								bind:value={auctionState.catalogRole}
-								label="Ruolo calciatori"
-								id="catalog-role"
-								panelId="catalog-role-panel"
-								onchange={() => (auctionState.catalogMantraRoles = [])}
-							/>
-							{#if auctionState.catalogMantraCodes.length > 0}
-								<div class="catalog-mantra-chips" role="group" aria-label="Sotto-ruolo mantra">
-									<ToggleChip
-										pressed={auctionState.catalogMantraRoles.length === 0}
-										onclick={() => (auctionState.catalogMantraRoles = [])}
-									>
-										Tutti
-									</ToggleChip>
-									{#each auctionState.catalogMantraCodes as code (code)}
-										<ToggleChip
-											pressed={auctionState.catalogMantraRoles.includes(code)}
-											onclick={() => auctionState.toggleCatalogMantraRole(code)}
-										>
-											{mantraRoleLabel(code)}
-										</ToggleChip>
-									{/each}
-								</div>
-							{/if}
-						</div>
-						<Field label="Ordina per" inline>
-							<Select bind:value={auctionState.catalogSort}>
-								{#if auctionState.viewedStrategy}<option value="tier">Fascia</option>{/if}
-								<option value="quotation">Quotazione</option>
-							</Select>
-						</Field>
-					</div>
-
-					<div
-						class="catalog-grid"
-						id="catalog-role-panel"
-						role="tabpanel"
-						tabindex="0"
-						aria-labelledby="catalog-role-{auctionState.catalogRole}"
-					>
-						{#each auctionState.catalogPlayers as player (player.id)}
-							{@const playerTier = auctionState.tierForPlayer(player.id)}
-							<button
-								type="button"
-								class="catalog-player"
-								class:purchased={auctionState.purchasedIds.has(player.id)}
-								disabled={auction.status !== 'live' || auctionState.purchasedIds.has(player.id)}
-								onclick={() => auctionState.callPlayer(player.id)}
-							>
-								<span class="catalog-player-heading">
-									<strong>{player.name}</strong>
-									<span class="catalog-quotation">Q. {player.quotation ?? '—'}</span>
-								</span>
-								<span class="catalog-player-details">
-									<span>{player.team}</span>
-									<MantraRoleBadges roles={player.mantra_roles} compact />
-									{#if playerTier}
-										<TierBadge name={playerTier.name} color={playerTier.color} compact />
-									{/if}
-								</span>
-								{#if auctionState.purchasedIds.has(player.id)}<span class="purchased-label"
-										>Acquistato</span
-									>{/if}
-							</button>
-						{/each}
-					</div>
-				</div>
-			</details>
-		</section>
+		<div class="auction-view">
+			<Tabs
+				items={[
+					{ value: 'tiers', label: 'Fasce' },
+					{ value: 'free', label: 'Svincolati' }
+				]}
+				bind:value={() => view, setView}
+				label="Vista"
+				id="auction-view"
+				panelId="auction-view-panel"
+			/>
+			<div
+				class="view-panel"
+				id="auction-view-panel"
+				role="tabpanel"
+				tabindex="0"
+				aria-labelledby="auction-view-{view}"
+			>
+				{#if view === 'free'}
+					<PlayerBrowser {auctionState} />
+				{:else if auctionState.strategies.length > 0}
+					{@render strategySection()}
+				{/if}
+			</div>
+		</div>
+	{:else if auctionState.strategies.length > 0}
+		{@render strategySection()}
 	{/if}
 
 	<Dialog
@@ -649,123 +600,14 @@
 	.tier-player-button:not(:disabled):hover:not(:focus-visible) {
 		outline: 1px solid var(--border-hover);
 	}
-	.catalog-section {
-		margin-top: 3rem;
-	}
-	.catalog-section details {
-		border: var(--bw) solid var(--line);
-		border-radius: var(--radius);
-		background: var(--surface);
-	}
-	.catalog-section summary {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 1rem 1.2rem;
-		cursor: pointer;
-	}
-	.catalog-section summary > span {
-		display: grid;
-		gap: 0.2rem;
-	}
-	.catalog-section summary strong {
-		font: 800 1.1rem/1.15 var(--font-display);
-	}
-	.catalog-section summary small {
-		color: var(--subdued);
-	}
-	.catalog-content {
-		padding: 1rem 1.2rem 1.2rem;
-		border-top: 1px solid var(--border);
-	}
-	.catalog-toolbar,
-	.catalog-mantra-chips {
-		display: flex;
-		align-items: center;
-	}
-	.catalog-toolbar {
-		justify-content: space-between;
-		gap: 1rem;
-	}
-	.catalog-tabs-group {
-		display: grid;
-		gap: 0.5rem;
-	}
-	.catalog-mantra-chips {
-		flex-wrap: wrap;
-		gap: 0.35rem;
-	}
-	.catalog-toolbar :global(select) {
-		width: auto;
-		min-width: 9rem;
-	}
-	.catalog-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-		gap: 0.5rem;
+	.auction-view {
 		margin-top: 1rem;
 	}
-	.catalog-player {
-		display: grid;
-		gap: 0.35rem;
-		min-width: 0;
-		height: auto;
-		padding: 0.7rem;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--input-bg);
-		font-size: 0.875rem;
-		font-weight: 700;
-		text-align: left;
-		cursor: pointer;
+	.view-panel {
+		margin-top: 0.75rem;
 	}
-	.catalog-player:disabled {
-		cursor: default;
-		opacity: 1;
-	}
-	.catalog-player:not(:disabled):hover {
-		border-color: var(--primary-text);
-	}
-	.catalog-player-heading,
-	.catalog-player-details {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.6rem;
-		min-width: 0;
-	}
-	.catalog-player-heading > strong {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.catalog-quotation {
-		flex: 0 0 auto;
-		font-variant-numeric: tabular-nums;
-	}
-	.catalog-player-details {
-		color: var(--subdued);
-		font-size: 0.68rem;
-	}
-	.catalog-player.purchased {
-		background: var(--muted-bg);
-		color: var(--taken-text);
-	}
-	.catalog-player.purchased .catalog-player-heading > strong {
-		text-decoration: line-through;
-	}
-	.catalog-player.purchased :global(.tier-badge-accent) {
-		filter: grayscale(1);
-		opacity: 0.5;
-	}
-	.purchased-label {
-		justify-self: end;
-		padding: 0.1rem 0.25rem;
-		border-radius: 0.2rem;
-		background: var(--muted-bg);
-		font-size: 0.58rem;
-		text-transform: uppercase;
+	.view-panel .strategy-section {
+		margin-top: 0;
 	}
 	.registry-trigger-row {
 		margin-bottom: 0.6rem;
@@ -792,17 +634,5 @@
 	}
 	.registry-list .registry-row:first-child {
 		border-top: 0;
-	}
-	@media (max-width: 620px) {
-		.catalog-toolbar {
-			align-items: stretch;
-			flex-direction: column;
-		}
-		.catalog-toolbar :global(.field) {
-			justify-content: space-between;
-		}
-		.catalog-toolbar :global(select) {
-			flex: 1;
-		}
 	}
 </style>
