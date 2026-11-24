@@ -2,8 +2,17 @@
 	import { tick } from 'svelte';
 	import Button from './Button.svelte';
 
-	let { label, items }: { label: string; items: { label: string; onselect: () => void }[] } =
-		$props();
+	let {
+		label,
+		items,
+		size = 'md',
+		disabled = false
+	}: {
+		label: string;
+		items: { label: string; onselect: () => void }[];
+		size?: 'md' | 'sm';
+		disabled?: boolean;
+	} = $props();
 	const menuId = $props.id();
 	let open = $state(false);
 	let root = $state<HTMLElement>();
@@ -55,6 +64,8 @@
 <div class="menu-wrap" bind:this={root}>
 	<Button
 		variant="secondary"
+		{size}
+		{disabled}
 		aria-label={label}
 		aria-haspopup="menu"
 		aria-expanded={open}

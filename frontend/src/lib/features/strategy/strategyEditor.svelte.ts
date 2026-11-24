@@ -240,6 +240,23 @@ export class StrategyEditor {
 		});
 	}
 
+	async addDefaultTiers(): Promise<void> {
+		const strategy = this.strategy;
+		if (!strategy || this.loading || this.saving || this.orderedTiers.length > 0) return;
+		await this.#runMutation(async () => {
+			await this.flushAll();
+			const names = ['Top', 'Semitop', 'Terza fascia', 'Scommesse'];
+			try {
+				for (const [index, name] of names.entries()) {
+					await addTier(strategy.id, name, tierColors[index]);
+				}
+			} finally {
+				// Show any tiers already created if a later request fails.
+				await this.#refreshStrategy(strategy);
+			}
+		});
+	}
+
 	async deleteTier(tier: Tier): Promise<void> {
 		const strategy = this.strategy;
 		if (!strategy) return;

@@ -4,6 +4,7 @@
 	import TierBoard from '$lib/components/TierBoard.svelte';
 	import TierPlayerCard from '$lib/components/TierPlayerCard.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import type { Role } from '$lib/players';
 	import { percentageToCredits } from '$lib/strategies';
@@ -30,6 +31,10 @@
 
 	const nameId = (tierId: string) => `tier-name-${tierId}`;
 
+	function focusSetup(button: HTMLElement): void {
+		if (document.activeElement === document.body) button.focus({ preventScroll: true });
+	}
+
 	async function addTier(): Promise<void> {
 		const tierId = await editor.addTier();
 		if (!tierId) return;
@@ -50,101 +55,136 @@
 		disabled: () => editor.saving
 	}}
 >
-	<TierBoard {columns} label="Fasce della strategia">
-		{#snippet header({ tier, title, players })}
-			<div class="header">
-				<button
-					type="button"
-					class="handle"
-					data-drag-handle
-					aria-label="Trascina per riordinare “{tier.name}”, o usa le frecce sinistra/destra"
-				>
-					⠿
-				</button>
-				<Input
-					type="color"
-					class="color"
-					value={tier.color ?? '#d8ded9'}
-					oninput={(event) => {
-						tier.color = event.currentTarget.value;
-						editor.scheduleTierSave(tier.id);
-					}}
-					onchange={() => editor.flushTierSave(tier.id)}
-					aria-label="Colore di “{tier.name}”"
-				/>
-				<Input
-					id={nameId(tier.id)}
-					class="inline-name"
-					bind:value={
-						() => editor.tierNameDrafts[tier.id] ?? tier.name,
-						(name) => (editor.tierNameDrafts[tier.id] = name)
-					}
-					{title}
-					oninput={() => editor.scheduleTierSave(tier.id)}
-					onblur={() => {
-						void editor.flushTierSave(tier.id);
-						if (!editor.tierNameDrafts[tier.id]?.trim()) delete editor.tierNameDrafts[tier.id];
-					}}
-					onkeydown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
-					autocomplete="off"
-					aria-label="Nome fascia"
-				/>
-				<span class="saved" role="status">
-					{#if editor.tierSaved[tier.id]}
-						<span role="img" aria-label="Salvato" title="Salvato">✓</span>
-					{/if}
-				</span>
-				<span class="count" title="Calciatori">{players.length}</span>
+	{#if columns.length === 0}
+		<EmptyState>
+			<h2>Aggiungi le prime fasce</h2>
+			<div class="setup-actions">
 				<Button
-					variant="text"
 					size="sm"
-					class="delete"
-					title="Elimina fascia"
-					aria-label="Elimina “{tier.name}”"
-					onclick={() => editor.deleteTier(tier)}
 					disabled={editor.saving}
+					onclick={() => editor.addDefaultTiers()}
+					{@attach focusSetup}
 				>
-					✕
+					Usa le fasce predefinite
+				</Button>
+				<Button variant="secondary" size="sm" onclick={addTier} disabled={editor.saving}>
+					Crea le fasce a mano
 				</Button>
 			</div>
-		{/snippet}
-		{#snippet players({ tier, players })}
-			<PlayerList {editor} {drag} {players} tierId={tier.id} label={tier.name}>
-				{#snippet row(player)}
-					{@const draft = editor.entryDrafts[player.id]}
-					{@const pct = draft.maximumPricePercentage}
-					<TierPlayerCard
-						name={player.name}
-						team={player.active ? player.team : `${player.team} · inattivo`}
-						mantraRoles={player.mantra_roles}
-						maximumPricePercentage={pct ?? null}
-						maximumPriceCredits={pct === undefined
-							? null
-							: percentageToCredits(pct, referenceBudget.value)}
-						note={draft.note}
-						inactive={!player.active}
+		</EmptyState>
+	{:else}
+		<TierBoard {columns} label="Fasce della strategia">
+			{#snippet header({ tier, title, players })}
+				<div class="header">
+					<button
+						type="button"
+						class="handle"
+						data-drag-handle
+						aria-label="Trascina per riordinare “{tier.name}”, o usa le frecce sinistra/destra"
+					>
+						⠿
+					</button>
+					<Input
+						type="color"
+						class="color"
+						value={tier.color ?? '#d8ded9'}
+						oninput={(event) => {
+							tier.color = event.currentTarget.value;
+							editor.scheduleTierSave(tier.id);
+						}}
+						onchange={() => editor.flushTierSave(tier.id)}
+						aria-label="Colore di “{tier.name}”"
 					/>
-				{/snippet}
-			</PlayerList>
-		{/snippet}
-		{#snippet trailing()}
-			<button
-				type="button"
-				class="add"
-				bind:this={addButton}
-				onclick={addTier}
-				disabled={editor.saving}
-			>
-				+ Nuova fascia
-			</button>
-		{/snippet}
-	</TierBoard>
+					<Input
+						id={nameId(tier.id)}
+						class="inline-name"
+						bind:value={
+							() => editor.tierNameDrafts[tier.id] ?? tier.name,
+							(name) => (editor.tierNameDrafts[tier.id] = name)
+						}
+						{title}
+						oninput={() => editor.scheduleTierSave(tier.id)}
+						onblur={() => {
+							void editor.flushTierSave(tier.id);
+							if (!editor.tierNameDrafts[tier.id]?.trim()) delete editor.tierNameDrafts[tier.id];
+						}}
+						onkeydown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
+						autocomplete="off"
+						aria-label="Nome fascia"
+					/>
+					<span class="saved" role="status">
+						{#if editor.tierSaved[tier.id]}
+							<span role="img" aria-label="Salvato" title="Salvato">✓</span>
+						{/if}
+					</span>
+					<span class="count" title="Calciatori">{players.length}</span>
+					<Button
+						variant="text"
+						size="sm"
+						class="delete"
+						title="Elimina fascia"
+						aria-label="Elimina “{tier.name}”"
+						onclick={() => editor.deleteTier(tier)}
+						disabled={editor.saving}
+					>
+						✕
+					</Button>
+				</div>
+			{/snippet}
+			{#snippet players({ tier, players })}
+				<PlayerList {editor} {drag} {players} tierId={tier.id} label={tier.name}>
+					{#snippet row(player)}
+						{@const draft = editor.entryDrafts[player.id]}
+						{@const pct = draft.maximumPricePercentage}
+						<TierPlayerCard
+							name={player.name}
+							team={player.active ? player.team : `${player.team} · inattivo`}
+							mantraRoles={player.mantra_roles}
+							maximumPricePercentage={pct ?? null}
+							maximumPriceCredits={pct === undefined
+								? null
+								: percentageToCredits(pct, referenceBudget.value)}
+							note={draft.note}
+							inactive={!player.active}
+						/>
+					{/snippet}
+				</PlayerList>
+			{/snippet}
+			{#snippet trailing()}
+				<button
+					type="button"
+					class="add"
+					bind:this={addButton}
+					onclick={addTier}
+					disabled={editor.saving}
+				>
+					+ Nuova fascia
+				</button>
+			{/snippet}
+		</TierBoard>
+	{/if}
 </div>
 
 <style>
 	.strategy-tiers {
 		min-width: 0;
 		min-height: 0;
+	}
+
+	.strategy-tiers :global(.empty-state) {
+		margin-top: 0;
+	}
+
+	h2 {
+		margin: 0 0 0.65rem;
+		color: var(--text);
+		font-size: 1rem;
+	}
+
+	.setup-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
 	}
 
 	.header {
