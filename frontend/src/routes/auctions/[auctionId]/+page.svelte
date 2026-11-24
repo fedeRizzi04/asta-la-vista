@@ -17,306 +17,32 @@
 	import Select from '$lib/components/ui/Select.svelte';
 	import Tabs from '$lib/components/ui/Tabs.svelte';
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
-	import { saveFile } from '$lib/api';
-	import { confirmDialog } from '$lib/dialog.svelte';
-
-	import { pushErrorToast } from '$lib/toast.svelte';
-	import {
-		amendPurchase,
-		cancelPurchase,
-		completeAuction,
-		exportAuctionReport,
-		getAuction,
-		recordPurchase,
-		reopenAuction,
-		setAuctionStrategy,
-		startAuction,
-		type Auction,
-		type Participant,
-		type Purchase
-	} from '$lib/auctions';
-	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
-	import { getPlayers, roleLabels, roles, type Player, type Role } from '$lib/players';
-	import { matchesSearch, nameMatchRank } from '$lib/search';
-	import {
-		byMaxPercentageDesc,
-		getStrategies,
-		getStrategy,
-		percentageToCredits,
-		strategyIndex,
-		type Strategy,
-		type StrategySummary
-	} from '$lib/strategies';
+	import { purchasesForRole } from '$lib/auctions';
+	import { AuctionState } from '$lib/features/auction/auctionState.svelte';
+	import { mantraRoleLabel } from '$lib/mantraRoles';
+	import { roleLabels, roles } from '$lib/players';
 
 	const roleTabs = roles.map((role) => ({ value: role, label: roleLabels[role] }));
-	type CatalogSort = 'tier' | 'quotation';
+	const auctionState = new AuctionState(() => page.params.auctionId);
+	const auction = $derived(auctionState.auction);
+	let callPanel = $state<HTMLElement>();
 
-	let auction = $state<Auction>();
-	let players = $state<Player[]>([]);
-	let strategies = $state<StrategySummary[]>([]);
-	let strategy = $state<Strategy>();
-	let viewingStrategyId = $state('');
-	let playerSearch = $state('');
-	let selectedPlayerId = $state('');
-	let selectedParticipantId = $state('');
-	let price = $state(1);
-	let editingPurchaseId = $state('');
-	let editedParticipantId = $state('');
-	let editedPrice = $state(1);
-	let registryOpen = $state(false);
-	let registrySearch = $state('');
-	let strategyRole = $state<Role>('P');
-	let catalogRole = $state<Role>('P');
-	let catalogMantraRoles = $state<string[]>([]);
-	let catalogSort = $state<CatalogSort>('tier');
-	let loading = $state(true);
-	let saving = $state(false);
+	onMount(() => auctionState.load());
 
-	let index = $derived(strategy && strategyIndex(strategy));
-	let purchasedIds = $derived(new Set(auction?.purchased_player_ids ?? []));
-	/** Tiers for the selected strategy role, with their entries resolved once for reuse below. */
-	let strategyRoleTiers = $derived.by(() => {
-		const currentStrategy = strategy;
-		if (!currentStrategy || !index) return [];
-		return index.sortedTiers.map((tier) => {
-			const entries = currentStrategy.entries
-				.filter((entry) => entry.role === strategyRole && entry.tier_id === tier.id)
-				.sort(byMaxPercentageDesc((entry) => entry.maximum_price_percentage));
-			return {
-				tier,
-				entries,
-				availableCount: entries.filter((entry) => !purchasedIds.has(entry.player_id)).length
-			};
-		});
-	});
-	let matchingPlayers = $derived.by(() => {
-		return players
-			.filter(
-				(player) =>
-					player.active &&
-					!purchasedIds.has(player.id) &&
-					matchesSearch(playerSearch, player.name, player.team)
-			)
-			.sort(
-				(first, second) =>
-					nameMatchRank(first.name, playerSearch) - nameMatchRank(second.name, playerSearch)
-			)
-			.slice(0, 20);
-	});
-	/** All purchases across every participant, newest first, for the purchase registry. */
-	let allPurchases = $derived.by(() => {
-		if (!auction) return [];
-		return auction.participants
-			.flatMap((participant) =>
-				participant.purchases.map((purchase) => ({ purchase, participant }))
-			)
-			.sort((first, second) => (first.purchase.created_at < second.purchase.created_at ? 1 : -1));
-	});
-	let filteredRegistryPurchases = $derived(
-		allPurchases.filter(({ purchase }) => matchesSearch(registrySearch, purchase.player_name))
-	);
-	let selectedPlayer = $derived(players.find((player) => player.id === selectedPlayerId));
-	let selectedStrategyEntry = $derived(index?.entryByPlayerId.get(selectedPlayerId));
-	let selectedMaximumPriceCredits = $derived(
-		selectedStrategyEntry?.maximum_price_percentage != null && auction
-			? percentageToCredits(selectedStrategyEntry.maximum_price_percentage, auction.initial_credits)
-			: null
-	);
-	let selectedTier = $derived(tierForPlayer(selectedPlayerId));
-	let catalogRolePlayers = $derived(
-		players.filter(
-			(player) => player.role === catalogRole && (player.active || purchasedIds.has(player.id))
-		)
-	);
-	let catalogMantraCodes = $derived(
-		sortMantraRoles([...new Set(catalogRolePlayers.flatMap((player) => player.mantra_roles))])
-	);
-	let catalogPlayers = $derived.by(() => {
-		return catalogRolePlayers
-			.filter(
-				(player) =>
-					catalogMantraRoles.length === 0 ||
-					catalogMantraRoles.some((role) => player.mantra_roles.includes(role))
-			)
-			.sort((first, second) => {
-				if (catalogSort === 'tier' && strategy) {
-					const firstPosition = tierPosition(first.id);
-					const secondPosition = tierPosition(second.id);
-					if (firstPosition < secondPosition) return -1;
-					if (firstPosition > secondPosition) return 1;
-				}
-				const quotationDifference = (second.quotation ?? -1) - (first.quotation ?? -1);
-				return quotationDifference || first.name.localeCompare(second.name, 'it');
-			});
-	});
-
-	onMount(loadAuction);
-
-	async function loadAuction(): Promise<void> {
-		loading = true;
-		try {
-			[auction, players, strategies] = await Promise.all([
-				getAuction(currentAuctionId()),
-				getPlayers({ includeInactive: true }),
-				getStrategies()
-			]);
-			selectedParticipantId ||= auction.participants[0]?.id ?? '';
-			viewingStrategyId = auction.strategy_id ?? '';
-			await loadViewedStrategy();
-		} catch (caught) {
-			pushErrorToast(caught);
-		} finally {
-			loading = false;
-		}
-	}
-
-	async function loadViewedStrategy(): Promise<void> {
-		strategy = viewingStrategyId ? await getStrategy(viewingStrategyId) : undefined;
-		if (!strategy) catalogSort = 'quotation';
-	}
-
-	async function viewSelectedStrategy(): Promise<void> {
-		try {
-			await loadViewedStrategy();
-		} catch (caught) {
-			pushErrorToast(caught);
-		}
-	}
-
-	async function fixViewedStrategy(): Promise<void> {
-		await runMutation(async () => {
-			await setAuctionStrategy(currentAuctionId(), viewingStrategyId || null);
-			await refreshAuction();
-		});
-	}
-
-	async function changeStatus(action: 'start' | 'complete' | 'reopen'): Promise<void> {
-		if (
-			action === 'complete' &&
-			!(await confirmDialog({
-				title: 'Termina asta',
-				message: 'Terminare questa asta? Potrai riaprirla in seguito.',
-				confirmLabel: 'Termina asta'
-			}))
-		)
-			return;
-		await runMutation(async () => {
-			if (action === 'start') await startAuction(currentAuctionId());
-			if (action === 'complete') await completeAuction(currentAuctionId());
-			if (action === 'reopen') await reopenAuction(currentAuctionId());
-			await refreshAuction();
-		});
-	}
-
-	async function submitPurchase(event: SubmitEvent): Promise<void> {
+	function submitPurchase(event: SubmitEvent): void {
 		event.preventDefault();
-		if (!selectedPlayerId || !selectedParticipantId) return;
-		await runMutation(async () => {
-			await recordPurchase(currentAuctionId(), selectedPlayerId, selectedParticipantId, price);
-			selectedPlayerId = '';
-			playerSearch = '';
-			price = 1;
-			await refreshAuction();
-		});
-	}
-
-	function selectPlayer(player: Player): void {
-		selectedPlayerId = player.id;
-		playerSearch = player.name;
-	}
-
-	function selectTopMatch(): void {
-		const [topMatch] = matchingPlayers;
-		if (topMatch) selectPlayer(topMatch);
+		void auctionState.registerPurchase();
 	}
 
 	function handleSearchKeydown(event: KeyboardEvent): void {
-		if (event.key !== 'Enter' || selectedPlayerId) return;
+		if (event.key !== 'Enter' || auctionState.selectedPlayerId) return;
 		event.preventDefault();
-		selectTopMatch();
+		auctionState.selectTopMatch();
 	}
 
-	function callPlayerFromCatalog(player: Player): void {
-		if (auction?.status !== 'live' || purchasedIds.has(player.id)) return;
-		selectPlayer(player);
-		document.querySelector('.call-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-	}
-
-	function callPlayerFromStrategy(playerId: string): void {
-		const player = players.find((candidate) => candidate.id === playerId);
-		if (player) callPlayerFromCatalog(player);
-	}
-
-	function tierForPlayer(playerId: string) {
-		const tierId = index?.entryByPlayerId.get(playerId)?.tier_id;
-		return tierId == null ? undefined : index?.tierById.get(tierId);
-	}
-
-	function tierPosition(playerId: string): number {
-		return tierForPlayer(playerId)?.position ?? Number.POSITIVE_INFINITY;
-	}
-
-	function resetRegistry(): void {
-		registrySearch = '';
-		editingPurchaseId = '';
-	}
-
-	function beginEdit(purchase: Purchase, participant: Participant): void {
-		editingPurchaseId = purchase.id;
-		editedParticipantId = participant.id;
-		editedPrice = purchase.price;
-	}
-
-	async function savePurchase(purchaseId: string): Promise<void> {
-		await runMutation(async () => {
-			await amendPurchase(currentAuctionId(), purchaseId, editedParticipantId, editedPrice);
-			editingPurchaseId = '';
-			await refreshAuction();
-		});
-	}
-
-	async function deletePurchase(purchase: Purchase): Promise<void> {
-		const confirmed = await confirmDialog({
-			title: 'Annulla acquisto',
-			message: `Annullare l'acquisto di ${purchase.player_name}?`,
-			confirmLabel: 'Annulla acquisto',
-			danger: true
-		});
-		if (!confirmed) return;
-		await runMutation(async () => {
-			await cancelPurchase(currentAuctionId(), purchase.id);
-			await refreshAuction();
-		});
-	}
-
-	async function refreshAuction(): Promise<void> {
-		auction = await getAuction(currentAuctionId());
-	}
-
-	async function runMutation(mutation: () => Promise<void>): Promise<void> {
-		saving = true;
-		try {
-			await mutation();
-		} catch (caught) {
-			pushErrorToast(caught);
-		} finally {
-			saving = false;
-		}
-	}
-
-	function currentAuctionId(): string {
-		const auctionId = page.params.auctionId;
-		if (!auctionId) throw new Error('Asta non trovata.');
-		return auctionId;
-	}
-
-	// Through fetch, like the strategy export: the app window has no Back button, so navigating
-	// to the report (HTML, which the window could display) must never replace the interface.
-	async function downloadReport(): Promise<void> {
-		try {
-			saveFile(await exportAuctionReport(currentAuctionId()));
-		} catch (caught) {
-			pushErrorToast(caught);
+	function callPlayer(playerId: string): void {
+		if (auctionState.callPlayer(playerId)) {
+			callPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}
 	}
 </script>
@@ -337,21 +63,31 @@
 	{/snippet}
 	{#snippet actions()}
 		{#if auction?.status === 'draft'}
-			<Button onclick={() => changeStatus('start')} disabled={saving}>Inizia asta</Button>
+			<Button onclick={() => auctionState.changeStatus('start')} disabled={auctionState.saving}
+				>Inizia asta</Button
+			>
 		{:else if auction?.status === 'live'}
-			<Button variant="secondary" onclick={() => changeStatus('complete')} disabled={saving}>
+			<Button
+				variant="secondary"
+				onclick={() => auctionState.changeStatus('complete')}
+				disabled={auctionState.saving}
+			>
 				Termina asta
 			</Button>
 		{:else if auction?.status === 'completed'}
-			<Button onclick={() => changeStatus('reopen')} disabled={saving}>Riapri asta</Button>
-			<Button variant="secondary" onclick={downloadReport}>Scarica report</Button>
+			<Button onclick={() => auctionState.changeStatus('reopen')} disabled={auctionState.saving}
+				>Riapri asta</Button
+			>
+			<Button variant="secondary" onclick={() => auctionState.downloadReport()}
+				>Scarica report</Button
+			>
 		{/if}
 	{/snippet}
 </PageHeader>
 
-{#if loading}<EmptyState>Caricamento dell'asta…</EmptyState>{/if}
+{#if auctionState.loading}<EmptyState>Caricamento dell'asta…</EmptyState>{/if}
 
-{#if auction && !loading}
+{#if auction && !auctionState.loading}
 	{#if auction.status === 'draft'}
 		<section class="draft-summary panel">
 			<h2>Configurazione</h2>
@@ -369,13 +105,16 @@
 		</section>
 	{:else if auction.status === 'live'}
 		<div class="registry-trigger-row">
-			<Button onclick={() => (registryOpen = true)}>
-				Apri registro acquisti{allPurchases.length > 0 ? ` (${allPurchases.length})` : ''}
+			<Button onclick={() => (auctionState.registryOpen = true)}>
+				Apri registro acquisti{auctionState.allPurchases.length > 0
+					? ` (${auctionState.allPurchases.length})`
+					: ''}
 			</Button>
 		</div>
-		<section class="call-panel panel">
+		<section class="call-panel panel" bind:this={callPanel}>
 			<SectionHeading eyebrow="Calciatore chiamato" title="Registra l'acquisto">
 				{#snippet trailing()}
+					{@const selectedPlayer = auctionState.selectedPlayer}
 					{#if selectedPlayer}<span class="selected-player"
 							><strong>{selectedPlayer.name}</strong> · {selectedPlayer.team} · {selectedPlayer.role}
 							<MantraRoleBadges
@@ -390,15 +129,15 @@
 			<form onsubmit={submitPurchase}>
 				<Field label="Calciatore">
 					<Input
-						bind:value={playerSearch}
+						bind:value={auctionState.playerSearch}
 						type="search"
 						placeholder="Cerca per nome o squadra"
-						oninput={() => (selectedPlayerId = '')}
+						oninput={() => (auctionState.selectedPlayerId = '')}
 						onkeydown={handleSearchKeydown}
 					/>
 				</Field>
 				<Field label="Vincitore">
-					<Select bind:value={selectedParticipantId}>
+					<Select bind:value={auctionState.selectedParticipantId}>
 						{#each auction.participants as participant (participant.id)}
 							<option value={participant.id}
 								>{participant.name} · max {participant.maximum_bid}</option
@@ -407,13 +146,21 @@
 					</Select>
 				</Field>
 				<Field label="Prezzo">
-					<Input bind:value={price} type="number" min="1" required />
+					<Input bind:value={auctionState.price} type="number" min="1" required />
 				</Field>
-				<Button type="submit" disabled={!selectedPlayerId || !selectedParticipantId || saving}>
+				<Button
+					type="submit"
+					disabled={!auctionState.selectedPlayerId ||
+						!auctionState.selectedParticipantId ||
+						auctionState.saving}
+				>
 					Registra
 				</Button>
 			</form>
-			{#if selectedPlayer && strategy}
+			{#if auctionState.selectedPlayer && auctionState.viewedStrategy}
+				{@const selectedTier = auctionState.selectedTier}
+				{@const selectedStrategyEntry = auctionState.selectedStrategyEntry}
+				{@const selectedMaximumPriceCredits = auctionState.selectedMaximumPriceCredits}
 				<div class="called-player-strategy">
 					<div>
 						<span class="strategy-label">Fascia</span>
@@ -437,11 +184,11 @@
 					</div>
 				</div>
 			{/if}
-			{#if playerSearch && !selectedPlayerId}
+			{#if auctionState.playerSearch && !auctionState.selectedPlayerId}
 				<div class="search-results">
-					{#each matchingPlayers as player (player.id)}<button
+					{#each auctionState.matchingPlayers as player (player.id)}<button
 							type="button"
-							onclick={() => selectPlayer(player)}
+							onclick={() => auctionState.selectPlayer(player)}
 							><strong>{player.name}</strong><span
 								>{player.team} · {player.role}{typeof player.quotation === 'number'
 									? ` · Q. ${player.quotation}`
@@ -481,13 +228,11 @@
 							<div class="roster">
 								{#if participant.purchases.length === 0}<p>Nessun acquisto.</p>{/if}
 								{#each roles as role (role)}
-									{@const rolePurchases = participant.purchases
-										.filter((purchase) => purchase.role === role)
-										.sort((first, second) => (first.created_at < second.created_at ? -1 : 1))}
+									{@const rolePurchases = purchasesForRole(participant, role)}
 									{#if rolePurchases.length > 0}
 										<div class="purchase-group" data-role={role} aria-label={roleLabels[role]}>
 											{#each rolePurchases as purchase (purchase.id)}
-												{@const purchaseTier = tierForPlayer(purchase.player_id)}
+												{@const purchaseTier = auctionState.tierForPlayer(purchase.player_id)}
 												<div class="purchase-row">
 													<span class="role-badge" data-role={purchase.role}>{purchase.role}</span
 													><span class="purchase-name"
@@ -520,32 +265,38 @@
 		</CollapsibleSection>
 	</section>
 
-	{#if strategies.length > 0}
+	{#if auctionState.strategies.length > 0}
 		<section class="strategy-section">
 			<CollapsibleSection
 				storageKey={`auction:${auction.id}:strategy`}
 				eyebrow="Strategia"
-				title={strategy?.name ?? 'Nessuna strategia selezionata'}
+				title={auctionState.viewedStrategy?.name ?? 'Nessuna strategia selezionata'}
 			>
 				{#snippet trailing()}
 					<div class="strategy-picker">
 						<Field label="Visualizza" inline>
-							<Select bind:value={viewingStrategyId} onchange={viewSelectedStrategy}>
+							<Select
+								bind:value={auctionState.viewingStrategyId}
+								onchange={() => auctionState.viewSelectedStrategy()}
+							>
 								<option value="">Nessuna strategia</option>
-								{#each strategies as candidate (candidate.id)}
+								{#each auctionState.strategies as candidate (candidate.id)}
 									<option value={candidate.id}>{candidate.name}</option>
 								{/each}
 							</Select>
 						</Field>
-						{#if viewingStrategyId !== (auction?.strategy_id ?? '')}
-							<Button disabled={saving} onclick={fixViewedStrategy}>Fissa per l'asta</Button>
+						{#if auctionState.viewingStrategyId !== (auction?.strategy_id ?? '')}
+							<Button
+								disabled={auctionState.saving}
+								onclick={() => auctionState.fixViewedStrategy()}>Fissa per l'asta</Button
+							>
 						{/if}
 					</div>
 				{/snippet}
-				{#if strategy}
+				{#if auctionState.viewedStrategy}
 					<Tabs
 						items={roleTabs}
-						bind:value={strategyRole}
+						bind:value={auctionState.strategyRole}
 						label="Ruolo strategia"
 						id="strategy-role"
 						panelId="strategy-role-panel"
@@ -554,11 +305,13 @@
 						id="strategy-role-panel"
 						role="tabpanel"
 						tabindex="0"
-						aria-labelledby="strategy-role-{strategyRole}"
+						aria-labelledby="strategy-role-{auctionState.strategyRole}"
 					>
-						<HorizontalScroller ariaLabel={`Fasce della strategia per ${roleLabels[strategyRole]}`}>
+						<HorizontalScroller
+							ariaLabel={`Fasce della strategia per ${roleLabels[auctionState.strategyRole]}`}
+						>
 							<div class="strategy-roles">
-								{#each strategyRoleTiers as { tier, entries, availableCount } (tier.id)}
+								{#each auctionState.strategyRoleTiers as { tier, entries, availableCount } (tier.id)}
 									<div class="tier">
 										<div class="tier-heading">
 											<TierBadge name={tier.name} color={tier.color} compact />
@@ -571,22 +324,19 @@
 														type="button"
 														class="tier-player-button"
 														disabled={auction.status !== 'live' ||
-															purchasedIds.has(entry.player_id)}
-														onclick={() => callPlayerFromStrategy(entry.player_id)}
+															auctionState.purchasedIds.has(entry.player_id)}
+														onclick={() => callPlayer(entry.player_id)}
 													>
 														<TierPlayerCard
 															name={entry.name}
 															team={entry.team}
 															mantraRoles={entry.mantra_roles}
 															maximumPricePercentage={entry.maximum_price_percentage}
-															maximumPriceCredits={entry.maximum_price_percentage != null
-																? percentageToCredits(
-																		entry.maximum_price_percentage,
-																		auction.initial_credits
-																	)
-																: null}
+															maximumPriceCredits={auctionState.maximumPriceCredits(
+																entry.maximum_price_percentage
+															)}
 															note={entry.note}
-															purchased={purchasedIds.has(entry.player_id)}
+															purchased={auctionState.purchasedIds.has(entry.player_id)}
 															compact
 														/>
 													</button>
@@ -611,35 +361,31 @@
 						<span class="eyebrow">Supporto alla chiamata</span>
 						<strong>Calciatori</strong>
 					</span>
-					<small>{catalogPlayers.length} nel ruolo</small>
+					<small>{auctionState.catalogPlayers.length} nel ruolo</small>
 				</summary>
 				<div class="catalog-content">
 					<div class="catalog-toolbar">
 						<div class="catalog-tabs-group">
 							<Tabs
 								items={roleTabs}
-								bind:value={catalogRole}
+								bind:value={auctionState.catalogRole}
 								label="Ruolo calciatori"
 								id="catalog-role"
 								panelId="catalog-role-panel"
-								onchange={() => (catalogMantraRoles = [])}
+								onchange={() => (auctionState.catalogMantraRoles = [])}
 							/>
-							{#if catalogMantraCodes.length > 0}
+							{#if auctionState.catalogMantraCodes.length > 0}
 								<div class="catalog-mantra-chips" role="group" aria-label="Sotto-ruolo mantra">
 									<ToggleChip
-										pressed={catalogMantraRoles.length === 0}
-										onclick={() => (catalogMantraRoles = [])}
+										pressed={auctionState.catalogMantraRoles.length === 0}
+										onclick={() => (auctionState.catalogMantraRoles = [])}
 									>
 										Tutti
 									</ToggleChip>
-									{#each catalogMantraCodes as code (code)}
+									{#each auctionState.catalogMantraCodes as code (code)}
 										<ToggleChip
-											pressed={catalogMantraRoles.includes(code)}
-											onclick={() => {
-												catalogMantraRoles = catalogMantraRoles.includes(code)
-													? catalogMantraRoles.filter((role) => role !== code)
-													: [...catalogMantraRoles, code];
-											}}
+											pressed={auctionState.catalogMantraRoles.includes(code)}
+											onclick={() => auctionState.toggleCatalogMantraRole(code)}
 										>
 											{mantraRoleLabel(code)}
 										</ToggleChip>
@@ -648,8 +394,8 @@
 							{/if}
 						</div>
 						<Field label="Ordina per" inline>
-							<Select bind:value={catalogSort}>
-								{#if strategy}<option value="tier">Fascia</option>{/if}
+							<Select bind:value={auctionState.catalogSort}>
+								{#if auctionState.viewedStrategy}<option value="tier">Fascia</option>{/if}
 								<option value="quotation">Quotazione</option>
 							</Select>
 						</Field>
@@ -660,16 +406,16 @@
 						id="catalog-role-panel"
 						role="tabpanel"
 						tabindex="0"
-						aria-labelledby="catalog-role-{catalogRole}"
+						aria-labelledby="catalog-role-{auctionState.catalogRole}"
 					>
-						{#each catalogPlayers as player (player.id)}
-							{@const playerTier = tierForPlayer(player.id)}
+						{#each auctionState.catalogPlayers as player (player.id)}
+							{@const playerTier = auctionState.tierForPlayer(player.id)}
 							<button
 								type="button"
 								class="catalog-player"
-								class:purchased={purchasedIds.has(player.id)}
-								disabled={auction.status !== 'live' || purchasedIds.has(player.id)}
-								onclick={() => callPlayerFromCatalog(player)}
+								class:purchased={auctionState.purchasedIds.has(player.id)}
+								disabled={auction.status !== 'live' || auctionState.purchasedIds.has(player.id)}
+								onclick={() => callPlayer(player.id)}
 							>
 								<span class="catalog-player-heading">
 									<strong>{player.name}</strong>
@@ -682,7 +428,8 @@
 										<TierBadge name={playerTier.name} color={playerTier.color} compact />
 									{/if}
 								</span>
-								{#if purchasedIds.has(player.id)}<span class="purchased-label">Acquistato</span
+								{#if auctionState.purchasedIds.has(player.id)}<span class="purchased-label"
+										>Acquistato</span
 									>{/if}
 							</button>
 						{/each}
@@ -693,43 +440,55 @@
 	{/if}
 
 	<Dialog
-		bind:open={registryOpen}
+		bind:open={auctionState.registryOpen}
 		title="Registro acquisti"
 		width="760px"
 		closeLabel="Chiudi"
-		onclose={resetRegistry}
+		onclose={() => auctionState.resetRegistry()}
 	>
 		<Field label="Cerca calciatore">
 			<Input
-				bind:value={registrySearch}
+				bind:value={auctionState.registrySearch}
 				type="search"
 				placeholder="Nome del calciatore"
 				data-autofocus
 			/>
 		</Field>
-		{#if allPurchases.length === 0}
+		{#if auctionState.allPurchases.length === 0}
 			<p class="registry-empty">Nessun acquisto registrato.</p>
-		{:else if filteredRegistryPurchases.length === 0}
+		{:else if auctionState.filteredRegistryPurchases.length === 0}
 			<p class="registry-empty">Nessun calciatore corrisponde alla ricerca.</p>
 		{:else}
 			<div class="registry-list">
-				{#each filteredRegistryPurchases as { purchase, participant } (purchase.id)}
-					{@const purchaseTier = tierForPlayer(purchase.player_id)}
-					<div class="purchase-row registry-row" class:editing={editingPurchaseId === purchase.id}>
-						{#if editingPurchaseId === purchase.id}
-							<Select bind:value={editedParticipantId} aria-label="Vincitore">
+				{#each auctionState.filteredRegistryPurchases as { purchase, participant } (purchase.id)}
+					{@const purchaseTier = auctionState.tierForPlayer(purchase.player_id)}
+					<div
+						class="purchase-row registry-row"
+						class:editing={auctionState.editingPurchaseId === purchase.id}
+					>
+						{#if auctionState.editingPurchaseId === purchase.id}
+							<Select bind:value={auctionState.editedParticipantId} aria-label="Vincitore">
 								{#each auction.participants as option (option.id)}
 									<option value={option.id}>{option.name}</option>
 								{/each}
 							</Select>
-							<Input bind:value={editedPrice} type="number" min="1" aria-label="Prezzo" />
+							<Input
+								bind:value={auctionState.editedPrice}
+								type="number"
+								min="1"
+								aria-label="Prezzo"
+							/>
 							<Button
 								variant="text"
 								size="sm"
-								onclick={() => savePurchase(purchase.id)}
-								disabled={saving}>Salva</Button
+								onclick={() => auctionState.savePurchase(purchase.id)}
+								disabled={auctionState.saving}>Salva</Button
 							>
-							<Button variant="text" size="sm" onclick={() => (editingPurchaseId = '')}>
+							<Button
+								variant="text"
+								size="sm"
+								onclick={() => (auctionState.editingPurchaseId = '')}
+							>
 								Annulla
 							</Button>
 						{:else}
@@ -748,10 +507,18 @@
 								<span class="purchase-tier-spacer" aria-hidden="true"></span>
 							{/if}
 							<span class="registry-participant">{participant.name}</span>
-							<Button variant="text" size="sm" onclick={() => beginEdit(purchase, participant)}>
+							<Button
+								variant="text"
+								size="sm"
+								onclick={() => auctionState.beginEdit(purchase, participant)}
+							>
 								Modifica
 							</Button>
-							<Button variant="danger" size="sm" onclick={() => deletePurchase(purchase)}>
+							<Button
+								variant="danger"
+								size="sm"
+								onclick={() => auctionState.deletePurchase(purchase)}
+							>
 								Elimina
 							</Button>
 						{/if}
