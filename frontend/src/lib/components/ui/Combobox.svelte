@@ -5,7 +5,7 @@
 	/**
 	 * A text field with a list of matches below it (ARIA combobox). The parent filters `items`
 	 * from the typed `value`; arrows move through them, Enter (or Tab, once something is typed)
-	 * chooses the highlighted one and Esc closes the list. Set `--combobox-width` to make the
+	 * chooses the highlighted one and Esc closes the list. ⌘/Ctrl+Enter is left to the page. Set `--combobox-width` to make the
 	 * list wider than the field.
 	 */
 	let {
@@ -64,7 +64,7 @@
 		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 			event.preventDefault();
 			void move(event.key === 'ArrowDown' ? 1 : -1);
-		} else if (event.key === 'Enter') {
+		} else if (event.key === 'Enter' && !event.metaKey && !event.ctrlKey) {
 			event.preventDefault();
 			if (listVisible) choose(activeItem);
 		} else if (event.key === 'Tab' && !event.shiftKey && listVisible && value.trim()) {

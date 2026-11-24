@@ -14,9 +14,13 @@
 	import TeamsStrip from '$lib/features/auction/TeamsStrip.svelte';
 	import { AuctionState } from '$lib/features/auction/auctionState.svelte';
 	import { roleLabels, roles, type Role } from '$lib/players';
+	import { registerShortcuts, withShortcut } from '$lib/shortcuts.svelte';
 	import { getUrlParams, setUrlParams } from '$lib/urlState';
 
 	type AuctionView = 'tiers' | 'free';
+
+	const keys = { tiers: 'alt+1', free: 'alt+2', registry: 'mod+j', undo: 'mod+z' };
+	const roleKey = (role: Role): string => role.toLowerCase();
 
 	const auctionState = new AuctionState(() => page.params.auctionId);
 	const auction = $derived(auctionState.auction);
@@ -49,6 +53,55 @@
 		void setUrlParams({ view: next === 'free' ? next : null });
 	}
 
+	/** Opens or closes the registry, unless another dialog (e.g. a confirmation) is on top. */
+	function toggleRegistry(): void {
+		if (document.querySelectorAll('dialog[open]').length === (registryOpen ? 1 : 0)) {
+			registryOpen = !registryOpen;
+		}
+	}
+
+	const started = () => auction !== undefined && auction.status !== 'draft';
+	$effect(() =>
+		registerShortcuts([
+			...roles.map((role) => ({
+				keys: roleKey(role),
+				description: `Mostra ${roleLabels[role].toLowerCase()}`,
+				group: 'Asta',
+				handler: () => setRole(role)
+			})),
+			{
+				keys: keys.tiers,
+				description: 'Vista Fasce',
+				group: 'Asta',
+				handler: () => setView('tiers'),
+				when: started
+			},
+			{
+				keys: keys.free,
+				description: 'Vista Svincolati',
+				group: 'Asta',
+				handler: () => setView('free'),
+				when: started
+			},
+			{
+				keys: keys.registry,
+				description: 'Apri o chiudi il registro acquisti',
+				group: 'Asta',
+				handler: toggleRegistry,
+				when: started,
+				inDialog: true
+			},
+			{
+				keys: keys.undo,
+				description: "Annulla l'ultimo acquisto",
+				group: 'Asta',
+				handler: () => auctionState.undoLastPurchase(),
+				when: () => auction?.status === 'live',
+				emptyFieldOnly: true
+			}
+		])
+	);
+
 	onMount(() => auctionState.load());
 </script>
 
@@ -80,6 +133,7 @@
 				variant="secondary"
 				size="sm"
 				aria-haspopup="dialog"
+				title={withShortcut('Registro acquisti', keys.registry)}
 				onclick={() => (registryOpen = true)}
 			>
 				Registro ({purchaseCount})
@@ -97,6 +151,7 @@
 			<Button
 				variant="secondary"
 				size="sm"
+				title={withShortcut("Annulla l'ultimo acquisto", keys.undo)}
 				onclick={() => auctionState.undoLastPurchase()}
 				disabled={auctionState.saving || purchaseCount === 0}
 			>
@@ -140,8 +195,8 @@
 		{#if auction.status !== 'draft'}
 			<Tabs
 				items={[
-					{ value: 'tiers', label: 'Fasce' },
-					{ value: 'free', label: 'Svincolati' }
+					{ value: 'tiers', label: 'Fasce', title: withShortcut('Fasce', keys.tiers) },
+					{ value: 'free', label: 'Svincolati', title: withShortcut('Svincolati', keys.free) }
 				]}
 				bind:value={() => view, setView}
 				label="Vista"
@@ -150,7 +205,11 @@
 			/>
 		{/if}
 		<Tabs
-			items={roles.map((value) => ({ value, label: roleLabels[value] }))}
+			items={roles.map((value) => ({
+				value,
+				label: roleLabels[value],
+				title: withShortcut(roleLabels[value], roleKey(value))
+			}))}
 			bind:value={() => role, setRole}
 			label="Ruolo"
 			id="auction-role"

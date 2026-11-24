@@ -6,6 +6,7 @@
 	import type { Participant } from '$lib/auctions';
 	import type { Player } from '$lib/players';
 	import { matchesSearch, nameMatchRank } from '$lib/search';
+	import { registerShortcuts, withShortcut } from '$lib/shortcuts.svelte';
 
 	/** Who won the called player and at what price, filled in whenever the bidding ends. */
 	let {
@@ -20,11 +21,24 @@
 		onregister: (participantId: string, price: number) => void;
 	} = $props();
 
+	const winnerKeys = 'mod+enter';
 	const winnerInputId = $props.id();
 	let winnerSearch = $state('');
 	let winnerId = $state('');
 	let price = $state<number | null>(null);
+	let winnerInput = $state<HTMLInputElement>();
 	let priceInput = $state<HTMLInputElement>();
+
+	$effect(() =>
+		registerShortcuts([
+			{
+				keys: winnerKeys,
+				description: 'Vai al vincitore',
+				group: 'Asta',
+				handler: () => winnerInput?.focus()
+			}
+		])
+	);
 
 	let winner = $derived(participants.find((participant) => participant.id === winnerId));
 	let matchingParticipants = $derived(
@@ -64,6 +78,8 @@
 		<Combobox
 			id={winnerInputId}
 			bind:value={() => winnerSearch, searchWinner}
+			bind:element={winnerInput}
+			title={withShortcut('Vincitore', winnerKeys)}
 			items={matchingParticipants}
 			emptyMessage="Nessun partecipante"
 			openOnFocus
