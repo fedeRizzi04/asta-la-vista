@@ -3,6 +3,7 @@
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import Combobox from '$lib/components/ui/Combobox.svelte';
 	import { matchesSearch, nameMatchRank } from '$lib/search';
+	import { registerShortcuts, withShortcut } from '$lib/shortcuts.svelte';
 	import type { AuctionState } from './auctionState.svelte';
 	import PurchaseForm from './PurchaseForm.svelte';
 
@@ -14,6 +15,7 @@
 	let { auctionState }: { auctionState: AuctionState } = $props();
 
 	const RESULT_LIMIT = 20;
+	const searchKeys = 'mod+k';
 
 	let searchInput = $state<HTMLInputElement>();
 	let player = $derived(auctionState.calledPlayer);
@@ -34,6 +36,24 @@
 					)
 					.slice(0, RESULT_LIMIT)
 			: []
+	);
+
+	function focusSearch(): void {
+		searchInput?.focus();
+		searchInput?.select();
+	}
+
+	$effect(() =>
+		registerShortcuts([
+			{ keys: searchKeys, description: 'Cerca un calciatore', group: 'Asta', handler: focusSearch },
+			{ keys: '/', description: 'Cerca un calciatore', group: 'Asta', handler: focusSearch },
+			{
+				keys: 'escape',
+				description: 'Annulla la chiamata',
+				group: 'Asta',
+				handler: () => search('')
+			}
+		])
 	);
 
 	function search(text: string): void {
@@ -57,6 +77,7 @@
 			emptyMessage={query.trim() ? 'Nessun calciatore trovato' : undefined}
 			placeholder="Cerca calciatore o squadra"
 			aria-label="Cerca calciatore"
+			title={withShortcut('Cerca calciatore', searchKeys)}
 			onchoose={(result) => auctionState.callPlayer(result.id)}
 			--combobox-width="36rem"
 		>

@@ -6,6 +6,10 @@ export type Shortcut = {
 	group?: string;
 	handler: () => void;
 	when?: () => boolean;
+	/** Also fires while a dialog is open, which blocks every other shortcut. */
+	inDialog?: boolean;
+	/** Keeps the shortcut for the browser in a field with text, e.g. ⌘Z undoes the typing there. */
+	emptyFieldOnly?: boolean;
 };
 
 const isMac = typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform);
@@ -85,6 +89,11 @@ export function shortcutLabel(spec: string): string {
 	return shortcutKeys(spec).join(isMac ? '' : '+');
 }
 
+/** A tooltip text: the label followed by the shortcut, e.g. "Registro acquisti (⌘J)". */
+export function withShortcut(label: string, spec: string): string {
+	return `${label} (${shortcutLabel(spec)})`;
+}
+
 function keyCode(key: string): string {
 	if (/^[a-z]$/.test(key)) return `key${key}`;
 	if (/^\d$/.test(key)) return `digit${key}`;
@@ -109,14 +118,7 @@ function matches(event: KeyboardEvent, spec: string, typing: boolean): boolean {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-	if (
-		event.defaultPrevented ||
-		event.isComposing ||
-		event.repeat ||
-		document.querySelector('dialog[open]')
-	) {
-		return;
-	}
+	if (event.defaultPrevented || event.isComposing || event.repeat) return;
 
 	const target = event.target;
 	const typing =
@@ -124,6 +126,8 @@ function handleKeydown(event: KeyboardEvent): void {
 		(target.matches('input, textarea, select') || target.isContentEditable);
 	const shortcut = shortcuts.findLast(({ keys }) => matches(event, keys, typing));
 	if (!shortcut || shortcut.when?.() === false) return;
+	if (document.querySelector('dialog[open]') && !shortcut.inDialog) return;
+	if (typing && shortcut.emptyFieldOnly && (target as HTMLInputElement).value) return;
 	event.preventDefault();
 	shortcut.handler();
 }

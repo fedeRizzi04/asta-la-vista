@@ -16,7 +16,7 @@
 		panelId,
 		onchange
 	}: {
-		items: { value: T; label: string }[];
+		items: { value: T; label: string; title?: string }[];
 		value: T;
 		label: string;
 		id: string;
@@ -54,6 +54,7 @@
 			id="{id}-{item.value}"
 			aria-selected={item.value === value}
 			aria-controls={panelId}
+			title={item.title}
 			tabindex={item.value === value ? 0 : -1}
 			use:press
 			onclick={() => select(item.value)}
