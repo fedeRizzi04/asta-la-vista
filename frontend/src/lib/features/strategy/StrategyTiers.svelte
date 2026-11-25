@@ -141,8 +141,8 @@
 							name={player.name}
 							team={player.active ? player.team : t.strategies.inactiveClub(player.team)}
 							mantraRoles={player.mantra_roles}
-							maximumPricePercentage={pct ?? null}
-							maximumPriceCredits={pct === undefined
+							maximumPricePercentage={pct}
+							maximumPriceCredits={pct === null
 								? null
 								: percentageToCredits(pct, referenceBudget.value)}
 							note={draft.note}
