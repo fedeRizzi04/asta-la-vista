@@ -61,7 +61,9 @@
 				keys: keys.clear,
 				description: t.strategies.clearSelection,
 				group,
-				handler: () => selection.clear(),
+				// Open details close first. With the focus in them, they handle Esc themselves; from
+				// here the focus is outside, so none of their fields still has to save on blur.
+				handler: () => (editor.detail ? editor.closeDetail() : selection.clear()),
 				when: () => selection.ids.size > 0
 			}
 		])
