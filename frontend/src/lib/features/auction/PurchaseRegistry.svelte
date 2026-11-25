@@ -6,6 +6,7 @@
 	import Drawer from '$lib/components/ui/Drawer.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
+	import { t } from '$lib/i18n';
 	import { matchesSearch } from '$lib/search';
 	import { tick } from 'svelte';
 	import type { AuctionState } from './auctionState.svelte';
@@ -54,19 +55,19 @@
 	}
 </script>
 
-<Drawer bind:open title="Registro acquisti" width="640px" onclose={resetRegistry}>
+<Drawer bind:open title={t.auction.purchaseRegistry} width="640px" onclose={resetRegistry}>
 	<Input
 		bind:value={search}
 		type="search"
-		placeholder="Cerca calciatore"
-		aria-label="Cerca calciatore"
+		placeholder={t.auction.searchPlayer}
+		aria-label={t.auction.searchPlayer}
 		data-autofocus
 	/>
 	{#if filteredPurchases.length === 0}
 		<p class="empty">
 			{auctionState.allPurchases.length === 0
-				? 'Nessun acquisto registrato.'
-				: 'Nessun calciatore corrisponde alla ricerca.'}
+				? t.auction.noPurchasesRecorded
+				: t.auction.noPlayersMatchSearch}
 		</p>
 	{:else}
 		<ol>
@@ -91,7 +92,7 @@
 							<Select
 								id={`${focusId}-winner`}
 								bind:value={draft.participantId}
-								aria-label="Vincitore"
+								aria-label={t.auction.winner}
 								disabled={auctionState.saving}
 							>
 								{#each auctionState.auction?.participants ?? [] as option (option.id)}
@@ -103,13 +104,15 @@
 								type="number"
 								min="1"
 								required
-								aria-label="Prezzo"
+								aria-label={t.auction.price}
 								disabled={auctionState.saving}
 							/>
 							<div class="edit-actions">
-								<Button type="submit" size="sm" disabled={auctionState.saving}>Salva</Button>
+								<Button type="submit" size="sm" disabled={auctionState.saving}
+									>{t.auction.save}</Button
+								>
 								<Button variant="text" size="sm" onclick={endEdit} disabled={auctionState.saving}>
-									Annulla
+									{t.common.cancel}
 								</Button>
 							</div>
 						</form>
@@ -119,8 +122,8 @@
 								id={`${focusId}-edit-${purchase.id}`}
 								variant="text"
 								size="sm"
-								aria-label={`Modifica acquisto di ${purchase.player_name}`}
-								title="Modifica vincitore e prezzo"
+								aria-label={t.auction.editPurchaseLabel(purchase.player_name)}
+								title={t.auction.editWinnerAndPrice}
 								disabled={auctionState.saving}
 								onclick={() => beginEdit(purchase, participant)}>✎</Button
 							>
@@ -128,8 +131,8 @@
 								variant="text"
 								class="delete"
 								size="sm"
-								aria-label={`Elimina acquisto di ${purchase.player_name}`}
-								title="Elimina acquisto"
+								aria-label={t.auction.deletePurchaseLabel(purchase.player_name)}
+								title={t.auction.deletePurchase}
 								disabled={auctionState.saving}
 								onclick={() => auctionState.deletePurchase(purchase)}>×</Button
 							>

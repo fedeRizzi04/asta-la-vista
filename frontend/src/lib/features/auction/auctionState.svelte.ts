@@ -14,6 +14,7 @@ import {
 	type Purchase
 } from '$lib/auctions';
 import { confirmDialog, type DialogOptions } from '$lib/dialog.svelte';
+import { t } from '$lib/i18n';
 import { getPlayers, type Player } from '$lib/players';
 import {
 	getStrategies,
@@ -104,9 +105,9 @@ export class AuctionState {
 		if (
 			action === 'complete' &&
 			!(await confirmDialog({
-				title: 'Termina asta',
-				message: 'Terminare questa asta? Potrai riaprirla in seguito.',
-				confirmLabel: 'Termina asta',
+				title: t.auction.endAuction,
+				message: t.auction.endAuctionMessage,
+				confirmLabel: t.auction.endAuction,
 				danger: true
 			}))
 		)
@@ -174,9 +175,9 @@ export class AuctionState {
 
 	async deletePurchase(purchase: Purchase): Promise<void> {
 		await this.#confirmPurchaseCancellation(purchase.id, {
-			title: 'Annulla acquisto',
-			message: `Annullare l'acquisto di ${purchase.player_name}?`,
-			cancelLabel: 'Lascia stare'
+			title: t.auction.cancelPurchase,
+			message: t.auction.cancelPurchaseMessage(purchase.player_name),
+			cancelLabel: t.auction.keepPurchase
 		});
 	}
 
@@ -185,9 +186,13 @@ export class AuctionState {
 		if (!latest) return;
 		const { purchase, participant } = latest;
 		await this.#confirmPurchaseCancellation(purchase.id, {
-			title: "Annullare l'ultimo acquisto?",
-			message: `${purchase.player_name} → ${participant.name} a ${purchase.price} crediti. I crediti tornano disponibili.`,
-			cancelLabel: 'Lascia stare'
+			title: t.auction.undoLastPurchaseTitle,
+			message: t.auction.undoLastPurchaseMessage(
+				purchase.player_name,
+				participant.name,
+				purchase.price
+			),
+			cancelLabel: t.auction.keepPurchase
 		});
 	}
 
@@ -198,7 +203,7 @@ export class AuctionState {
 		if (this.auction?.status !== 'live' || this.saving) return;
 		const confirmed = await confirmDialog({
 			...options,
-			confirmLabel: 'Annulla acquisto',
+			confirmLabel: t.auction.cancelPurchase,
 			danger: true
 		});
 		if (!confirmed || this.auction?.status !== 'live' || this.saving) return;
@@ -232,7 +237,7 @@ export class AuctionState {
 
 	#currentAuctionId(): string {
 		const auctionId = this.#getAuctionId();
-		if (!auctionId) throw new Error('Asta non trovata.');
+		if (!auctionId) throw new Error(t.errors.auction_not_found);
 		return auctionId;
 	}
 }

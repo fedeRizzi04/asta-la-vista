@@ -3,9 +3,9 @@
 	import HorizontalScroller from '$lib/components/HorizontalScroller.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Tabs from '$lib/components/ui/Tabs.svelte';
+	import { t } from '$lib/i18n';
 	import { panelVisibility } from '$lib/panelVisibility.svelte';
 	import { roleLabels, roles } from '$lib/players';
-	import { plural } from '$lib/plural';
 	import type { AuctionState } from './auctionState.svelte';
 	import RosterDrawer from './RosterDrawer.svelte';
 
@@ -13,8 +13,8 @@
 
 	type View = 'roster' | 'compact';
 	const views: { value: View; label: string }[] = [
-		{ value: 'roster', label: 'Rose' },
-		{ value: 'compact', label: 'Compatta' }
+		{ value: 'roster', label: t.auction.squads },
+		{ value: 'compact', label: t.auction.compact }
 	];
 	const id = $props.id();
 	const visibleSlots = 12;
@@ -31,7 +31,7 @@
 </script>
 
 {#if auction && visibility}
-	<section class="teams" aria-label="Squadre">
+	<section class="teams" aria-label={t.auction.teams}>
 		<div class="strip-header">
 			<Button
 				variant="secondary"
@@ -43,13 +43,20 @@
 					visibility?.toggle();
 				}}
 			>
-				<span aria-hidden="true">{visibility.visible ? '▾' : '▸'}</span> Squadre
+				<span aria-hidden="true">{visibility.visible ? '▾' : '▸'}</span>
+				{t.auction.teams}
 			</Button>
 			{#if visibility.visible}
-				<Tabs items={views} bind:value={view} label="Vista squadre" {id} panelId="{id}-teams" />
+				<Tabs
+					items={views}
+					bind:value={view}
+					label={t.auction.teamsView}
+					{id}
+					panelId="{id}-teams"
+				/>
 			{:else}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex (Allow keyboard scrolling in the credit summary.) -->
-				<div class="credit-pills" role="region" aria-label="Crediti residui" tabindex="0">
+				<div class="credit-pills" role="region" aria-label={t.auction.creditsLeft} tabindex="0">
 					{#each auction.participants as participant (participant.id)}
 						<span>{participant.name} <strong>{participant.credits_remaining}</strong></span>
 					{/each}
@@ -66,7 +73,7 @@
 		>
 			{#if visibility.visible}
 				<HorizontalScroller
-					ariaLabel={view === 'roster' ? 'Rose dei partecipanti' : 'Slot dei partecipanti'}
+					ariaLabel={view === 'roster' ? t.auction.participantSquads : t.auction.participantSlots}
 				>
 					<div class="strip" class:compact={view === 'compact'}>
 						{#each auction.participants as participant (participant.id)}
@@ -75,7 +82,11 @@
 									type="button"
 									class="team-header"
 									aria-haspopup="dialog"
-									aria-label={`Rosa di ${participant.name}, ${participant.credits_remaining} ${plural(participant.credits_remaining, 'credito residuo', 'crediti residui')}, puntata massima ${participant.maximum_bid}`}
+									aria-label={t.auction.squadSummary(
+										participant.name,
+										participant.credits_remaining,
+										participant.maximum_bid
+									)}
 									onclick={() => (selectedId = participant.id)}
 								>
 									<span class="team-name name-lines name-min" title={participant.name}
@@ -91,7 +102,7 @@
 									class="team-slots"
 									style:--visible-slots={visibleSlots}
 									role="group"
-									aria-label="Slot di {participant.name}"
+									aria-label={t.auction.slotsForParticipant(participant.name)}
 									tabindex={view === 'roster' && hasTallRoster ? 0 : undefined}
 								>
 									{#each roles as role (role)}
@@ -107,11 +118,10 @@
 													class="mini-bar"
 													style:--slot-count={auction.slot_totals[role]}
 													role="img"
-													aria-label="{participant.slots[role].filled} {plural(
+													aria-label={t.auction.slotsFilled(
 														participant.slots[role].filled,
-														'slot occupato',
-														'slot occupati'
-													)} su {auction.slot_totals[role]}"
+														auction.slot_totals[role]
+													)}
 												>
 													{#each { length: auction.slot_totals[role] }, index (index)}
 														<span class:filled={index < participant.slots[role].filled}></span>

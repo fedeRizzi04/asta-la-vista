@@ -14,8 +14,8 @@
 	import PurchaseRegistry from '$lib/features/auction/PurchaseRegistry.svelte';
 	import TeamsStrip from '$lib/features/auction/TeamsStrip.svelte';
 	import { AuctionState } from '$lib/features/auction/auctionState.svelte';
+	import { t } from '$lib/i18n';
 	import { roleLabels, roles, type Role } from '$lib/players';
-	import { plural } from '$lib/plural';
 	import { registerShortcuts, withShortcut } from '$lib/shortcuts.svelte';
 	import { getUrlParams, setUrlParams } from '$lib/urlState';
 
@@ -67,36 +67,36 @@
 		registerShortcuts([
 			...roles.map((role) => ({
 				keys: roleKey(role),
-				description: `Mostra ${roleLabels[role].toLowerCase()}`,
-				group: 'Asta',
+				description: t.auction.showRole(roleLabels[role].toLowerCase()),
+				group: t.auction.title,
 				handler: () => setRole(role)
 			})),
 			{
 				keys: keys.tiers,
-				description: 'Vista Fasce',
-				group: 'Asta',
+				description: t.auction.tiersView,
+				group: t.auction.title,
 				handler: () => setView('tiers'),
 				when: started
 			},
 			{
 				keys: keys.free,
-				description: 'Vista Svincolati',
-				group: 'Asta',
+				description: t.auction.freePlayersView,
+				group: t.auction.title,
 				handler: () => setView('free'),
 				when: started
 			},
 			{
 				keys: keys.registry,
-				description: 'Apri o chiudi il registro acquisti',
-				group: 'Asta',
+				description: t.auction.toggleRegistry,
+				group: t.auction.title,
 				handler: toggleRegistry,
 				when: started,
 				inDialog: true
 			},
 			{
 				keys: keys.undo,
-				description: "Annulla l'ultimo acquisto",
-				group: 'Asta',
+				description: t.auction.undoLastPurchase,
+				group: t.auction.title,
 				handler: () => auctionState.undoLastPurchase(),
 				when: () => auction?.status === 'live',
 				emptyFieldOnly: true
@@ -107,12 +107,12 @@
 	onMount(() => auctionState.load());
 </script>
 
-<svelte:head><title>{auction?.name ?? 'Asta'} | Asta la Vista</title></svelte:head>
+<svelte:head><title>{auction?.name ?? t.auction.title} | Asta la Vista</title></svelte:head>
 
 <PageHeader
 	compact
-	title={auction?.name ?? 'Asta'}
-	back={{ href: resolve('/auctions'), label: 'Aste' }}
+	title={auction?.name ?? t.auction.title}
+	back={{ href: resolve('/auctions'), label: t.navigation.auctions }}
 >
 	{#snippet meta()}
 		{#if auction}
@@ -120,10 +120,12 @@
 				>{auctionStatusLabels[auction.status]}</span
 			>
 			<span class="header-summary">
-				{auction.participants.length}
-				{plural(auction.participants.length, 'partecipante', 'partecipanti')} · {auction.initial_credits}
-				crediti · {purchaseCount}/{purchaseCapacity}
-				{plural(purchaseCapacity, 'acquisto', 'acquisti')}
+				{t.auction.headerSummary(
+					auction.participants.length,
+					auction.initial_credits,
+					purchaseCount,
+					purchaseCapacity
+				)}
 			</span>
 		{/if}
 	{/snippet}
@@ -133,10 +135,10 @@
 				variant="secondary"
 				size="sm"
 				aria-haspopup="dialog"
-				title={withShortcut('Registro acquisti', keys.registry)}
+				title={withShortcut(t.auction.purchaseRegistry, keys.registry)}
 				onclick={() => (registryOpen = true)}
 			>
-				Registro ({purchaseCount})
+				{t.auction.registryCount(purchaseCount)}
 			</Button>
 		{/if}
 		{#if auction?.status === 'draft'}
@@ -145,17 +147,18 @@
 				onclick={() => auctionState.changeStatus('start')}
 				disabled={auctionState.saving}
 			>
-				Inizia asta
+				{t.auction.startAuction}
 			</Button>
 		{:else if auction?.status === 'live'}
 			<Button
 				variant="secondary"
 				size="sm"
-				title={withShortcut("Annulla l'ultimo acquisto", keys.undo)}
+				title={withShortcut(t.auction.undoLastPurchase, keys.undo)}
 				onclick={() => auctionState.undoLastPurchase()}
 				disabled={auctionState.saving || purchaseCount === 0}
 			>
-				<span aria-hidden="true">↶</span> Annulla ultimo
+				<span aria-hidden="true">↶</span>
+				{t.auction.undoLast}
 			</Button>
 			<Button
 				variant="danger"
@@ -163,24 +166,24 @@
 				onclick={() => auctionState.changeStatus('complete')}
 				disabled={auctionState.saving}
 			>
-				Termina asta
+				{t.auction.endAuction}
 			</Button>
 		{:else if auction?.status === 'completed'}
 			<Button variant="secondary" size="sm" onclick={() => auctionState.downloadReport()}>
-				Scarica report
+				{t.auction.downloadReport}
 			</Button>
 			<Button
 				size="sm"
 				onclick={() => auctionState.changeStatus('reopen')}
 				disabled={auctionState.saving}
 			>
-				Riapri asta
+				{t.auction.reopenAuction}
 			</Button>
 		{/if}
 	{/snippet}
 </PageHeader>
 
-{#if auctionState.loading}<EmptyState>Caricamento dell'asta…</EmptyState>{/if}
+{#if auctionState.loading}<EmptyState>{t.auction.loadingAuction}</EmptyState>{/if}
 
 {#if auction && !auctionState.loading}
 	<TeamsStrip {auctionState} />
@@ -195,11 +198,19 @@
 		{#if auction.status !== 'draft'}
 			<Tabs
 				items={[
-					{ value: 'tiers', label: 'Fasce', title: withShortcut('Fasce', keys.tiers) },
-					{ value: 'free', label: 'Svincolati', title: withShortcut('Svincolati', keys.free) }
+					{
+						value: 'tiers',
+						label: t.auction.tiers,
+						title: withShortcut(t.auction.tiers, keys.tiers)
+					},
+					{
+						value: 'free',
+						label: t.auction.freePlayers,
+						title: withShortcut(t.auction.freePlayers, keys.free)
+					}
 				]}
 				bind:value={() => view, setView}
-				label="Vista"
+				label={t.auction.view}
 				id="auction-view"
 				panelId="auction-view-panel"
 			/>
@@ -211,7 +222,7 @@
 				title: withShortcut(roleLabels[value], roleKey(value))
 			}))}
 			bind:value={() => role, setRole}
-			label="Ruolo"
+			label={t.players.role}
 			id="auction-role"
 			panelId="auction-view-panel"
 		/>

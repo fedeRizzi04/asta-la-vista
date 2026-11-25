@@ -4,8 +4,8 @@
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import Drawer from '$lib/components/ui/Drawer.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import { t } from '$lib/i18n';
 	import { roleLabels, roles } from '$lib/players';
-	import { plural } from '$lib/plural';
 	import type { AuctionState } from './auctionState.svelte';
 
 	let {
@@ -19,12 +19,12 @@
 	<p class="budget">
 		<span
 			><strong>{participant.credits_remaining}</strong>
-			{plural(participant.credits_remaining, 'credito residuo', 'crediti residui')}</span
+			{t.auction.creditsLeftLabel(participant.credits_remaining)}</span
 		>
 		<span>max <strong>{participant.maximum_bid}</strong></span>
 	</p>
 	{#if participant.purchases.length === 0}
-		<EmptyState compact>Nessun acquisto.</EmptyState>
+		<EmptyState compact>{t.auction.noPurchases}</EmptyState>
 	{:else}
 		{#each roles as role (role)}
 			{@const purchases = purchasesForRole(participant, role)}

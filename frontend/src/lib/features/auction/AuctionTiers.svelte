@@ -6,6 +6,7 @@
 	import Field from '$lib/components/ui/Field.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
+	import { t } from '$lib/i18n';
 	import { panelVisibility } from '$lib/panelVisibility.svelte';
 	import type { Role } from '$lib/players';
 	import { byMaxPercentageDesc } from '$lib/strategies';
@@ -49,12 +50,12 @@
 
 <div class="toolbar">
 	{#if auctionState.strategies.length > 0}
-		<Field label="Strategia" inline>
+		<Field label={t.strategies.strategy} inline>
 			<Select
 				bind:value={auctionState.viewingStrategyId}
 				onchange={() => auctionState.viewSelectedStrategy()}
 			>
-				<option value="">Nessuna strategia</option>
+				<option value="">{t.auctions.noStrategy}</option>
 				{#each auctionState.strategies as candidate (candidate.id)}
 					<option value={candidate.id}>{candidate.name}</option>
 				{/each}
@@ -67,19 +68,19 @@
 				disabled={auctionState.saving}
 				onclick={() => auctionState.fixViewedStrategy()}
 			>
-				Fissa per l'asta
+				{t.auction.pinStrategy}
 			</Button>
 		{:else if auctionState.viewingStrategyId}
-			<span class="fixed">Fissata</span>
+			<span class="fixed">{t.auction.strategyPinned}</span>
 		{/if}
 	{/if}
 	{#if columns.length > 0}
 		<div class="board-actions">
 			<ToggleChip pressed={!takenPlayers.visible} onclick={() => takenPlayers.toggle()}>
-				Nascondi presi
+				{t.auction.hideTaken}
 			</ToggleChip>
 			<Button variant="text" size="sm" onclick={() => setAllVisible(allClosed)}>
-				{allClosed ? 'Espandi tutte' : 'Comprimi tutte'}
+				{allClosed ? t.auction.expandAll : t.auction.collapseAll}
 			</Button>
 		</div>
 	{/if}
@@ -87,9 +88,9 @@
 
 {#if columns.length > 0}
 	<div class="board">
-		<TierBoard {columns} label="Fasce della strategia">
+		<TierBoard {columns} label={t.strategies.strategyTiers}>
 			{#snippet summary({ entries, leftCount })}
-				rimasti <b>{leftCount}</b>/{entries.length}
+				{t.auction.playersLeft} <b>{leftCount}</b>/{entries.length}
 			{/snippet}
 			{#snippet players({ entries })}
 				{@const shownEntries = takenPlayers.visible
@@ -116,14 +117,14 @@
 						/>
 					</button>
 				{:else}
-					<p class="empty">{entries.length > 0 ? 'Tutti presi' : 'Nessun calciatore'}</p>
+					<p class="empty">{entries.length > 0 ? t.auction.allTaken : t.strategies.noPlayers}</p>
 				{/each}
 			{/snippet}
 		</TierBoard>
 	</div>
 {:else}
 	<EmptyState compact>
-		{strategy ? 'La strategia non ha fasce' : 'Nessuna strategia selezionata'}
+		{strategy ? t.auction.noTiers : t.auction.noStrategySelected}
 	</EmptyState>
 {/if}
 

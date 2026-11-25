@@ -1,13 +1,10 @@
 import { apiDownload, apiRequest, type DownloadedFile } from './api';
+import { locale, t } from './i18n';
 import type { Role } from './players';
 
 export type AuctionStatus = 'draft' | 'live' | 'completed';
 
-export const auctionStatusLabels: Record<AuctionStatus, string> = {
-	draft: 'Da iniziare',
-	live: 'In corso',
-	completed: 'Terminata'
-};
+export const auctionStatusLabels: Record<AuctionStatus, string> = t.auctions.statuses;
 
 export type AuctionSummary = {
 	id: string;
@@ -141,7 +138,7 @@ export function amendPurchase(
 }
 
 export function exportAuctionReport(auctionId: string): Promise<DownloadedFile> {
-	return apiDownload(`/api/auctions/${auctionId}/report`);
+	return apiDownload(`/api/auctions/${auctionId}/report?lang=${locale}`);
 }
 
 export function cancelPurchase(auctionId: string, purchaseId: string): Promise<void> {

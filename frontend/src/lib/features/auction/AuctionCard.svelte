@@ -2,8 +2,8 @@
 	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import { auctionStatusLabels, type AuctionSummary } from '$lib/auctions';
-	import { plural } from '$lib/plural';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { t } from '$lib/i18n';
 
 	let {
 		auction,
@@ -17,7 +17,7 @@
 		actions?: Snippet;
 	} = $props();
 
-	const openLabel = $derived(highlighted ? 'Riprendi' : 'Apri');
+	const openLabel = $derived(highlighted ? t.auctions.resume : t.strategies.open);
 </script>
 
 <article class:highlighted>
@@ -29,10 +29,11 @@
 			</span>
 		</div>
 		<p>
-			{auction.participant_count}
-			{plural(auction.participant_count, 'partecipante', 'partecipanti')} · {auction.purchase_count}
-			{plural(auction.purchase_count, 'acquisto', 'acquisti')} ·
-			{auction.initial_credits} crediti iniziali
+			{t.auctions.cardSummary(
+				auction.participant_count,
+				auction.purchase_count,
+				auction.initial_credits
+			)}
 		</p>
 	</div>
 	<div class="actions">

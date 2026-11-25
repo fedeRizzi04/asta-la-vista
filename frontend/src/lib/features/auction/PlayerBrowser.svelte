@@ -6,9 +6,9 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
+	import { t } from '$lib/i18n';
 	import { mantraRolesOf } from '$lib/mantraRoles';
 	import type { Role } from '$lib/players';
-	import { plural } from '$lib/plural';
 	import { matchesSearch } from '$lib/search';
 	import type { AuctionState } from './auctionState.svelte';
 
@@ -69,29 +69,28 @@
 		<Input
 			bind:value={search}
 			type="search"
-			placeholder="Cerca calciatore o squadra"
-			aria-label="Cerca calciatore o squadra"
+			placeholder={t.strategies.searchPlayerOrClub}
+			aria-label={t.strategies.searchPlayerOrClub}
 		/>
 		<Select
 			bind:value={() => effectiveSort, (value: Sort) => (sort = value)}
-			aria-label="Ordina per"
+			aria-label={t.strategies.sortBy}
 		>
-			<option value="quotation">Quotazione</option>
-			{#if auctionState.viewedStrategy}<option value="tier">Fascia</option>{/if}
-			<option value="name">Nome</option>
+			<option value="quotation">{t.common.quotation}</option>
+			{#if auctionState.viewedStrategy}<option value="tier">{t.strategies.tier}</option>{/if}
+			<option value="name">{t.strategies.name}</option>
 		</Select>
 		<ToggleChip pressed={showTaken} onclick={() => (showTaken = !showTaken)}>
-			Mostra presi
+			{t.auction.showTaken}
 		</ToggleChip>
 	</div>
 </div>
 
 <p class="count" aria-live="polite">
-	{playerRows.length}
-	{plural(playerRows.length, 'calciatore', 'calciatori')}
+	{t.strategies.playerCount(playerRows.length)}
 </p>
 {#if playerRows.length === 0}
-	<EmptyState compact>Nessun calciatore</EmptyState>
+	<EmptyState compact>{t.strategies.noPlayers}</EmptyState>
 {:else}
 	<div class="player-grid">
 		{#each playerRows as { player, tier } (player.id)}
@@ -106,7 +105,8 @@
 				<span class="player-heading">
 					<span class="role-badge" data-role={player.role}>{player.role}</span>
 					<strong class="player-name">{player.name}</strong>
-					<span class="quotation">{player.quotation === null ? '—' : `Q. ${player.quotation}`}</span
+					<span class="quotation"
+						>{player.quotation === null ? '—' : t.strategies.quotationValue(player.quotation)}</span
 					>
 				</span>
 				<span class="player-details">
