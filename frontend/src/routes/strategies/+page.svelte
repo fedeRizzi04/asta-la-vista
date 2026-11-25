@@ -80,11 +80,10 @@
 		try {
 			const summary = await importStrategy(name, file).catch(async (caught: unknown) => {
 				if (!(caught instanceof ApiError) || caught.code !== 'unmatched_players') throw caught;
-				const names = caught.params?.names as string[] | undefined;
 				if (
 					importOpen &&
 					(await confirmDialog({
-						message: t.strategies.unmatchedPlayersWarning(names ?? []),
+						message: t.strategies.unmatchedPlayersWarning(caught.params?.names as string[]),
 						confirmLabel: t.common.continueAnyway
 					}))
 				) {
