@@ -24,10 +24,12 @@
 			.filter(({ purchase }) => matchesSearch(search, purchase.player_name))
 	);
 
-	function resetRegistry(): void {
+	// Not the Drawer's `onclose`, which skips the closes the parent asks for (the shortcut).
+	$effect(() => {
+		if (open) return;
 		search = '';
 		editing = undefined;
-	}
+	});
 
 	async function beginEdit(purchase: Purchase, participant: Participant): Promise<void> {
 		editing = { purchaseId: purchase.id, participantId: participant.id, price: purchase.price };
@@ -55,7 +57,7 @@
 	}
 </script>
 
-<Drawer bind:open title={t.auction.purchaseRegistry} width="640px" onclose={resetRegistry}>
+<Drawer bind:open title={t.auction.purchaseRegistry} width="640px">
 	<Input
 		bind:value={search}
 		type="search"
