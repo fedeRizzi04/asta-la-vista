@@ -137,9 +137,9 @@ export class AuctionState {
 		this.#calledPlayerId = '';
 	}
 
-	async registerPurchase(participantId: string, price: number): Promise<void> {
+	async registerPurchase(participantId: string, price: number): Promise<boolean> {
 		const playerId = this.#calledPlayerId;
-		await this.#runMutation(async (auctionId) => {
+		return this.#runMutation(async (auctionId) => {
 			await recordPurchase(auctionId, playerId, participantId, price);
 			// Another player may have been called in the meantime.
 			if (this.#calledPlayerId === playerId) this.cancelCall();
