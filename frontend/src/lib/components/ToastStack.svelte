@@ -1,10 +1,16 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
-	import { dismissToast, toastState } from '$lib/toast.svelte';
+	import { dismissToast, toastDialogId, toastState } from '$lib/toast.svelte';
 	import { press } from '$lib/actions/press';
 	import { t } from '$lib/i18n';
 	import { motionPreferences } from '$lib/motionPreferences.svelte';
+
+	/**
+	 * Mounted by the layout and by every Dialog (with its `dialogId`): only one of them shows
+	 * the toasts. The transitions are local, so moving to another one does not replay them.
+	 */
+	let { dialogId }: { dialogId?: string } = $props();
 
 	let flyIn = $derived(
 		motionPreferences.reducedMotion
@@ -16,38 +22,42 @@
 	);
 </script>
 
-<div class="toast-stack">
-	{#each toastState.items as toast (toast.id)}
-		<div
-			class="toast"
-			class:success={toast.kind === 'success'}
-			role={toast.kind === 'error' ? 'alert' : 'status'}
-			in:fly={flyIn}
-			out:fly={flyOut}
-		>
-			<span>{toast.message}</span>
-			<button
-				class="dismiss-button"
-				type="button"
-				aria-label={t.common.dismissNotification}
-				use:press
-				onclick={() => dismissToast(toast.id)}
+{#if toastDialogId() === dialogId}
+	<div class="toast-stack">
+		{#each toastState.items as toast (toast.id)}
+			<div
+				class="toast"
+				class:success={toast.kind === 'success'}
+				role={toast.kind === 'error' ? 'alert' : 'status'}
+				in:fly={flyIn}
+				out:fly={flyOut}
 			>
-				&times;
-			</button>
-		</div>
-	{/each}
-</div>
+				<span>{toast.message}</span>
+				<button
+					class="dismiss-button"
+					type="button"
+					aria-label={t.common.dismissNotification}
+					use:press
+					onclick={() => dismissToast(toast.id)}
+				>
+					&times;
+				</button>
+			</div>
+		{/each}
+	</div>
+{/if}
 
 <style>
 	.toast-stack {
 		position: fixed;
 		top: calc(var(--header-height) + 1.25rem);
-		right: 1.25rem;
+		right: 0;
+		left: 0;
 		z-index: 1000;
 		display: grid;
 		gap: 0.6rem;
 		width: min(360px, calc(100% - 2.5rem));
+		margin-inline: auto;
 	}
 
 	.toast {
@@ -69,14 +79,5 @@
 		border-color: var(--success-border);
 		background: var(--success-bg);
 		color: var(--success-text);
-	}
-
-	@media (max-width: 720px) {
-		.toast-stack {
-			top: 1rem;
-			right: 1rem;
-			left: 1rem;
-			width: auto;
-		}
 	}
 </style>
