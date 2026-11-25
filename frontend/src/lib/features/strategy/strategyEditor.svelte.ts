@@ -25,7 +25,8 @@ import { PlayerSelection } from './playerSelection.svelte';
 type EntryDraft = {
 	tierId: string;
 	note: string;
-	maximumPricePercentage: number | undefined;
+	/** Null when unset, which is also what an emptied number input binds to. */
+	maximumPricePercentage: number | null;
 };
 
 // Every field saves itself shortly after the user stops changing it.
@@ -352,7 +353,7 @@ export class StrategyEditor {
 				playerId,
 				draft.tierId || null,
 				draft.note,
-				draft.maximumPricePercentage ?? null
+				draft.maximumPricePercentage
 			);
 			this.#flashSaved(this.entrySaved, playerId);
 		} catch (caught) {
@@ -423,7 +424,7 @@ export class StrategyEditor {
 					{
 						tierId: entry?.tier_id ?? '',
 						note: entry?.note ?? '',
-						maximumPricePercentage: entry?.maximum_price_percentage ?? undefined
+						maximumPricePercentage: entry?.maximum_price_percentage ?? null
 					}
 				];
 			})

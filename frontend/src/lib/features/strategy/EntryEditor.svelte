@@ -135,7 +135,7 @@
 					/>
 					<span>%</span>
 					<strong
-						>= {pct === undefined
+						>= {pct === null
 							? '—'
 							: `${percentageToCredits(pct, referenceBudget.value)} cr`}</strong
 					>
