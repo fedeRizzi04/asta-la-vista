@@ -1,6 +1,6 @@
 [project]
 name = "asta-la-vista"
-version = "0.4.1"
+version = "0.5.0"
 description = "Assistente locale per aste Classic del fantacalcio"
 requires-python = ">=3.12"
 dependencies = [

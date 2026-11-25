@@ -9,6 +9,8 @@ who use the app.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-25
+
 ### Added
 
 - Asta la Vista is now in English and Italian. It starts in the language of your system (English
@@ -195,7 +197,8 @@ First release, with a desktop app that needs neither Docker nor Python.
   - a final HTML report that opens in any browser;
   - a dark theme.
 
-[Unreleased]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.2.0...v0.3.0
