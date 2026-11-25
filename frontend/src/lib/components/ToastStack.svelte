@@ -3,6 +3,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import { dismissToast, toastState } from '$lib/toast.svelte';
 	import { press } from '$lib/actions/press';
+	import { t } from '$lib/i18n';
 	import { motionPreferences } from '$lib/motionPreferences.svelte';
 
 	let flyIn = $derived(
@@ -28,7 +29,7 @@
 			<button
 				class="dismiss-button"
 				type="button"
-				aria-label="Chiudi notifica"
+				aria-label={t.common.dismissNotification}
 				use:press
 				onclick={() => dismissToast(toast.id)}
 			>

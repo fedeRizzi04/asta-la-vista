@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import { press } from '$lib/actions/press';
+	import { t } from '$lib/i18n';
 
 	let {
 		ariaLabel,
@@ -126,7 +127,7 @@
 	<button
 		type="button"
 		class="rail-button previous"
-		aria-label="Scorri a sinistra"
+		aria-label={t.common.scrollLeft}
 		disabled={!canScrollBackward}
 		use:press={{ disabled: !canScrollBackward }}
 		onclick={() => scrollByPage(-1)}
@@ -139,7 +140,7 @@
 	<button
 		type="button"
 		class="rail-button next"
-		aria-label="Scorri a destra"
+		aria-label={t.common.scrollRight}
 		disabled={!canScrollForward}
 		use:press={{ disabled: !canScrollForward }}
 		onclick={() => scrollByPage(1)}

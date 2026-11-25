@@ -3,6 +3,7 @@
 	import { slide } from 'svelte/transition';
 	import { press } from '$lib/actions/press';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { t } from '$lib/i18n';
 	import { motionPreferences } from '$lib/motionPreferences.svelte';
 	import type { AppVersion } from '$lib/system';
 
@@ -47,8 +48,9 @@
 	>
 		<div class="update-content">
 			<p>
-				È disponibile <strong>Asta la Vista {appVersion.latest_version}</strong>
-				<span class="current">(stai usando la {appVersion.version})</span>
+				{t.common.updateAvailable}
+				<strong>Asta la Vista {appVersion.latest_version}</strong>
+				<span class="current">{t.common.currentVersion(appVersion.version)}</span>
 			</p>
 			<div class="update-actions">
 				<!-- External page on GitHub, not an app route: resolve() does not apply. -->
@@ -57,12 +59,12 @@
 					target="_blank"
 					rel="noopener noreferrer"
 				>
-					Scarica
+					{t.common.download}
 				</Button>
 				<button
 					class="dismiss-button"
 					type="button"
-					aria-label="Nascondi avviso di aggiornamento"
+					aria-label={t.common.dismissUpdate}
 					use:press
 					onclick={dismiss}
 				>

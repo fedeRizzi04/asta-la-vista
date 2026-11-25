@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { SvelteMap } from 'svelte/reactivity';
+	import { t } from '$lib/i18n';
 	import { getShortcuts, shortcutKeys, shortcutsPanel } from '$lib/shortcuts.svelte';
 	import Dialog from './ui/Dialog.svelte';
 	import Kbd from './ui/Kbd.svelte';
@@ -20,7 +21,7 @@
 	});
 </script>
 
-<Dialog bind:open={shortcutsPanel.open} title="Scorciatoie da tastiera" closeLabel="Chiudi">
+<Dialog bind:open={shortcutsPanel.open} title={t.shortcuts.title} closeLabel={t.common.close}>
 	{#each groups as [group, rows] (group)}
 		<div>
 			{#if group}<h3>{group}</h3>{/if}
@@ -30,7 +31,7 @@
 						<span>{row.description}</span>
 						<span class="keys">
 							{#each row.keys as spec, index (spec)}
-								{#if index > 0}<span class="or">o</span>{/if}
+								{#if index > 0}<span class="or">{t.shortcuts.or}</span>{/if}
 								<span class="keys">
 									{#each shortcutKeys(spec) as key (key)}
 										<Kbd>{key}</Kbd>

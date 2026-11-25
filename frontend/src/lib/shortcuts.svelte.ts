@@ -1,4 +1,5 @@
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
+import { t } from './i18n';
 
 export type Shortcut = {
 	keys: string;
@@ -22,13 +23,13 @@ const modifierLabels: Record<string, string> = {
 // escape and return (⎋ ⏎) are not printed on the keyboard, so nobody recognises them.
 const keyLabels: Record<string, string> = {
 	escape: isMac ? 'esc' : 'Esc',
-	enter: isMac ? 'invio' : 'Invio',
+	enter: isMac ? t.shortcuts.returnKey : t.shortcuts.enterKey,
 	tab: isMac ? 'tab' : 'Tab',
 	arrowup: '↑',
 	arrowdown: '↓',
 	arrowleft: '←',
 	arrowright: '→',
-	' ': 'Spazio'
+	' ': t.shortcuts.spaceKey
 };
 const punctuationCodes: Record<string, string> = {
 	'/': 'slash',
@@ -88,8 +89,8 @@ export function shortcutKeys(spec: string): string[] {
 }
 
 /**
- * On macOS the symbols are joined as they are ("⌘K"), but a word needs a space ("⌘ invio");
- * elsewhere the keys are joined with "+" ("Ctrl+Invio").
+ * On macOS the symbols are joined as they are ("⌘K"), but a word needs a space ("⌘ return");
+ * elsewhere the keys are joined with "+" ("Ctrl+Enter").
  */
 export function shortcutLabel(spec: string): string {
 	const keys = shortcutKeys(spec);
@@ -97,7 +98,7 @@ export function shortcutLabel(spec: string): string {
 	return keys.join(isMac ? (hasWord ? ' ' : '') : '+');
 }
 
-/** A tooltip text: the label followed by the shortcut, e.g. "Registro acquisti (⌘J)". */
+/** A tooltip text: the label followed by the shortcut, e.g. "Purchase registry (⌘J)". */
 export function withShortcut(label: string, spec: string): string {
 	return `${label} (${shortcutLabel(spec)})`;
 }
