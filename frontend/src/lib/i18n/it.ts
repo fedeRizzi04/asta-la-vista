@@ -140,6 +140,7 @@ export const it: Messages = {
 		playerDetails: (name) => `Dettaglio di ${name}`,
 		inactiveClub: (club) => `${club} · inattivo`,
 		ofBudget: (budget) => `su ${budget}`,
+		percentageNotSaved: 'Percentuale non salvata.',
 		note: 'Nota',
 		showAll: 'Mostra tutti',
 		search: 'Cerca',

@@ -7,7 +7,7 @@
 	import Field from '$lib/components/ui/Field.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
-	import { t } from '$lib/i18n';
+	import { errorText, t } from '$lib/i18n';
 	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
 	import { MAX_PERCENTAGE, percentageToCredits } from '$lib/strategies';
 	import { referenceBudget } from './referenceBudget.svelte';
@@ -16,6 +16,30 @@
 	let { editor }: { editor: StrategyEditor } = $props();
 	let detail = $derived(editor.detail);
 	let player = $derived(detail && editor.players.find(({ id }) => id === detail?.playerId));
+
+	let percentageInput = $state<HTMLInputElement>();
+	/** What the percentage field had when it got the focus: kept if what is typed is invalid. */
+	let focusedPercentage: number | null = null;
+	/** An invalid percentage, shown but kept out of the draft, which is what gets saved. */
+	let rejected = $state.raw<{ detail: object; value: number | null; code: string }>();
+	let rejection = $derived(rejected?.detail === detail ? rejected : undefined);
+
+	/** The code of the broken backend rule. Above the maximum is clamped instead, on scheduling. */
+	function percentageError(value: number | null): string | undefined {
+		// Null is also a half-typed or unreadable number, which must not clear the saved one.
+		if (percentageInput?.validity.badInput || (value !== null && value <= 0)) {
+			return 'max_price_out_of_range';
+		}
+		if (value !== null && value <= MAX_PERCENTAGE && Number(value.toFixed(1)) !== value) {
+			return 'max_price_too_precise';
+		}
+	}
+
+	function typePercentage(playerId: string, value: number | null): void {
+		const code = percentageError(value);
+		rejected = code && detail ? { detail, value, code } : undefined;
+		editor.entryDrafts[playerId].maximumPricePercentage = code ? focusedPercentage : value;
+	}
 
 	$effect(() => {
 		if (detail && (editor.selection.ids.size !== 1 || !editor.selection.ids.has(detail.playerId))) {
@@ -125,22 +149,35 @@
 				<span class="price">
 					<Input
 						id="entry-editor-percentage"
-						bind:value={draft.maximumPricePercentage}
+						bind:element={percentageInput}
+						bind:value={
+							() => (rejection ? rejection.value : draft.maximumPricePercentage),
+							(value) => typePercentage(playerId, value)
+						}
 						type="number"
 						min="0.1"
 						max={MAX_PERCENTAGE}
 						step="0.1"
+						aria-invalid={rejection !== undefined}
+						aria-describedby={rejection && 'entry-editor-percentage-error'}
+						onfocus={() => (focusedPercentage = draft.maximumPricePercentage)}
 						oninput={() => editor.scheduleEntrySave(playerId)}
 						onblur={() => editor.flushEntrySave(playerId)}
 					/>
 					<span>%</span>
 					<strong
-						>= {pct === null
+						>= {rejection || pct === null
 							? '—'
 							: `${percentageToCredits(pct, referenceBudget.value)} cr`}</strong
 					>
 					<small>{t.strategies.ofBudget(referenceBudget.value)}</small>
 				</span>
+				{#if rejection}
+					<small id="entry-editor-percentage-error" class="percentage-error" role="alert">
+						{t.strategies.percentageNotSaved}
+						{errorText(rejection.code)}
+					</small>
+				{/if}
 			</Field>
 			<Field label={t.strategies.note} for="entry-editor-note">
 				<textarea
@@ -200,6 +237,10 @@
 
 	.price {
 		flex-wrap: wrap;
+	}
+
+	.percentage-error {
+		color: var(--error-text);
 	}
 
 	.save-status {

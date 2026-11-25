@@ -141,6 +141,7 @@ export const en = {
 		playerDetails: (name: string) => `Details for ${name}`,
 		inactiveClub: (club: string) => `${club} · inactive`,
 		ofBudget: (budget: number) => `of ${budget}`,
+		percentageNotSaved: 'Percentage not saved.',
 		note: 'Note',
 		showAll: 'Show all',
 		search: 'Search',
