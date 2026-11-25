@@ -11,6 +11,12 @@ who use the app.
 
 ### Added
 
+- Asta la Vista is now in English and Italian. It starts in the language of your system (English
+  if that is neither of the two), and the selector at the top of every page switches to the other
+  one; the app remembers your choice. Error messages and the final report follow it too.
+- In the desktop app, the menu and the messages outside the page are in the language of your
+  system, and so is the Windows installer (an update keeps the language of the previous
+  installation).
 - Press `?` to see the keyboard shortcuts available on the current page.
 - A guide to the keyboard shortcuts, with a step-by-step purchase from the keyboard and the
   difference between dropping a call and undoing a purchase, in
@@ -24,49 +30,49 @@ who use the app.
   tabs and filters look and behave the same on every page. Role tabs can be switched with the
   arrow keys.
 - Confirmations open as proper modal windows: Esc closes only the topmost one. When you confirm
-  a deletion or a cancellation, the cursor starts on the safe choice (**Annulla**, or **Lascia
-  stare**), so a stray Enter does not delete anything.
+  a deletion or a cancellation, the cursor starts on the safe choice (**Cancel**, or **Keep
+  purchase**), so a stray Enter does not delete anything.
 - The app remembers which panels you show or hide when you reload the page.
 - The auction page is laid out as a control panel. The header stays on one line with the status
   and the actions (start, end, reopen, download the report). Below it come the teams, the call
   bar and the tiers or the free players, and the role and the view you chose are kept when you
   reload the page.
-- The teams are on top of the auction page, side by side. **Rose** shows every roster (goalkeepers,
-  defenders, midfielders and forwards) with the credits left and the maximum bid, and
-  **Compatta** shows a bar of filled and empty slots for each role. Scroll the row with the arrows, hide it
-  with **Squadre** (the same button brings it back), or click a team to see its whole roster,
-  with prices and tiers, in a side panel.
+- The teams are on top of the auction page, side by side. **Squads** shows every squad
+  (goalkeepers, defenders, midfielders and forwards) with the credits left and the maximum bid, and
+  **Compact** shows a bar of filled and empty slots for each role. Scroll the row with the arrows, hide it
+  with **Teams** (the same button brings it back), or click a team to see its whole squad, with
+  prices and tiers, in a side panel.
 - During an auction, the called player, the winner and the price are in one bar that stays at the
   top while you scroll, below the teams. Pick a player from the search (arrows and Enter) or
   with a click anywhere in the lists, without the page jumping, and fill in the winner (type the
   initials) and the price when the bidding ends: they always start empty.
-- The auction player list is now the **Svincolati** view, one click away from the tiers. Filter by
-  Mantra role, search by player or team, sort by quotation, tier or name, and choose whether to
+- The auction player list is now the **Free players** view, one click away from the tiers. Filter
+  by Mantra role, search by player or club, sort by quotation, tier or name, and choose whether to
   show the players already taken.
 - During an auction, each tier shows the players left out of the total, and the players already
   taken stay in their place, crossed out, with who bought them and the price. Collapse a tier into
-  a thin strip (the choice is remembered, and **Comprimi tutte** does it for all of them), or hide
-  the taken players with **Nascondi presi**. One strategy at a time is shown, and **Fissa per
-  l'asta** keeps working as before.
-- The role shown in the tiers and in Svincolati is one at a time, goalkeepers first. Calling a
-  player of another role switches to that role.
-- The purchase registry opens in a side panel, from **Registro** or with `⌘J`. Search it, edit the
+  a thin strip (the choice is remembered, and **Collapse all** does it for all of them), or hide
+  the taken players with **Hide taken**. One strategy at a time is shown, and **Pin to this
+  auction** keeps working as before.
+- The role shown in the tiers and in the free players is one at a time, goalkeepers first. Calling
+  a player of another role switches to that role.
+- The purchase registry opens in a side panel, from **Registry** or with `⌘J`. Search it, edit the
   winner and the price of a purchase (the cursor starts on the winner), or cancel a purchase after
   confirming. Esc closes the panel.
-- **Annulla ultimo** (or `⌘Z`) cancels the most recent purchase, after asking you to confirm. A
+- **Undo last** (or `⌘Z`) cancels the most recent purchase, after asking you to confirm. A
   draft auction shows its setup instead of the call bar, and a finished one is read-only with a
-  short summary, **Riapri asta** and **Scarica report** in the header.
+  short summary, **Reopen auction** and **Download report** in the header.
 - Keyboard shortcuts for the auction, listed with `?`: `⌘K` or `/` to search for a player,
-  `⌘ invio` to go to the winner, `invio` in the price to register, Esc to drop the call, `P` `D`
-  `C` `A` to switch role, `⌥1` and `⌥2` for the tiers and Svincolati (also while typing in a
-  field), `⌘J` for the registry and `⌘Z` to undo the last purchase. A player can be called and
+  `⌘ return` to go to the winner, `return` in the price to register, Esc to drop the call, `P` `D`
+  `C` `A` to switch role, `⌥1` and `⌥2` for the tiers and the free players (also while typing in
+  a field), `⌘J` for the registry and `⌘Z` to undo the last purchase. A player can be called and
   registered with the keyboard alone. After a purchase, or after dropping the call with Esc, the
   cursor leaves the text fields, so `P` `D` `C` `A`, `?` and `⌥1` `⌥2` work at once; screen readers
   announce the purchase.
 - The strategy page shows the players without a tier on the left and the tiers side by side on
-  the right. Search the players, sort them by quotation, name or team, filter them by Mantra role
+  the right. Search the players, sort them by quotation, name or club, filter them by Mantra role
   and choose whether to show the ones already in a tier; inactive players stay visible and are
-  flagged. Add a tier with **+ Nuova fascia**, rename it and change its colour right in its header,
+  flagged. Add a tier with **+ New tier**, rename it and change its colour right in its header,
   and reorder tiers by dragging the grip or with the left and right arrow keys.
 - Drag players from the list to a tier, between tiers, or back to the list to take them out of
   their tier. Select several with `⇧` or `⌘` (or Space), then drag them together, press `1`-`9` to
@@ -76,18 +82,18 @@ who use the app.
 - The strategy name is edited in place and saves itself, like the rest of the page. Export and
   duplicate are in the **⋯** menu, and duplicating opens the copy.
 - Creating a strategy opens it straight away. An empty strategy offers a set of default tiers
-  (Top, Semitop, Terza fascia, Scommesse) or lets you create your own, and the strategies list has
-  **Importa CSV** in a window, with the file format explained under **Formato CSV**. Each row has
-  a **⋯** menu with export, duplicate and delete.
-- The Listone filters by role with the counts in the tabs (**Tutti**, **P**, **D**, **C**, **A**),
+  (Top, Semi-top, Third tier, Long shots) or lets you create your own, and the strategies list has
+  **Import CSV** in a window, with the file format explained under **CSV format**. Each row has a
+  **⋯** menu with export, duplicate and delete.
+- The player list filters by role with the counts in the tabs (**All**, **P**, **D**, **C**, **A**),
   and the filters apply as soon as you change them or type in the search, with no button to press.
-  The table header stays in view while you scroll, and you can sort by player, team or
-  quotation. The import (CSV or XLSX) is under **Importa**, in a window, and the summary and the
+  The table header stays in view while you scroll, and you can sort by player, club or
+  quotation. The import (CSV or XLSX) is under **Import**, in a window, and the summary and the
   confirmation for a live auction work as before.
-- The auctions list shows the auction in progress first, with **Riprendi**, and **Nuova asta**
+- The auctions list shows the auction in progress first, with **Resume**, and **New auction**
   opens a window instead of a form that is always on the page.
 - The home page shows the auction in progress, your first strategies and how many players each
-  role has in the Listone, instead of the welcome banner.
+  role has in the player list, instead of the welcome banner.
 - Accessibility pass on both themes: text fields in the dark theme have a clearly visible edge,
   secondary text on selected rows is readable, small controls are big enough to hit, tier names
   are headings, and with reduced motion enabled the transitions are turned off too.
@@ -97,16 +103,16 @@ who use the app.
 - Notes, percentages and names typed on a strategy no longer risk being lost when you reload the
   page right away: pending changes are saved first, and two quick edits of the same player or tier
   are saved in order.
-- Counts read correctly with one item ("1 acquisto", "1 fascia", "1 nuovo") instead of always using
+- Counts read correctly with one item ("1 purchase", "1 tier", "1 player") instead of always using
   the plural.
-- The confirmation shown when importing the Listone during a live auction, and the one for
-  players missing from a strategy CSV, are now in Italian. Cancelling the first one no longer
-  shows an error.
+- The confirmation shown when importing the player list during a live auction, and the one for
+  players missing from a strategy CSV, are now in the language of the app. Cancelling the first one
+  no longer shows an error.
 - In a narrow window the auction header wraps onto two rows instead of squeezing the title down to
   a few letters and splitting the status badge.
-- Names are no longer cut down to a bare "…". Player surnames in the team rosters, fantasy team
+- Names are no longer cut down to a bare "…". Player surnames in the squads, fantasy team
   names, tier names and the strategy name take the room that prices and badges leave free: the
-  rosters show about three teams at a time with room for long surnames, long team and tier names
+  squads show about three teams at a time with room for long surnames, long team and tier names
   wrap onto a second line, the buyer's name gives way to the player's in the tiers, and the tier
   buttons of the strategy page go to a second row instead of shrinking. When a name is still too
   long, at least its first letters stay visible and the full name is in the tooltip. A long file
