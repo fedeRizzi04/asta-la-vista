@@ -57,7 +57,7 @@ The most useful ones, with the macOS keys (on Windows and Linux, `⌘` is `Ctrl`
 - `⌘K` or `/` goes to the player search, `⌘ invio` goes to the winner field and `esc` drops the
   player being called.
 - `P` `D` `C` `A` show goalkeepers, defenders, midfielders or forwards, `⌥1` and `⌥2` switch between
-  the tiers and the free players, `⌘J` opens the purchase registry and `⌘Z` cancels the last
+  the tiers and the free players (also from a field), `⌘J` opens the purchase registry and `⌘Z` cancels the last
   purchase, after asking you to confirm.
 - A player can be called and recorded with the keyboard alone: `⌘K`, the name, `invio`, `⌘ invio`,
   the winner, `invio`, the price and `invio`.

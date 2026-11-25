@@ -60,8 +60,9 @@ who use the app.
   short summary, **Riapri asta** and **Scarica report** in the header.
 - Keyboard shortcuts for the auction, listed with `?`: `⌘K` or `/` to search for a player,
   `⌘ invio` to go to the winner, `invio` in the price to register, Esc to drop the call, `P` `D`
-  `C` `A` to switch role, `⌥1` and `⌥2` for the tiers and Svincolati, `⌘J` for the registry and
-  `⌘Z` to undo the last purchase. A player can be called and registered with the keyboard alone.
+  `C` `A` to switch role, `⌥1` and `⌥2` for the tiers and Svincolati (also while typing in a
+  field), `⌘J` for the registry and `⌘Z` to undo the last purchase. A player can be called and
+  registered with the keyboard alone.
 - The strategy page shows the players without a tier on the left and the tiers side by side on
   the right. Search the players, sort them by quotation, name or team, filter them by Mantra role
   and choose whether to show the ones already in a tier; inactive players stay visible and are
