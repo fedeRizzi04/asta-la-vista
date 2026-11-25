@@ -9,6 +9,14 @@ who use the app.
 
 ## [Unreleased]
 
+### Fixed
+
+- On Windows, an update could stop with "Access denied" when the app was in a folder such as
+  Program Files, which version 0.4.0 let you choose. Now just close the app and run the new
+  installer: if it finds the app in another folder, it removes that copy and installs the app in
+  your user folder, and your data stays where it is. Windows may ask for permission to remove the
+  old copy: allow it. If an icon you had pinned to the taskbar no longer works, pin the app again.
+
 ## [0.5.0] - 2026-11-25
 
 ### Added

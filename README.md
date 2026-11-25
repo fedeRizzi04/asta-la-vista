@@ -176,11 +176,13 @@ find out, the app asks GitHub for the latest release at most every few hours. No
 or your auctions is sent, and when you are offline the app simply skips the check.
 
 To update, quit the app and install the new version: on Windows, run its installer, which
-replaces the old version where it is; on macOS, replace the old app in **Applications**. Your
-data is kept: the new version updates the database automatically the first time it starts. If
-an update on Windows is interrupted, for example cancelled while copying files, and the app no
-longer opens, run the installer again: your data is not affected. What changed in each
-version is listed in the [changelog](CHANGELOG.md).
+replaces the old version; on macOS, replace the old app in **Applications**. Your data is
+kept: the new version updates the database automatically the first time it starts. If an
+update on Windows is interrupted, for example cancelled while copying files, and the app no
+longer opens, run the installer again: your data is not affected. If the old version is in
+another folder, which version 0.4.0 let you choose, the installer removes it and installs the
+new one in your user folder; Windows may ask for permission to remove it. What changed in
+each version is listed in the [changelog](CHANGELOG.md).
 
 ### Docker
 
