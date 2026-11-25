@@ -17,6 +17,7 @@
 	import SelectionBar from '$lib/features/strategy/SelectionBar.svelte';
 	import { StrategyEditor } from '$lib/features/strategy/strategyEditor.svelte';
 	import StrategyTiers from '$lib/features/strategy/StrategyTiers.svelte';
+	import { t } from '$lib/i18n';
 	import { roleLabels, roles, type Role } from '$lib/players';
 
 	const strategyId = $derived(page.params.strategyId);
@@ -46,34 +47,34 @@
 <svelte:window onpagehide={() => editor.flushOnUnload()} />
 
 <svelte:head>
-	<title>{strategy?.name ?? 'Strategia'} | Asta la Vista</title>
+	<title>{strategy?.name ?? t.strategies.strategy} | Asta la Vista</title>
 </svelte:head>
 
 <div class="editor">
-	<PageHeader compact back={{ href: resolve('/strategies'), label: 'Strategie' }}>
+	<PageHeader compact back={{ href: resolve('/strategies'), label: t.navigation.strategies }}>
 		{#snippet title()}
 			{#if strategy && !editor.loading}
 				<span class="strategy-title">
 					<Input
 						class="inline-name"
 						bind:value={editor.strategyName}
-						aria-label="Nome della strategia"
+						aria-label={t.strategies.strategyName}
 						autocomplete="off"
 						oninput={() => editor.scheduleNameSave()}
 						onblur={() => editor.flushNameSave()}
 						onkeydown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
 					/>
 					<span class="save-status" role="status">
-						{editor.strategySaved[strategy.id] ? 'Salvato' : ''}
+						{editor.strategySaved[strategy.id] ? t.strategies.saved : ''}
 					</span>
 				</span>
 			{:else}
-				Strategia
+				{t.strategies.strategy}
 			{/if}
 		{/snippet}
 		{#snippet actions()}
 			{#if strategy && !editor.loading}
-				<Field label="Budget di riferimento" inline for="reference-budget">
+				<Field label={t.strategies.referenceBudget} inline for="reference-budget">
 					<Input
 						id="reference-budget"
 						class="budget-input"
@@ -86,10 +87,10 @@
 					<span class="budget-unit">cr</span>
 				</Field>
 				<Menu
-					label="Azioni della strategia"
+					label={t.strategies.strategyActions}
 					items={[
-						{ label: 'Esporta CSV', onselect: () => void editor.exportCsv() },
-						{ label: 'Duplica…', onselect: () => void duplicate() }
+						{ label: t.strategies.exportCsv, onselect: () => void editor.exportCsv() },
+						{ label: t.strategies.duplicateMenu, onselect: () => void duplicate() }
 					]}
 				/>
 			{/if}
@@ -97,13 +98,13 @@
 	</PageHeader>
 
 	{#if editor.loading}
-		<EmptyState>Caricamento della strategia…</EmptyState>
+		<EmptyState>{t.strategies.loadingStrategy}</EmptyState>
 	{:else if strategy}
 		<div class="toolbar">
 			<Tabs
 				items={roleTabs}
 				bind:value={selectedRole}
-				label="Ruoli"
+				label={t.strategies.roles}
 				id="strategy-role"
 				panelId="strategy-role-panel"
 				onchange={() => editor.selection.clear()}

@@ -7,6 +7,7 @@
 	import Field from '$lib/components/ui/Field.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
+	import { t } from '$lib/i18n';
 	import { mantraRoleLabel, sortMantraRoles } from '$lib/mantraRoles';
 	import { MAX_PERCENTAGE, percentageToCredits } from '$lib/strategies';
 	import { referenceBudget } from './referenceBudget.svelte';
@@ -80,7 +81,7 @@
 			class="panel entry-editor"
 			role="dialog"
 			tabindex="-1"
-			aria-label={`Dettaglio di ${player.name}`}
+			aria-label={t.strategies.playerDetails(player.name)}
 			{@attach (panel) => position(panel, anchor, playerId)}
 			onkeydown={(event) => {
 				if (event.key !== 'Escape') return;
@@ -90,30 +91,37 @@
 		>
 			<header>
 				<h3>{player.name}</h3>
-				<Button variant="text" size="sm" aria-label="Chiudi" onclick={() => closeAndFocus(anchor)}>
+				<Button
+					variant="text"
+					size="sm"
+					aria-label={t.common.close}
+					onclick={() => closeAndFocus(anchor)}
+				>
 					✕
 				</Button>
 			</header>
 			<p class="player-meta">
-				{player.team}{player.active ? '' : ' · inattivo'} · Q. {player.quotation ?? '—'}
+				{player.active ? player.team : t.strategies.inactiveClub(player.team)} · {t.strategies.quotationValue(
+					player.quotation ?? '—'
+				)}
 				{#if player.mantra_roles.length}
 					· {sortMantraRoles(player.mantra_roles).map(mantraRoleLabel).join(' ')}
 				{/if}
 			</p>
 
-			<Field label="Fascia" for={entryTierFieldId}>
+			<Field label={t.strategies.tier} for={entryTierFieldId}>
 				<Select
 					id={entryTierFieldId}
 					value={draft.tierId}
 					onchange={(event) => editor.movePlayers([playerId], event.currentTarget.value)}
 				>
-					<option value="">Senza fascia</option>
+					<option value="">{t.strategies.noTier}</option>
 					{#each editor.orderedTiers as tier (tier.id)}
 						<option value={tier.id}>{tier.name}</option>
 					{/each}
 				</Select>
 			</Field>
-			<Field label="Prezzo massimo" for="entry-editor-percentage">
+			<Field label={t.common.maximumPrice} for="entry-editor-percentage">
 				<span class="price">
 					<Input
 						id="entry-editor-percentage"
@@ -131,10 +139,10 @@
 							? '—'
 							: `${percentageToCredits(pct, referenceBudget.value)} cr`}</strong
 					>
-					<small>su {referenceBudget.value}</small>
+					<small>{t.strategies.ofBudget(referenceBudget.value)}</small>
 				</span>
 			</Field>
-			<Field label="Nota" for="entry-editor-note">
+			<Field label={t.strategies.note} for="entry-editor-note">
 				<textarea
 					id="entry-editor-note"
 					class="control"
@@ -144,7 +152,9 @@
 					onblur={() => editor.flushEntrySave(playerId)}></textarea>
 			</Field>
 
-			<span class="save-status" role="status">{editor.entrySaved[playerId] ? 'Salvato' : ''}</span>
+			<span class="save-status" role="status"
+				>{editor.entrySaved[playerId] ? t.strategies.saved : ''}</span
+			>
 		</div>
 	{/key}
 {/if}

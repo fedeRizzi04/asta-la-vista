@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick, type Snippet } from 'svelte';
+	import { t } from '$lib/i18n';
 	import type { Player } from '$lib/players';
 	import { entryTierFieldId } from './EntryEditor.svelte';
 	import type { PlayerDrag } from './playerDrag.svelte';
@@ -131,7 +132,7 @@
 	{/each}
 </div>
 {#if players.length === 0}
-	<p class="empty">Nessun calciatore</p>
+	<p class="empty">{t.strategies.noPlayers}</p>
 {/if}
 
 <style>

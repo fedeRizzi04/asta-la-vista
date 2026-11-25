@@ -1,5 +1,6 @@
 import { saveFile } from '$lib/api';
 import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
+import { t } from '$lib/i18n';
 import { getPlayers, type Player, type Role } from '$lib/players';
 import {
 	addTier,
@@ -140,7 +141,7 @@ export class StrategyEditor {
 			this.closeDetail();
 			this.lastMove = '';
 			this.strategy = undefined;
-			if (!strategyId) throw new Error('Strategia non trovata.');
+			if (!strategyId) throw new Error(t.errors.strategy_not_found);
 			const [strategy, players] = await Promise.all([
 				getStrategy(strategyId),
 				getPlayers({ includeInactive: true })
@@ -198,8 +199,8 @@ export class StrategyEditor {
 		const moved =
 			movedIds.length === 1
 				? this.players.find((player) => player.id === movedIds[0])?.name
-				: `${movedIds.length} calciatori`;
-		this.lastMove = `${moved}: ${this.index?.tierById.get(tierId)?.name ?? 'senza fascia'}`;
+				: t.strategies.playerCount(movedIds.length);
+		this.lastMove = t.strategies.moveAnnouncement(moved, this.index?.tierById.get(tierId)?.name);
 	}
 
 	async exportCsv(): Promise<void> {
@@ -217,10 +218,10 @@ export class StrategyEditor {
 		const strategy = this.strategy;
 		if (!strategy) return;
 		const name = await promptDialog({
-			title: 'Duplica strategia',
-			message: 'Nome della nuova strategia',
-			defaultValue: `${this.strategyName.trim() || strategy.name} - copia`,
-			confirmLabel: 'Duplica'
+			title: t.strategies.duplicateStrategy,
+			message: t.strategies.copyNameLabel,
+			defaultValue: t.strategies.copyName(this.strategyName.trim() || strategy.name),
+			confirmLabel: t.strategies.duplicate
 		});
 		if (!name || this.strategy !== strategy) return;
 		return this.#runMutation(async () => {
@@ -246,7 +247,7 @@ export class StrategyEditor {
 		if (!strategy || this.loading || this.saving || this.orderedTiers.length > 0) return;
 		await this.#runMutation(async () => {
 			await this.flushAll();
-			const names = ['Top', 'Semitop', 'Terza fascia', 'Scommesse'];
+			const names = t.strategies.defaultTierNames;
 			try {
 				for (const [index, name] of names.entries()) {
 					await addTier(strategy.id, name, tierColors[index]);
@@ -262,9 +263,9 @@ export class StrategyEditor {
 		const strategy = this.strategy;
 		if (!strategy) return;
 		const confirmed = await confirmDialog({
-			title: 'Elimina fascia',
-			message: `Eliminare la fascia “${tier.name}”?`,
-			confirmLabel: 'Elimina',
+			title: t.strategies.deleteTier,
+			message: t.strategies.deleteTierMessage(tier.name),
+			confirmLabel: t.strategies.delete,
 			danger: true
 		});
 		if (!confirmed || this.strategy !== strategy) return;
@@ -336,7 +337,7 @@ export class StrategyEditor {
 	/** The backend wants the tier names of a strategy to be unique. */
 	#newTierName(): string {
 		const taken = this.orderedTiers.map((tier) => tier.name.trim().toLowerCase());
-		const base = 'Nuova fascia';
+		const base = t.strategies.newTier;
 		let name = base;
 		for (let number = 2; taken.includes(name.toLowerCase()); number++) name = `${base} ${number}`;
 		return name;
