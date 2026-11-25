@@ -8,8 +8,10 @@
 	import ToastStack from '$lib/components/ToastStack.svelte';
 	import UpdateBanner from '$lib/components/UpdateBanner.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Select from '$lib/components/ui/Select.svelte';
 	import { press } from '$lib/actions/press';
 	import { slidingIndicator } from '$lib/actions/slidingIndicator.svelte';
+	import { locale, setLocale, t, type Locale } from '$lib/i18n';
 	import { installShortcuts, registerShortcuts, shortcutsPanel } from '$lib/shortcuts.svelte';
 	import type { AppVersion } from '$lib/system';
 	import { watchVersion } from '$lib/versionWatcher';
@@ -24,10 +26,10 @@
 	let appVersion = $state<AppVersion>();
 
 	const navigation: { href: '/' | '/players' | '/strategies' | '/auctions'; label: string }[] = [
-		{ href: '/', label: 'Home' },
-		{ href: '/players', label: 'Listone' },
-		{ href: '/strategies', label: 'Strategie' },
-		{ href: '/auctions', label: 'Aste' }
+		{ href: '/', label: t.navigation.home },
+		{ href: '/players', label: t.navigation.playerList },
+		{ href: '/strategies', label: t.navigation.strategies },
+		{ href: '/auctions', label: t.navigation.auctions }
 	];
 
 	function isCurrent(href: string): boolean {
@@ -44,8 +46,8 @@
 		registerShortcuts([
 			{
 				keys: '?',
-				description: 'Mostra le scorciatoie',
-				group: 'Generali',
+				description: t.shortcuts.showShortcuts,
+				group: t.shortcuts.general,
 				handler: () => (shortcutsPanel.open = true)
 			}
 		])
@@ -94,16 +96,13 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	<title>Asta la Vista</title>
-	<meta
-		name="description"
-		content="Assistente locale per preparare e seguire le aste Classic del fantacalcio."
-	/>
+	<meta name="description" content={t.navigation.appDescription} />
 </svelte:head>
 
 <header class="app-header" class:is-scrolled={scrolled} bind:this={headerEl}>
 	<a class="brand" href={resolve('/')} aria-label="Asta la Vista, home" use:press>Asta la Vista</a>
 	<div class="header-actions">
-		<nav aria-label="Navigazione principale" bind:this={navEl}>
+		<nav aria-label={t.navigation.mainNavigation} bind:this={navEl}>
 			{#each navigation as item (item.href)}
 				<a
 					href={resolve(item.href)}
@@ -115,16 +114,27 @@
 			{/each}
 			<span class="tab-indicator" use:slidingIndicator={activeNavEl} aria-hidden="true"></span>
 		</nav>
+		<Select
+			class="language-select"
+			aria-label={t.navigation.language}
+			value={locale}
+			onchange={(event) => setLocale(event.currentTarget.value as Locale)}
+		>
+			<option value="en" lang="en">English</option>
+			<option value="it" lang="it">Italiano</option>
+		</Select>
 		<Button
 			variant="secondary"
 			size="sm"
 			class="theme-toggle"
 			onclick={toggleTheme}
-			aria-label={theme === 'light' ? 'Attiva tema scuro' : 'Attiva tema chiaro'}
+			aria-label={theme === 'light'
+				? t.navigation.switchToDarkTheme
+				: t.navigation.switchToLightTheme}
 			aria-pressed={theme === 'dark'}
 		>
 			<span aria-hidden="true"></span>
-			{theme === 'light' ? 'Tema scuro' : 'Tema chiaro'}
+			{theme === 'light' ? t.navigation.darkTheme : t.navigation.lightTheme}
 		</Button>
 	</div>
 </header>
@@ -146,3 +156,14 @@
 <ToastStack />
 <DialogHost />
 <ShortcutsPanel />
+
+<style>
+	.header-actions :global(.language-select) {
+		align-self: center;
+		width: auto;
+		min-height: 1.75rem;
+		padding: 0 0.55rem;
+		border-radius: var(--radius-xs);
+		font-size: 0.8rem;
+	}
+</style>

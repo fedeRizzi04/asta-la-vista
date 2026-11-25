@@ -3,6 +3,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Dialog from '$lib/components/ui/Dialog.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import { t } from '$lib/i18n';
 
 	const messageId = $props.id();
 
@@ -14,7 +15,7 @@
 
 <Dialog
 	open={dialogState.request !== null}
-	title={dialogState.request?.title ?? 'Conferma'}
+	title={dialogState.request?.title ?? t.common.confirm}
 	role="alertdialog"
 	aria-describedby={messageId}
 	onclose={dismissDialog}
@@ -36,7 +37,7 @@
 					onclick={dismissDialog}
 					data-autofocus={dialogState.request.danger || undefined}
 				>
-					{dialogState.request.cancelLabel ?? 'Annulla'}
+					{dialogState.request.cancelLabel ?? t.common.cancel}
 				</Button>
 				<Button
 					type="submit"
@@ -44,7 +45,7 @@
 					data-autofocus={(dialogState.request.kind === 'confirm' && !dialogState.request.danger) ||
 						undefined}
 				>
-					{dialogState.request.confirmLabel ?? 'Conferma'}
+					{dialogState.request.confirmLabel ?? t.common.confirm}
 				</Button>
 			</div>
 		</form>

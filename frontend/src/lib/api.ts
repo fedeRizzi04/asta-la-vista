@@ -1,15 +1,18 @@
+import { errorText } from './i18n';
+import type { ErrorParams } from './i18n/en';
+
 export type ApiErrorBody = {
 	code?: string;
-	message?: string;
+	params?: ErrorParams;
 };
 
 export class ApiError extends Error {
 	constructor(
-		message: string,
 		readonly status: number,
-		readonly code?: string
+		readonly code?: string,
+		readonly params?: ErrorParams
 	) {
-		super(message);
+		super(errorText(code, params));
 	}
 }
 
@@ -44,13 +47,9 @@ async function apiError(response: Response): Promise<ApiError> {
 	try {
 		body = await response.json();
 	} catch {
-		// The fallback below covers non-JSON errors from the development server.
+		// A non-JSON error, such as one from the development server, has no code.
 	}
-	return new ApiError(
-		body.message ?? 'La richiesta non è andata a buon fine.',
-		response.status,
-		body.code
-	);
+	return new ApiError(response.status, body.code, body.params);
 }
 
 export function saveFile({ blob, filename }: DownloadedFile): void {

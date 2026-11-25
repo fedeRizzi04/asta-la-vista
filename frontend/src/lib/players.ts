@@ -1,13 +1,9 @@
 import { apiRequest } from './api';
+import { t } from './i18n';
 
 export type Role = 'P' | 'D' | 'C' | 'A';
 
-export const roleLabels: Record<Role, string> = {
-	P: 'Portieri',
-	D: 'Difensori',
-	C: 'Centrocampisti',
-	A: 'Attaccanti'
-};
+export const roleLabels: Record<Role, string> = t.roles;
 export const roles: Role[] = ['P', 'D', 'C', 'A'];
 
 export type Player = {

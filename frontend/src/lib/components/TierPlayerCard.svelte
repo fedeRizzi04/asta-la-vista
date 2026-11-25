@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { nameFit } from '$lib/names';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
+	import { t } from '$lib/i18n';
 
 	/** A player's row in a tier. A taken player shows who bought them and the price paid. */
 	let {
@@ -38,7 +39,7 @@
 			<span>{taken.price}</span></span
 		>
 	{:else if maximumPricePercentage !== null}
-		<span class="price" title="Prezzo massimo">
+		<span class="price" title={t.common.maximumPrice}>
 			<b>{maximumPricePercentage}%</b>
 			{#if maximumPriceCredits !== null}<small>{maximumPriceCredits}</small>{/if}
 		</span>

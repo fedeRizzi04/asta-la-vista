@@ -1,3 +1,5 @@
+import { t } from './i18n';
+
 export type ToastKind = 'error' | 'success';
 
 export type ToastItem = {
@@ -29,7 +31,7 @@ export function dismissToast(id: number): void {
 }
 
 function errorMessage(caught: unknown): string {
-	return caught instanceof Error ? caught.message : 'Si è verificato un errore inatteso.';
+	return caught instanceof Error ? caught.message : t.errors.unexpected;
 }
 
 /** Shorthand for the common `pushToast(errorMessage(caught))` catch-block pattern. */
