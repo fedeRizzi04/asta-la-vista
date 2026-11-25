@@ -32,6 +32,8 @@ who use the app.
 - Confirmations open as proper modal windows: Esc closes only the topmost one. When you confirm
   a deletion or a cancellation, the cursor starts on the safe choice (**Cancel**, or **Keep
   purchase**), so a stray Enter does not delete anything.
+- Error and success messages appear at the top centre of the window, also in front of open
+  windows and side panels.
 - The app remembers which panels you show or hide when you reload the page.
 - The auction page is laid out as a control panel. The header stays on one line with the status
   and the actions (start, end, reopen, download the report). Below it come the teams, the call
@@ -45,7 +47,8 @@ who use the app.
 - During an auction, the called player, the winner and the price are in one bar that stays at the
   top while you scroll, below the teams. Pick a player from the search (arrows and Enter) or
   with a click anywhere in the lists, without the page jumping, and fill in the winner (type the
-  initials) and the price when the bidding ends: they always start empty.
+  initials) and the price when the bidding ends: they always start empty. In a narrow window the
+  bar does not stay at the top: if it is out of view, calling a player scrolls back to it.
 - The auction player list is now the **Free players** view, one click away from the tiers. Filter
   by Mantra role, search by player or club, sort by quotation, tier or name, and choose whether to
   show the players already taken.
@@ -68,7 +71,7 @@ who use the app.
   a field), `⌘J` for the registry and `⌘Z` to undo the last purchase. A player can be called and
   registered with the keyboard alone. After a purchase, or after dropping the call with Esc, the
   cursor leaves the text fields, so `P` `D` `C` `A`, `?` and `⌥1` `⌥2` work at once; screen readers
-  announce the purchase.
+  announce the purchase. In the search of the free players, the first Esc only empties the field.
 - The strategy page shows the players without a tier on the left and the tiers side by side on
   the right. Search the players, sort them by quotation, name or club, filter them by Mantra role
   and choose whether to show the ones already in a tier; inactive players stay visible and are
@@ -78,7 +81,8 @@ who use the app.
   their tier. Select several with `⇧` or `⌘` (or Space), then drag them together, press `1`-`9` to
   move them to that tier or `0` to take them out of it. Click a player to open its tier, maximum
   price and note: the price is also shown in credits, based on a reference budget you can change
-  at the top (it is remembered and does not affect the strategy itself).
+  at the top (it is remembered and does not affect the strategy itself). Esc closes these details
+  and keeps the player selected; in the search of the list, the first Esc only empties the field.
 - The strategy name is edited in place and saves itself, like the rest of the page. Export and
   duplicate are in the **⋯** menu, and duplicating opens the copy.
 - Creating a strategy opens it straight away. An empty strategy offers a set of default tiers
@@ -103,8 +107,8 @@ who use the app.
 - Notes, percentages and names typed on a strategy no longer risk being lost when you reload the
   page right away: pending changes are saved first, and two quick edits of the same player or tier
   are saved in order.
-- Counts read correctly with one item ("1 purchase", "1 tier", "1 player") instead of always using
-  the plural.
+- Counts read correctly with one item ("1 purchase", "1 tier", "1 player", "1 credit", also in
+  the final report) instead of always using the plural.
 - The confirmation shown when importing the player list during a live auction, and the one for
   players missing from a strategy CSV, are now in the language of the app. Cancelling the first one
   no longer shows an error.
@@ -119,6 +123,12 @@ who use the app.
   name in the import windows no longer makes the window wider.
 - The maximum price percentage of a player cannot go above 100%: a larger value, typed or
   pasted, is brought back to 100% before it is shown on the card or saved, and the credits follow.
+- A maximum price percentage that cannot be saved (zero, negative or with more than one decimal)
+  no longer stops the note and the tier of the player from being saved. A message under the field
+  says that the percentage was not saved, and the previous one is kept.
+- On macOS, `bin/start` (running the app from its source code) no longer quits right after
+  starting while its two servers keep running in the background. Stopping it, or one of the two
+  servers stopping on its own, now closes both.
 
 ## [0.4.1] - 2026-11-06
 
