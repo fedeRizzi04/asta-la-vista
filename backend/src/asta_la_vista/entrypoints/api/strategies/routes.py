@@ -46,7 +46,7 @@ class StrategyImport(MethodView):
     def post(self, query: dict) -> dict[str, str | int | list[str]]:
         uploaded_file = request.files.get("file")
         if uploaded_file is None or not uploaded_file.filename:
-            raise ValidationError("A .csv tier file is required")
+            raise ValidationError("unsupported_tier_file")
         rows = parse_strategy_import_file(uploaded_file.read(), uploaded_file.filename)
         return bus().handle(
             commands.ImportStrategy(query["name"], rows, query["confirm_unmatched"])
@@ -74,7 +74,7 @@ class StrategyExportResource(MethodView):
     def get(self, strategy_id: str):
         exported_strategy = strategies.strategy_export(uow(), strategy_id)
         if not exported_strategy.rows:
-            raise ValidationError("A strategy without players cannot be exported")
+            raise ValidationError("strategy_without_players")
         response = make_response(render_strategy_export_file(exported_strategy.rows))
         filename = secure_filename(exported_strategy.name) or "strategy"
         response.headers["Content-Disposition"] = f'attachment; filename="{filename}.csv"'

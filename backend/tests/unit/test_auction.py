@@ -63,6 +63,16 @@ def test_cancelled_purchase_restores_budget_slot_and_player_availability(auction
         auction.cancel_purchase(purchase_id)
 
 
+def test_a_wrong_auction_status_is_reported_with_the_required_status(auction: Auction):
+    with pytest.raises(ValidationError, match="auction_not_draft"):
+        auction.add_participant("Carol")
+    with pytest.raises(ValidationError, match="auction_not_completed"):
+        auction.reopen()
+    auction.complete()
+    with pytest.raises(ValidationError, match="auction_not_live"):
+        auction.complete()
+
+
 def test_completed_auction_can_only_change_after_reopening(auction: Auction):
     auction.complete()
     assert auction.status == AuctionStatus.COMPLETED

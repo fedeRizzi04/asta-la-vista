@@ -62,7 +62,7 @@ def update_strategy_player(cmd: commands.UpdateStrategyPlayer, uow: AbstractUnit
         strategy = _strategy(uow, cmd.strategy_id)
         player = uow.players.get(cmd.player_id)
         if player is None:
-            raise NotFoundError("Player not found")
+            raise NotFoundError("player_not_found")
         strategy.update_player(
             player.external_id,
             player.role,
@@ -77,7 +77,7 @@ def import_strategy(
     cmd: commands.ImportStrategy, uow: AbstractUnitOfWork
 ) -> dict[str, str | int | list[str]]:
     if not cmd.rows:
-        raise ValidationError("The tier list is empty")
+        raise ValidationError("empty_tier_list")
     with uow:
         _ensure_strategy_name_is_free(uow, cmd.name)
         players_by_name = {player.name.casefold(): player for player in uow.players.list_all()}
@@ -85,7 +85,7 @@ def import_strategy(
             {row.name for row in cmd.rows if row.name.casefold() not in players_by_name}
         )
         if missing and not cmd.allow_unmatched_players:
-            raise ConfirmationRequiredError(f"No matching player found for: {', '.join(missing)}")
+            raise ConfirmationRequiredError("unmatched_players", names=missing)
 
         strategy = model.Strategy(cmd.name)
         tier_ids: dict[str, str] = {}
@@ -140,11 +140,11 @@ def _ensure_strategy_name_is_free(uow: AbstractUnitOfWork, name: str, keeping: s
     """Strategy names are unique, so reject a clash before the database does."""
     existing = uow.strategies.get_by_name(name)
     if existing is not None and existing.uuid != keeping:
-        raise ValidationError(f'A strategy named "{existing.name}" already exists')
+        raise ValidationError("strategy_name_taken", name=existing.name)
 
 
 def _strategy(uow: AbstractUnitOfWork, strategy_id: str) -> model.Strategy:
     strategy = uow.strategies.get(strategy_id)
     if strategy is None:
-        raise NotFoundError("Strategy not found")
+        raise NotFoundError("strategy_not_found")
     return strategy

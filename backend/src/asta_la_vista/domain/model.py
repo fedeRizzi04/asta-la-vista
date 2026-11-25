@@ -34,9 +34,9 @@ class RosterSlots:
 
     def __post_init__(self):
         if any(value < 0 for value in self.as_dict().values()):
-            raise ValidationError("Roster slots cannot be negative")
+            raise ValidationError("negative_roster_slots")
         if self.total == 0:
-            raise ValidationError("A roster must contain at least one slot")
+            raise ValidationError("empty_roster")
 
     def for_role(self, role: Role) -> int:
         return self.as_dict()[role]
@@ -85,7 +85,7 @@ class Player:
         active: bool = True,
     ):
         if not external_id.strip() or not name.strip() or not team.strip():
-            raise ValidationError("Player id, name and team are required")
+            raise ValidationError("player_fields_required")
         self._validate_quotation(quotation)
         self.external_id = external_id.strip()
         self.name = name.strip()
@@ -105,7 +105,7 @@ class Player:
         mantra_roles: tuple[str, ...] | None = None,
     ):
         if not name.strip() or not team.strip():
-            raise ValidationError("Player name and team are required")
+            raise ValidationError("player_fields_required")
         self._validate_quotation(quotation)
         previous_role = self.role
         self.name = name.strip()
@@ -128,7 +128,7 @@ class Player:
         if quotation is not None and (
             isinstance(quotation, bool) or not isinstance(quotation, int) or quotation < 0
         ):
-            raise ValidationError("Player quotation must be a non-negative integer")
+            raise ValidationError("invalid_quotation")
 
 
 @dataclass
@@ -153,7 +153,7 @@ class Strategy:
     def __init__(self, name: str, uuid: str | None = None):
         name = name.strip()
         if not name:
-            raise ValidationError("Strategy name is required")
+            raise ValidationError("strategy_name_required")
         self.uuid = uuid or new_uuid()
         self.name = name
         self.tiers: list[Tier] = []
@@ -163,7 +163,7 @@ class Strategy:
     def rename(self, name: str):
         name = name.strip()
         if not name:
-            raise ValidationError("Strategy name is required")
+            raise ValidationError("strategy_name_required")
         self.name = name
 
     def add_tier(
@@ -174,9 +174,9 @@ class Strategy:
     ) -> str:
         name = name.strip()
         if not name:
-            raise ValidationError("Tier name is required")
+            raise ValidationError("tier_name_required")
         if any(tier.name.casefold() == name.casefold() for tier in self.tiers):
-            raise ValidationError("Tier names must be unique within a strategy")
+            raise ValidationError("tier_name_taken")
         tier = Tier(name, len(self.tiers), color, uuid or new_uuid())
         self.tiers.append(tier)
         return tier.uuid
@@ -185,7 +185,7 @@ class Strategy:
         if len(ordered_tier_ids) != len(set(ordered_tier_ids)) or set(ordered_tier_ids) != {
             tier.uuid for tier in self.tiers
         }:
-            raise ValidationError("Tier order must contain every tier exactly once")
+            raise ValidationError("invalid_tier_order")
         positions = {tier_id: position for position, tier_id in enumerate(ordered_tier_ids)}
         for tier in self.tiers:
             tier.position = positions[tier.uuid]
@@ -194,11 +194,11 @@ class Strategy:
         tier = self._tier(tier_id)
         name = name.strip()
         if not name:
-            raise ValidationError("Tier name is required")
+            raise ValidationError("tier_name_required")
         if any(
             item.uuid != tier_id and item.name.casefold() == name.casefold() for item in self.tiers
         ):
-            raise ValidationError("Tier names must be unique within a strategy")
+            raise ValidationError("tier_name_taken")
         tier.name = name
         tier.color = color
 
@@ -254,13 +254,11 @@ class Strategy:
             if isinstance(maximum_price_percentage, bool) or not isinstance(
                 maximum_price_percentage, int | float
             ):
-                raise ValidationError("Maximum price percentage must be a number")
+                raise ValidationError("max_price_not_number")
             if not (0 < maximum_price_percentage <= 100):
-                raise ValidationError("Maximum price percentage must be between 0 and 100")
+                raise ValidationError("max_price_out_of_range")
             if round(maximum_price_percentage, 1) != maximum_price_percentage:
-                raise ValidationError(
-                    "Maximum price percentage must have at most one decimal place"
-                )
+                raise ValidationError("max_price_too_precise")
         entry = self._entry(player_id)
         if entry is None:
             self.entries.append(
@@ -302,7 +300,7 @@ class Strategy:
     def _tier(self, tier_id: str) -> Tier:
         tier = next((tier for tier in self.tiers if tier.uuid == tier_id), None)
         if tier is None:
-            raise NotFoundError("Tier not found")
+            raise NotFoundError("tier_not_found")
         return tier
 
     def _entry(self, player_id: str) -> StrategyEntry | None:
@@ -322,9 +320,9 @@ class Auction:
     ):
         name = name.strip()
         if not name:
-            raise ValidationError("Auction name is required")
+            raise ValidationError("auction_name_required")
         if initial_credits < slots.total * self.minimum_price:
-            raise ValidationError("Initial credits cannot cover the roster")
+            raise ValidationError("insufficient_initial_credits")
         self.uuid = uuid or new_uuid()
         self.name = name
         self.initial_credits = initial_credits
@@ -339,9 +337,9 @@ class Auction:
         self._require_status(AuctionStatus.DRAFT)
         name = name.strip()
         if not name:
-            raise ValidationError("Participant name is required")
+            raise ValidationError("participant_name_required")
         if any(participant.name.casefold() == name.casefold() for participant in self.participants):
-            raise ValidationError("Participant names must be unique")
+            raise ValidationError("participant_name_taken")
         participant = Participant(name, uuid or new_uuid(), len(self.participants))
         self.participants.append(participant)
         return participant.uuid
@@ -352,7 +350,7 @@ class Auction:
     def start(self):
         self._require_status(AuctionStatus.DRAFT)
         if not self.participants:
-            raise ValidationError("An auction needs at least one participant")
+            raise ValidationError("participants_required")
         self.status = AuctionStatus.LIVE
         self.events.append(events.AuctionStarted(self.uuid))
 
@@ -378,7 +376,7 @@ class Auction:
         self._require_status(AuctionStatus.LIVE)
         self._participant(participant_id)
         if any(p.player_id == player_id for p in self._active_purchases()):
-            raise ValidationError("Player is already purchased")
+            raise ValidationError("player_already_purchased")
         self._validate_purchase(participant_id, role, price)
         purchase = Purchase(
             player_id=player_id,
@@ -443,18 +441,18 @@ class Auction:
         excluded_purchase_ids: set[str] | None = None,
     ):
         if isinstance(price, bool) or not isinstance(price, int) or price < self.minimum_price:
-            raise ValidationError("Price must be a positive integer")
+            raise ValidationError("invalid_price")
         purchases = self._active_purchases(excluded_purchase_ids)
         role_count = sum(p.role == role and p.participant_id == participant_id for p in purchases)
         if role_count >= self.slots.for_role(role):
-            raise ValidationError("No slot is available for this role")
+            raise ValidationError("role_slots_full")
         spent = sum(p.price for p in purchases if p.participant_id == participant_id)
         filled = sum(p.participant_id == participant_id for p in purchases)
         remaining_credits = self.initial_credits - spent
         remaining_slots = self.slots.total - filled
         maximum_bid = remaining_credits - (remaining_slots - 1) * self.minimum_price
         if price > maximum_bid:
-            raise ValidationError("Price exceeds the participant maximum bid")
+            raise ValidationError("bid_exceeds_maximum")
 
     def _active_purchases(self, excluded_purchase_ids: set[str] | None = None) -> list[Purchase]:
         excluded_purchase_ids = excluded_purchase_ids or set()
@@ -465,7 +463,7 @@ class Auction:
     def _participant(self, participant_id: str) -> Participant:
         participant = next((p for p in self.participants if p.uuid == participant_id), None)
         if participant is None:
-            raise NotFoundError("Participant not found")
+            raise NotFoundError("participant_not_found")
         return participant
 
     def _purchase(self, purchase_id: str) -> Purchase:
@@ -473,9 +471,9 @@ class Auction:
             (p for p in self.purchases if p.uuid == purchase_id and not p.cancelled), None
         )
         if purchase is None:
-            raise NotFoundError("Purchase not found")
+            raise NotFoundError("purchase_not_found")
         return purchase
 
     def _require_status(self, expected: AuctionStatus):
         if self.status != expected:
-            raise ValidationError(f"Auction must be {expected.value}")
+            raise ValidationError(f"auction_not_{expected.value}")

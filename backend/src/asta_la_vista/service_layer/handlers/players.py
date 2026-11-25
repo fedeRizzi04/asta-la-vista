@@ -5,20 +5,20 @@ from asta_la_vista.service_layer.unit_of_work import AbstractUnitOfWork
 
 def import_players(cmd: commands.ImportPlayers, uow: AbstractUnitOfWork) -> dict[str, int]:
     if not cmd.players:
-        raise ValidationError("The player list is empty")
+        raise ValidationError("empty_player_list")
     incoming_ids = [row.external_id for row in cmd.players]
     if len(incoming_ids) != len(set(incoming_ids)):
-        raise ValidationError("The player list contains duplicate ids")
+        raise ValidationError("duplicate_player_ids")
     with uow:
         if uow.auctions.has_live() and not cmd.allow_live_auction:
-            raise ConfirmationRequiredError("A live auction requires explicit import confirmation")
+            raise ConfirmationRequiredError("live_auction_import")
         existing = {player.external_id: player for player in uow.players.list_all()}
         added = updated = deactivated = role_changes = 0
         for row in cmd.players:
             try:
                 role = model.Role(row.role)
             except ValueError as exc:
-                raise ValidationError(f"Unsupported Classic role: {row.role}") from exc
+                raise ValidationError("unsupported_role", role=row.role) from exc
             player = existing.get(row.external_id)
             if player is None:
                 uow.players.add(

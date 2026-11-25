@@ -135,13 +135,13 @@ def test_strategy_names_must_be_unique(session_factory):
     bus = bootstrap.bootstrap(uow)
     strategy_id = bus.handle(commands.CreateStrategy("Prova"))
 
-    with pytest.raises(ValidationError, match='A strategy named "Prova" already exists'):
+    with pytest.raises(ValidationError, match="strategy_name_taken"):
         bus.handle(commands.CreateStrategy("prova"))
-    with pytest.raises(ValidationError, match='A strategy named "Prova" already exists'):
+    with pytest.raises(ValidationError, match="strategy_name_taken"):
         bus.handle(commands.DuplicateStrategy(strategy_id, "Prova"))
 
     other_id = bus.handle(commands.CreateStrategy("Seconda"))
-    with pytest.raises(ValidationError, match='A strategy named "Prova" already exists'):
+    with pytest.raises(ValidationError, match="strategy_name_taken"):
         bus.handle(commands.RenameStrategy(other_id, "Prova"))
 
 

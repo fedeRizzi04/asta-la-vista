@@ -41,7 +41,7 @@ def strategy_detail(uow: AbstractUnitOfWork, strategy_id: str) -> dict:
             .one_or_none()
         )
         if strategy is None:
-            raise NotFoundError("Strategy not found")
+            raise NotFoundError("strategy_not_found")
         tiers = uow.session.execute(
             text("""
                 SELECT uuid, name, position, color
@@ -92,7 +92,7 @@ def strategy_export(uow: AbstractUnitOfWork, strategy_id: str) -> StrategyExport
             {"strategy_id": strategy_id},
         ).scalar_one_or_none()
         if strategy_name is None:
-            raise NotFoundError("Strategy not found")
+            raise NotFoundError("strategy_not_found")
         rows = uow.session.execute(
             text("""
                 SELECT p.name AS player_name, COALESCE(t.name, '') AS tier_name,

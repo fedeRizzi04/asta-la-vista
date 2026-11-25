@@ -81,7 +81,7 @@ def test_reads_the_color_column_when_present_whatever_its_position():
 def test_rejects_a_color_that_is_not_hexadecimal():
     content = b"Nome,Fascia,Colore,MaxPrezzo%,Note\nSvilar,Top,rosso,,\n"
 
-    with pytest.raises(ValidationError, match="Colore"):
+    with pytest.raises(ValidationError, match="invalid_tier_color"):
         parse_strategy_import_file(content, "fasce.csv")
 
 

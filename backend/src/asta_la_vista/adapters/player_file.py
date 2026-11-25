@@ -18,16 +18,16 @@ def parse_player_file(content: bytes, filename: str) -> tuple[PlayerRow, ...]:
         return _parse_xlsx(content)
     if extension == "csv":
         return _parse_csv(content)
-    raise ValidationError("Only .xlsx and .csv files are supported")
+    raise ValidationError("unsupported_player_file")
 
 
 def _parse_xlsx(content: bytes) -> tuple[PlayerRow, ...]:
     try:
         workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
     except Exception as exc:
-        raise ValidationError("The Excel file is not valid") from exc
+        raise ValidationError("invalid_excel_file") from exc
     if "Tutti" not in workbook.sheetnames:
-        raise ValidationError("The Excel file does not contain the 'Tutti' sheet")
+        raise ValidationError("missing_tutti_sheet")
     rows = workbook["Tutti"].iter_rows(values_only=True)
     headers, data = _find_headers(rows)
     return _rows_to_players(headers, data)
@@ -37,7 +37,7 @@ def _parse_csv(content: bytes) -> tuple[PlayerRow, ...]:
     try:
         text = content.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
-        raise ValidationError("The CSV file must use UTF-8 encoding") from exc
+        raise ValidationError("csv_not_utf8") from exc
     try:
         dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;")
     except csv.Error:
@@ -55,7 +55,7 @@ def _find_headers(rows: Iterable[Iterable[object]]) -> tuple[list[str], Iterable
             return values, iterator
         if row_number == 10:
             break
-    raise ValidationError("Required columns Id, R, Nome and Squadra were not found")
+    raise ValidationError("missing_player_columns")
 
 
 def _rows_to_players(headers: list[str], rows: Iterable[Iterable[object]]) -> tuple[PlayerRow, ...]:
@@ -75,9 +75,9 @@ def _rows_to_players(headers: list[str], rows: Iterable[Iterable[object]]) -> tu
             name = str(values[positions["Nome"]]).strip()
             team = str(values[positions["Squadra"]]).strip()
         except IndexError as exc:
-            raise ValidationError("A player row is incomplete") from exc
+            raise ValidationError("incomplete_player_row") from exc
         if not all((external_id, role, name, team)) or external_id == "None":
-            raise ValidationError("A player row contains empty required values")
+            raise ValidationError("incomplete_player_row")
         quotation = (
             _parse_quotation(values[quotation_position])
             if quotation_position is not None and quotation_position < len(values)
@@ -90,7 +90,7 @@ def _rows_to_players(headers: list[str], rows: Iterable[Iterable[object]]) -> tu
         )
         players.append(PlayerRow(external_id, name, team, role, quotation, mantra_roles))
     if not players:
-        raise ValidationError("The player list is empty")
+        raise ValidationError("empty_player_list")
     return tuple(players)
 
 
@@ -111,11 +111,11 @@ def _parse_quotation(value: object) -> int | None:
     if value is None or not str(value).strip():
         return None
     if isinstance(value, bool):
-        raise ValidationError("Player quotation must be a non-negative integer")
+        raise ValidationError("invalid_quotation")
     try:
         quotation = int(value)
     except (TypeError, ValueError) as exc:
-        raise ValidationError("Player quotation must be a non-negative integer") from exc
+        raise ValidationError("invalid_quotation") from exc
     if (isinstance(value, float) and value != quotation) or quotation < 0:
-        raise ValidationError("Player quotation must be a non-negative integer")
+        raise ValidationError("invalid_quotation")
     return quotation
