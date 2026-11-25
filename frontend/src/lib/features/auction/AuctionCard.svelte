@@ -17,7 +17,7 @@
 		actions?: Snippet;
 	} = $props();
 
-	const openLabel = $derived(highlighted ? t.auctions.resume : t.strategies.open);
+	const openLabel = $derived(highlighted ? t.auctions.resume : t.common.open);
 </script>
 
 <article class:highlighted>

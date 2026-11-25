@@ -101,7 +101,7 @@
 				</Button>
 			</header>
 			<p class="player-meta">
-				{player.active ? player.team : t.strategies.inactiveClub(player.team)} · {t.strategies.quotationValue(
+				{player.active ? player.team : t.strategies.inactiveClub(player.team)} · {t.common.quotationValue(
 					player.quotation ?? '—'
 				)}
 				{#if player.mantra_roles.length}
@@ -109,13 +109,13 @@
 				{/if}
 			</p>
 
-			<Field label={t.strategies.tier} for={entryTierFieldId}>
+			<Field label={t.common.tier} for={entryTierFieldId}>
 				<Select
 					id={entryTierFieldId}
 					value={draft.tierId}
 					onchange={(event) => editor.movePlayers([playerId], event.currentTarget.value)}
 				>
-					<option value="">{t.strategies.noTier}</option>
+					<option value="">{t.common.noTier}</option>
 					{#each editor.orderedTiers as tier (tier.id)}
 						<option value={tier.id}>{tier.name}</option>
 					{/each}

@@ -222,7 +222,7 @@
 	<Tabs
 		items={roleTabs}
 		bind:value={() => role, setRole}
-		label={t.players.role}
+		label={t.common.role}
 		id="player-role"
 		panelId="player-role-panel"
 	/>
@@ -271,7 +271,7 @@
 		<table>
 			<thead>
 				<tr>
-					<th scope="col">{t.players.role}</th>
+					<th scope="col">{t.common.role}</th>
 					{@render sortHeader('name', t.players.player)}
 					{@render sortHeader('team', t.common.club)}
 					{@render sortHeader('quotation', t.common.quotation)}

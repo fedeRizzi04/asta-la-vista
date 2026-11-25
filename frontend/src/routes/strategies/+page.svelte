@@ -135,7 +135,7 @@
 		const confirmed = await confirmDialog({
 			title: t.strategies.deleteStrategy,
 			message: t.strategies.deleteStrategyMessage(strategy.name),
-			confirmLabel: t.strategies.delete,
+			confirmLabel: t.common.delete,
 			danger: true
 		});
 		if (!confirmed) return;
@@ -266,7 +266,7 @@
 							size="sm"
 							aria-label={t.strategies.openStrategy(strategy.name)}
 						>
-							{t.strategies.open}
+							{t.common.open}
 						</Button>
 						<Menu
 							label={t.strategies.actionsForStrategy(strategy.name)}

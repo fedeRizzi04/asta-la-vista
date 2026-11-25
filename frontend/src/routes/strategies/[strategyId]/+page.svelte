@@ -47,7 +47,7 @@
 <svelte:window onpagehide={() => editor.flushOnUnload()} />
 
 <svelte:head>
-	<title>{strategy?.name ?? t.strategies.strategy} | Asta la Vista</title>
+	<title>{strategy?.name ?? t.common.strategy} | Asta la Vista</title>
 </svelte:head>
 
 <div class="editor">
@@ -69,7 +69,7 @@
 					</span>
 				</span>
 			{:else}
-				{t.strategies.strategy}
+				{t.common.strategy}
 			{/if}
 		{/snippet}
 		{#snippet actions()}

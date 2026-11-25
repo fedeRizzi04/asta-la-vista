@@ -132,7 +132,7 @@
 	{/each}
 </div>
 {#if players.length === 0}
-	<p class="empty">{t.strategies.noPlayers}</p>
+	<p class="empty">{t.common.noPlayers}</p>
 {/if}
 
 <style>

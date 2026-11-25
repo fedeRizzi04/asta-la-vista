@@ -50,12 +50,12 @@
 
 <div class="toolbar">
 	{#if auctionState.strategies.length > 0}
-		<Field label={t.strategies.strategy} inline>
+		<Field label={t.common.strategy} inline>
 			<Select
 				bind:value={auctionState.viewingStrategyId}
 				onchange={() => auctionState.viewSelectedStrategy()}
 			>
-				<option value="">{t.auctions.noStrategy}</option>
+				<option value="">{t.common.noStrategy}</option>
 				{#each auctionState.strategies as candidate (candidate.id)}
 					<option value={candidate.id}>{candidate.name}</option>
 				{/each}
@@ -88,7 +88,7 @@
 
 {#if columns.length > 0}
 	<div class="board">
-		<TierBoard {columns} label={t.strategies.strategyTiers}>
+		<TierBoard {columns} label={t.common.strategyTiers}>
 			{#snippet summary({ entries, leftCount })}
 				{t.auction.playersLeft} <b>{leftCount}</b>/{entries.length}
 			{/snippet}
@@ -117,7 +117,7 @@
 						/>
 					</button>
 				{:else}
-					<p class="empty">{entries.length > 0 ? t.auction.allTaken : t.strategies.noPlayers}</p>
+					<p class="empty">{entries.length > 0 ? t.auction.allTaken : t.common.noPlayers}</p>
 				{/each}
 			{/snippet}
 		</TierBoard>

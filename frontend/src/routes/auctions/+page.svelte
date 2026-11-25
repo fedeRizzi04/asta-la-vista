@@ -82,7 +82,7 @@
 		const confirmed = await confirmDialog({
 			title: t.auctions.deleteAuction,
 			message: t.auctions.deleteAuctionMessage(auction.name),
-			confirmLabel: t.strategies.delete,
+			confirmLabel: t.common.delete,
 			danger: true
 		});
 		if (!confirmed) return;
@@ -142,7 +142,7 @@
 		</Field>
 		<Field label={t.auctions.defaultStrategy} class="wide">
 			<Select bind:value={strategyId}>
-				<option value="">{t.auctions.noStrategy}</option>
+				<option value="">{t.common.noStrategy}</option>
 				{#each strategies as strategy (strategy.id)}
 					<option value={strategy.id}>{strategy.name}</option>
 				{/each}
@@ -186,7 +186,7 @@
 							onclick={() => removeAuction(auction)}
 							disabled={saving}
 						>
-							{t.strategies.delete}
+							{t.common.delete}
 						</Button>
 					{/snippet}
 				</AuctionCard>

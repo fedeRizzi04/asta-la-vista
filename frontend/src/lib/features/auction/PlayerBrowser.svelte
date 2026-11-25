@@ -69,16 +69,16 @@
 		<Input
 			bind:value={search}
 			type="search"
-			placeholder={t.strategies.searchPlayerOrClub}
-			aria-label={t.strategies.searchPlayerOrClub}
+			placeholder={t.common.searchPlayerOrClub}
+			aria-label={t.common.searchPlayerOrClub}
 		/>
 		<Select
 			bind:value={() => effectiveSort, (value: Sort) => (sort = value)}
-			aria-label={t.strategies.sortBy}
+			aria-label={t.common.sortBy}
 		>
 			<option value="quotation">{t.common.quotation}</option>
-			{#if auctionState.viewedStrategy}<option value="tier">{t.strategies.tier}</option>{/if}
-			<option value="name">{t.strategies.name}</option>
+			{#if auctionState.viewedStrategy}<option value="tier">{t.common.tier}</option>{/if}
+			<option value="name">{t.common.name}</option>
 		</Select>
 		<ToggleChip pressed={showTaken} onclick={() => (showTaken = !showTaken)}>
 			{t.auction.showTaken}
@@ -87,10 +87,10 @@
 </div>
 
 <p class="count" aria-live="polite">
-	{t.strategies.playerCount(playerRows.length)}
+	{t.common.playerCount(playerRows.length)}
 </p>
 {#if playerRows.length === 0}
-	<EmptyState compact>{t.strategies.noPlayers}</EmptyState>
+	<EmptyState compact>{t.common.noPlayers}</EmptyState>
 {:else}
 	<div class="player-grid">
 		{#each playerRows as { player, tier } (player.id)}
@@ -106,7 +106,7 @@
 					<span class="role-badge" data-role={player.role}>{player.role}</span>
 					<strong class="player-name">{player.name}</strong>
 					<span class="quotation"
-						>{player.quotation === null ? '—' : t.strategies.quotationValue(player.quotation)}</span
+						>{player.quotation === null ? '—' : t.common.quotationValue(player.quotation)}</span
 					>
 				</span>
 				<span class="player-details">

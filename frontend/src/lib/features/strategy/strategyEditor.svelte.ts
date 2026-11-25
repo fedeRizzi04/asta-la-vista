@@ -199,7 +199,7 @@ export class StrategyEditor {
 		const moved =
 			movedIds.length === 1
 				? this.players.find((player) => player.id === movedIds[0])?.name
-				: t.strategies.playerCount(movedIds.length);
+				: t.common.playerCount(movedIds.length);
 		this.lastMove = t.strategies.moveAnnouncement(moved, this.index?.tierById.get(tierId)?.name);
 	}
 
@@ -265,7 +265,7 @@ export class StrategyEditor {
 		const confirmed = await confirmDialog({
 			title: t.strategies.deleteTier,
 			message: t.strategies.deleteTierMessage(tier.name),
-			confirmLabel: t.strategies.delete,
+			confirmLabel: t.common.delete,
 			danger: true
 		});
 		if (!confirmed || this.strategy !== strategy) return;

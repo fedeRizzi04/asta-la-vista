@@ -74,7 +74,7 @@
 			</div>
 		</EmptyState>
 	{:else}
-		<TierBoard {columns} label={t.strategies.strategyTiers}>
+		<TierBoard {columns} label={t.common.strategyTiers}>
 			{#snippet header({ tier, title, players })}
 				<div class="header">
 					<button

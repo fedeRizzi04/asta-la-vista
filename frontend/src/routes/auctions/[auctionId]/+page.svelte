@@ -222,7 +222,7 @@
 				title: withShortcut(roleLabels[value], roleKey(value))
 			}))}
 			bind:value={() => role, setRole}
-			label={t.players.role}
+			label={t.common.role}
 			id="auction-role"
 			panelId="auction-view-panel"
 		/>
