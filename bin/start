@@ -92,12 +92,16 @@ if [[ "$backend_proxy_host" == "0.0.0.0" || "$backend_proxy_host" == "::" ]]; th
 fi
 backend_url="http://$backend_proxy_host:$backend_port"
 
-trap stop_application EXIT INT TERM
+trap stop_application EXIT
+# A signal must also end the script: exiting runs the EXIT trap.
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
+# With `exec` each PID below is uv or npm itself, which forward the signal to their server.
 echo "Avvio del backend su http://$backend_host:$backend_port..."
 (
   cd "$backend_dir"
-  uv run flask --app asta_la_vista.entrypoints.flask_app:create_app run \
+  exec uv run flask --app asta_la_vista.entrypoints.flask_app:create_app run \
     --host "$backend_host" \
     --port "$backend_port"
 ) &
@@ -106,16 +110,23 @@ backend_pid=$!
 echo "Avvio del frontend su http://127.0.0.1:5173..."
 (
   cd "$frontend_dir"
-  VITE_BACKEND_URL="$backend_url" npm run dev -- --host 127.0.0.1
+  VITE_BACKEND_URL="$backend_url" exec npm run dev -- --host 127.0.0.1
 ) &
 frontend_pid=$!
 
 echo "Applicazione avviata. Premi Ctrl+C per fermarla."
 
-set +e
-wait -n "$backend_pid" "$frontend_pid"
-exit_code=$?
-set -e
+# Poll until one of the two exits: `wait -n` needs bash 4.3, macOS ships 3.2.
+while kill -0 "$backend_pid" 2>/dev/null && kill -0 "$frontend_pid" 2>/dev/null; do
+  sleep 1
+done
+
+stopped_pid="$backend_pid"
+if kill -0 "$backend_pid" 2>/dev/null; then
+  stopped_pid="$frontend_pid"
+fi
+exit_code=0
+wait "$stopped_pid" || exit_code=$?
 
 if [[ $exit_code -ne 0 ]]; then
   echo "Uno dei processi si è interrotto con un errore." >&2
