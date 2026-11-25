@@ -26,7 +26,7 @@
 	 */
 	let { editor, workspaceId }: { editor: StrategyEditor; workspaceId: string } = $props();
 
-	const group = t.strategies.strategy;
+	const group = t.common.strategy;
 	const keys = { remove: '0', clear: 'escape' };
 
 	let selection = $derived(editor.selection);
@@ -34,7 +34,7 @@
 	let selectedLabel = $derived(
 		selectedPlayers.length === 1
 			? selectedPlayers[0].name
-			: t.strategies.playerCount(selectedPlayers.length)
+			: t.common.playerCount(selectedPlayers.length)
 	);
 	let anyInTier = $derived(selectedPlayers.some((player) => editor.tierOfPlayer(player.id)));
 

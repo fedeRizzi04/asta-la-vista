@@ -38,7 +38,7 @@
 	let mantraCodes = $derived(mantraRolesOf(rolePlayers));
 	// A selection that does not apply to the role is ignored, and comes back with its role.
 	let mantraRoles = $derived(selectedMantraRoles.filter((code) => mantraCodes.includes(code)));
-	let title = $derived(showAssigned ? t.common.all : t.strategies.noTier);
+	let title = $derived(showAssigned ? t.common.all : t.common.noTier);
 	let shownPlayers = $derived(
 		rolePlayers
 			.filter(
@@ -73,11 +73,11 @@
 				bind:value={search}
 				type="search"
 				placeholder={t.strategies.search}
-				aria-label={t.strategies.searchPlayerOrClub}
+				aria-label={t.common.searchPlayerOrClub}
 			/>
-			<Select bind:value={sort} aria-label={t.strategies.sortBy}>
+			<Select bind:value={sort} aria-label={t.common.sortBy}>
 				<option value="quotation">{t.common.quotation}</option>
-				<option value="name">{t.strategies.name}</option>
+				<option value="name">{t.common.name}</option>
 				<option value="team">{t.common.club}</option>
 			</Select>
 		</div>

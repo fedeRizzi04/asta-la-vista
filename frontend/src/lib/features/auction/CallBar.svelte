@@ -110,7 +110,7 @@
 			bind:element={searchInput}
 			items={results}
 			emptyMessage={query.trim() ? t.auction.noPlayersFound : undefined}
-			placeholder={t.strategies.searchPlayerOrClub}
+			placeholder={t.common.searchPlayerOrClub}
 			aria-label={t.auction.searchPlayer}
 			title={withShortcut(t.auction.searchPlayer, searchKeys)}
 			onchoose={(result) => auctionState.callPlayer(result.id)}
@@ -126,7 +126,7 @@
 					>
 					<MantraRoleBadges roles={result.mantra_roles} compact />
 					{#if resultTier}<TierBadge name={resultTier.name} color={resultTier.color} compact />{/if}
-					<small>{t.strategies.quotationValue(result.quotation ?? '—')}</small>
+					<small>{t.common.quotationValue(result.quotation ?? '—')}</small>
 					{#if auctionState.viewedStrategy}
 						<span class="result-percentage">{percentage != null ? `${percentage}%` : '—'}</span>
 					{/if}
@@ -143,11 +143,11 @@
 					{#if tier}
 						<TierBadge name={tier.name} color={tier.color} compact />
 					{:else if auctionState.viewedStrategy}
-						<span class="no-tier">{t.strategies.noTier}</span>
+						<span class="no-tier">{t.common.noTier}</span>
 					{/if}
 				</div>
 				<div class="details">
-					<span>{player.team} · {t.strategies.quotationValue(player.quotation ?? '—')}</span>
+					<span>{player.team} · {t.common.quotationValue(player.quotation ?? '—')}</span>
 					{#if maximumCredits !== null}
 						<strong>max {maximumCredits} cr · {entry?.maximum_price_percentage}%</strong>
 					{/if}
