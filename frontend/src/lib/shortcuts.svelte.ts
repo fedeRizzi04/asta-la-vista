@@ -18,10 +18,12 @@ const modifierLabels: Record<string, string> = {
 	shift: isMac ? '⇧' : 'Shift',
 	alt: isMac ? '⌥' : 'Alt'
 };
+// On macOS the modifiers are symbols (⌘ ⌥ ⇧), but the other keys are words: the symbols for
+// escape and return (⎋ ⏎) are not printed on the keyboard, so nobody recognises them.
 const keyLabels: Record<string, string> = {
-	escape: isMac ? '⎋' : 'Esc',
-	enter: isMac ? '⏎' : 'Invio',
-	tab: isMac ? '⇥' : 'Tab',
+	escape: isMac ? 'esc' : 'Esc',
+	enter: isMac ? 'invio' : 'Invio',
+	tab: isMac ? 'tab' : 'Tab',
 	arrowup: '↑',
 	arrowdown: '↓',
 	arrowleft: '←',
@@ -85,8 +87,14 @@ export function shortcutKeys(spec: string): string[] {
 	];
 }
 
+/**
+ * On macOS the symbols are joined as they are ("⌘K"), but a word needs a space ("⌘ invio");
+ * elsewhere the keys are joined with "+" ("Ctrl+Invio").
+ */
 export function shortcutLabel(spec: string): string {
-	return shortcutKeys(spec).join(isMac ? '' : '+');
+	const keys = shortcutKeys(spec);
+	const hasWord = keys.some((key) => /\p{L}{2,}/u.test(key));
+	return keys.join(isMac ? (hasWord ? ' ' : '') : '+');
 }
 
 /** A tooltip text: the label followed by the shortcut, e.g. "Registro acquisti (⌘J)". */
