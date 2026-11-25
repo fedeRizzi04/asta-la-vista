@@ -9,22 +9,24 @@
 
 Asta la Vista is a web app that assists you during a fantacalcio (Italian fantasy football)
 auction. For now only the Classic mode is supported. Upload a player list in _.csv_ or _.xlsx_
-format, with each player's role and team, and run the whole auction from there: no more
+format, with each player's role and club, and run the whole auction from there: no more
 spreadsheets, or pen and paper.
 
-The user interface is in Italian.
+The user interface is in English and Italian. It starts in the language of your system (English
+if that is neither of the two), and the selector at the top of every page switches to the other
+one.
 
 ## Features
 
 - **Player list (Listone)**: import the official fantacalcio.it file and keep track of every
-  player's role, team, quotation and availability. Filter by role (with the counts in the tabs),
-  search by name or team and sort by column.
+  player's role, club, quotation and availability. Filter by role (with the counts in the tabs),
+  search by name or club and sort by column.
 - **Strategies**: create custom global tiers (colour, order) and assign each role's players to
   them by dragging, or with the keyboard. For each player you can add a note and a maximum
   spending percentage, shown in credits too, so you always know at a glance whom to buy and for
   how much.
 - **Live auctions**: the teams sit on top of the page, with every participant's credits, maximum
-  bid, free slots and roster. A call bar takes the player being called, the winner and the price,
+  bid, free slots and squad. A call bar takes the player being called, the winner and the price,
   and below it you see your tiers (the players already taken stay in place, greyed out and crossed
   out) or the players still available. A purchase registry lets you correct or cancel a purchase.
 - **Keyboard first**: calling a player and recording the purchase takes only the keyboard, and
@@ -54,14 +56,14 @@ Press `?` to see the shortcuts of the page you are on. There is no button for it
 
 The most useful ones, with the macOS keys (on Windows and Linux, `⌘` is `Ctrl` and `⌥` is `Alt`):
 
-- `⌘K` or `/` goes to the player search, `⌘ invio` goes to the winner field and `esc` drops the
-  player being called.
+- `⌘K` or `/` goes to the player search, `⌘ return` goes to the winner field and `esc` drops
+  the player being called.
 - `P` `D` `C` `A` show goalkeepers, defenders, midfielders or forwards, `⌥1` and `⌥2` switch between
   the tiers and the free players (also from a field), `⌘J` opens the purchase registry and `⌘Z`
   cancels the last purchase, after asking you to confirm.
-- A player can be called and recorded with the keyboard alone: `⌘K`, the name, `invio`, `⌘ invio`,
-  the winner, `invio`, the price and `invio`. After a purchase the cursor is no longer in a text
-  field, so the other keys work at once.
+- A player can be called and recorded with the keyboard alone: `⌘K`, the name, `return`,
+  `⌘ return`, the winner, `return`, the price and `return`. After a purchase the cursor is no
+  longer in a text field, so the other keys work at once.
 - On the strategy page, the arrows select players, `1`-`9` move them to a tier, `0` takes them out
   of it and `esc` clears the selection.
 
@@ -134,8 +136,11 @@ xattr -dr com.apple.quarantine "/Applications/Asta la Vista.app"
 
 - Asta la Vista opens in **its own window**. Closing the window quits the app; it asks you
   first, because an auction may be in progress.
-- **File → Apri cartella dati** opens the folder that holds your data. On macOS the menu is in
-  the menu bar at the top of the screen; on Windows it is at the top of the window.
+- **File → Open Data Folder** opens the folder that holds your data. On macOS the menu is in the
+  menu bar at the top of the screen; on Windows it is at the top of the window.
+- The menu and the messages outside the page follow the language of your system (Italian, or
+  English for any other), not the language you choose in the page. In Italian the menu item is
+  **Apri cartella dati**.
 - Opening the app again while it is already running brings its window to the front. If the copy
   that is running is an older version, for example right after you downloaded an update, the
   app tells you to close it first.
@@ -156,7 +161,7 @@ The folder contains:
 - `asta-la-vista.sqlite3`: the database;
 - `asta-la-vista.log`: a log file, useful when reporting a problem;
 - `instance.json` and `instance.lock`: small files that stop the app from being started twice;
-- on Windows, `webview`: what the window remembers, such as the theme you chose.
+- on Windows, `webview`: what the window remembers, such as the theme and the language you chose.
 
 On macOS, the window keeps what it remembers in the system's own folders instead: see
 [Uninstalling](#desktop-app-1).
@@ -315,19 +320,19 @@ from fantacalcio.it and import it once. You can import it again whenever it chan
 
 ### Importing it
 
-1. Open the **Listone** section of the app and click **Importa**.
-2. Choose the file and click **Importa** again.
+1. Open the **Player list** section of the app and click **Import**.
+2. Choose the file and click **Import** again.
 3. A message tells you how many players were added, updated or deactivated, and how many changed
    role. The counts per role are shown right below it, so you can check them at a glance.
 
 ### Importing it again
 
-You can import a newer file at any time, for example when quotations or teams change after the
+You can import a newer file at any time, for example when quotations or clubs change after the
 transfer market. Players are matched by their `Id`, so nothing already set up is lost:
 
-- new players are added, and existing ones get their name, team, role and quotation updated;
+- new players are added, and existing ones get their name, club, role and quotation updated;
 - players missing from the new file are **deactivated**, not deleted. They disappear from the
-  list, unless you turn on **Mostra inattivi**;
+  list, unless you turn on **Show inactive**;
 - if a player changed role, the strategies that contain them follow the new role;
 - if an auction is in progress, the app asks you to confirm before importing.
 
@@ -468,9 +473,9 @@ The window comes from [pywebview](https://pywebview.flowrl.com/), which shows a 
 the engine the operating system already has: WKWebView (the engine of Safari) on macOS and
 WebView2 (the engine of Edge) on Windows. So the app does not bundle a browser, and the frontend
 is the same one that Docker and the development setup serve. The window keeps its storage
-between launches, which is how it remembers the theme and the closed update banner. That storage
-belongs to the address of the page, port included, which is why the server prefers the same port
-every time.
+between launches, which is how it remembers the theme, the language and the closed update
+banner. That storage belongs to the address of the page, port included, which is why the server
+prefers the same port every time.
 
 The desktop app also turns on the update check (`UPDATE_CHECK`). `GET /api/version` then adds
 the latest release on GitHub to its answer, and the frontend shows the banner when that release
@@ -483,9 +488,30 @@ back to the window and when the computer goes back online. The code is in
 The code is in `backend/src/asta_la_vista/entrypoints/desktop/`, and the build recipe is in
 `desktop/asta-la-vista.spec`.
 
+### Languages
+
+The texts of the page are in two catalogs, `en.ts` and `it.ts` in `frontend/src/lib/i18n/`, and
+components read them as `t.<section>.<key>`. The language is chosen when the page loads, from the
+one saved in the browser or else from the system's, and changing it reloads the page.
+
+- **To add a text**, add its key to `en.ts`, then to `it.ts`: `npm run check` fails as long as one
+  of the two lacks it. A text with values in it is a function, and `plural` picks between the
+  singular and the plural.
+- **The API has no texts for its errors**: it answers with a code and its parameters
+  (`{"code": ..., "params": ...}`), and the catalogs translate each code in their `errors`
+  section. A code they do not know is shown as an unexpected error.
+- **Outside the page** there are three more places: the final report, in the language the page
+  asks for (`REPORT_TEXTS` in `backend/src/asta_la_vista/entrypoints/api/auctions/routes.py`), and
+  the menu and messages of the desktop app (`texts.py` and `window.py` in
+  `backend/src/asta_la_vista/entrypoints/desktop/`) and the Windows installer
+  (`desktop/installer.iss`), which both follow the operating system.
+- **To add a language**, write its catalog, add it to `catalogs` and to the choice of the initial
+  language in `frontend/src/lib/i18n/index.ts`, add an option to the selector in
+  `frontend/src/routes/+layout.svelte`, then add its texts in the three places above.
+
 ## Application flow
 
-1. Open the Listone section and import the CSV or XLSX file with the players. The file from
+1. Open the Player list section and import the CSV or XLSX file with the players. The file from
    [fantacalcio.it](https://www.fantacalcio.it/quotazioni-fantacalcio) works best: see
    [Preparing the player list](#preparing-the-player-list).
 2. Create one or more strategies: define global tiers with their own order and colours, and
@@ -522,10 +548,11 @@ git push origin main v0.2.0
 Before tagging, build the app (`./bin/build-desktop`), open it with a separate data folder
 (`ASTA_LA_VISTA_DATA_DIR`) and check what the automatic tests cannot see:
 
-- the window opens on the app, and the theme you choose is still there after reopening it;
+- the window opens on the app, and the theme and the language you choose are still there after
+  reopening it;
 - importing the listone works, and so do the strategy export and the final report download:
   each asks where to save the file, and the app stays on screen;
-- **File → Apri cartella dati** opens the data folder;
+- **File → Open Data Folder** (**Apri cartella dati** on an Italian system) opens the data folder;
 - opening the app a second time brings the window to the front;
 - closing the window asks for confirmation, then quits the app.
 
