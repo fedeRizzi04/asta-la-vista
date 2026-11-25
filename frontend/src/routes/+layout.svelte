@@ -166,4 +166,13 @@
 		border-radius: var(--radius-xs);
 		font-size: 0.8rem;
 	}
+
+	/* Beside the brand, so that the navigation keeps its room on narrow screens. */
+	@media (max-width: 720px) {
+		.header-actions :global(.language-select) {
+			position: absolute;
+			top: 0.4rem;
+			right: 1rem;
+		}
+	}
 </style>
