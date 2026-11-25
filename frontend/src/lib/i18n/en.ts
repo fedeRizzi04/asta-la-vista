@@ -202,7 +202,7 @@ export const en = {
 		undoLast: 'Undo last',
 		undoLastPurchaseTitle: 'Undo the last purchase?',
 		undoLastPurchaseMessage: (player: string, winner: string, price: number) =>
-			`${player} → ${winner} for ${price} ${plural(price, 'credit', 'credits')}. The credits become available again.`,
+			`${player} → ${winner} for ${price} ${plural(price, 'credit', 'credits')}. ${plural(price, 'The credit becomes', 'The credits become')} available again.`,
 		endAuction: 'End auction',
 		endAuctionMessage: 'End this auction? You can reopen it later.',
 		downloadReport: 'Download report',

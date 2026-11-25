@@ -27,13 +27,13 @@
       "Pc": "Pc", "A": "Sp"
     } %}
     <h1>{{ auction.name }}</h1>
-    <p class="meta">{{ text.final_report }} · {{ auction.initial_credits }} {{ text.initial_credits }}</p>
+    <p class="meta">{{ text.final_report }} · {{ auction.initial_credits }} {{ text.initial_credit if auction.initial_credits == 1 else text.initial_credits }}</p>
 
     {% for participant in auction.participants %}
       <section class="team">
         <div class="team-header">
           <h2>{{ participant.name }}</h2>
-          <span class="credits">{{ participant.credits_remaining }} {{ text.credits_left }}</span>
+          <span class="credits">{{ participant.credits_remaining }} {{ text.credit_left if participant.credits_remaining == 1 else text.credits_left }}</span>
         </div>
         {% if participant.purchases %}
           <table>

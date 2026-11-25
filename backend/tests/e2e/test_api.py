@@ -272,6 +272,35 @@ def test_live_auction_purchase_amendment_and_cancellation_flow(client):
         assert "Asta amici" in html
 
 
+@pytest.mark.parametrize(
+    ("lang", "initial", "left"),
+    [
+        ("en", "1 initial credit<", "1 credit left<"),
+        ("it", "1 credito iniziale<", "1 credito rimasto<"),
+    ],
+)
+def test_auction_report_uses_the_singular_for_one_credit(client, lang, initial, left):
+    auction_id = client.post(
+        "/api/auctions",
+        json={
+            "name": "Asta amici",
+            "initial_credits": 1,
+            "goalkeeper_slots": 1,
+            "defender_slots": 0,
+            "midfielder_slots": 0,
+            "forward_slots": 0,
+            "participant_names": ["Alice"],
+        },
+    ).get_json()["id"]
+    client.post(f"/api/auctions/{auction_id}/start")
+    client.post(f"/api/auctions/{auction_id}/complete")
+
+    html = client.get(f"/api/auctions/{auction_id}/report?lang={lang}").get_data(as_text=True)
+
+    assert initial in html
+    assert left in html
+
+
 def test_strategy_import_flow(client):
     client.post(
         "/api/players/import",
