@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { registerOpenDialog } from '$lib/toast.svelte';
+	import ToastStack from '../ToastStack.svelte';
 	import Button from './Button.svelte';
 
 	/**
@@ -48,6 +50,11 @@
 		}
 	});
 
+	// Covers every way of closing, including a dialog destroyed while open (no `close` event).
+	$effect(() => {
+		if (open) return registerOpenDialog(titleId);
+	});
+
 	function handleClose(): void {
 		// Skip closes the parent asked for, and a late `close` from a dialog reopened since.
 		if (!open || dialog?.open) return;
@@ -90,6 +97,8 @@
 			{@render children()}
 		</div>
 	{/if}
+	<!-- After the content, so that opening never focuses a toast's dismiss button. -->
+	<ToastStack dialogId={titleId} />
 </dialog>
 
 <style>
@@ -151,16 +160,18 @@
 		font-size: 1.15rem;
 	}
 
+	/* Moved with insets: a transform would make the dialog, rather than the viewport, the
+	   containing block of the fixed toasts inside it. */
 	@keyframes dialog-in {
 		from {
 			opacity: 0;
-			transform: translateY(6px);
+			top: 12px;
 		}
 	}
 
 	@keyframes drawer-in {
 		from {
-			transform: translateX(2rem);
+			right: -2rem;
 			opacity: 0;
 		}
 	}
