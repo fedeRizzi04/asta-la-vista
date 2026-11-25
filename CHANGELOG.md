@@ -15,6 +15,8 @@ who use the app.
 
 ### Changed
 
+- On macOS the keyboard shortcuts show **esc** and **invio** as words, in the `?` panel and in the
+  tooltips, instead of the symbols ⎋ and ⏎, which are not printed on the keys.
 - Asta la Vista has a new sticker-inspired look in both themes, with pastel role badges and
   bundled Bricolage Grotesque and Atkinson Hyperlegible fonts that work offline.
 - Page headers are compact, so more of the screen goes to your data, and buttons, fields, role
@@ -53,10 +55,10 @@ who use the app.
 - **Annulla ultimo** (or `⌘Z`) cancels the most recent purchase, after asking you to confirm. A
   draft auction shows its setup instead of the call bar, and a finished one is read-only with a
   short summary, **Riapri asta** and **Scarica report** in the header.
-- Keyboard shortcuts for the auction, listed with `?`: `⌘K` or `/` to search for a player, `⌘⏎` to
-  go to the winner, `⏎` in the price to register, Esc to drop the call, `P` `D` `C` `A` to switch
-  role, `⌥1` and `⌥2` for the tiers and Svincolati, `⌘J` for the registry and `⌘Z` to undo the
-  last purchase. A player can be called and registered with the keyboard alone.
+- Keyboard shortcuts for the auction, listed with `?`: `⌘K` or `/` to search for a player,
+  `⌘ invio` to go to the winner, `invio` in the price to register, Esc to drop the call, `P` `D`
+  `C` `A` to switch role, `⌥1` and `⌥2` for the tiers and Svincolati, `⌘J` for the registry and
+  `⌘Z` to undo the last purchase. A player can be called and registered with the keyboard alone.
 - The strategy page shows the players without a tier on the left and the tiers side by side on
   the right. Search the players, sort them by quotation, name or team, filter them by Mantra role
   and choose whether to show the ones already in a tier; inactive players stay visible and are
