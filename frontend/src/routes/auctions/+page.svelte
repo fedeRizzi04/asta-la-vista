@@ -13,6 +13,7 @@
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import { createAuction, deleteAuction, getAuctions, type AuctionSummary } from '$lib/auctions';
 	import AuctionCard from '$lib/features/auction/AuctionCard.svelte';
+	import { t } from '$lib/i18n';
 	import { getStrategies, type StrategySummary } from '$lib/strategies';
 
 	let auctions = $state<AuctionSummary[]>();
@@ -79,9 +80,9 @@
 
 	async function removeAuction(auction: AuctionSummary): Promise<void> {
 		const confirmed = await confirmDialog({
-			title: 'Elimina asta',
-			message: `Eliminare l'asta “${auction.name}”? Questa azione non può essere annullata.`,
-			confirmLabel: 'Elimina',
+			title: t.auctions.deleteAuction,
+			message: t.auctions.deleteAuctionMessage(auction.name),
+			confirmLabel: t.strategies.delete,
 			danger: true
 		});
 		if (!confirmed) return;
@@ -98,46 +99,56 @@
 </script>
 
 <svelte:head>
-	<title>Aste | Asta la Vista</title>
+	<title>{t.navigation.auctions} | Asta la Vista</title>
 </svelte:head>
 
-<PageHeader title="Aste" compact>
+<PageHeader title={t.navigation.auctions} compact>
 	{#snippet actions()}
 		<Button size="sm" aria-haspopup="dialog" onclick={() => (createOpen = true)} disabled={saving}>
-			Nuova asta
+			{t.auctions.newAuction}
 		</Button>
 	{/snippet}
 </PageHeader>
 
-<Dialog bind:open={createOpen} title="Nuova asta" width="34rem" closeLabel="Chiudi">
+<Dialog
+	bind:open={createOpen}
+	title={t.auctions.newAuction}
+	width="34rem"
+	closeLabel={t.common.close}
+>
 	<form class="auction-form" onsubmit={submitAuction}>
-		<Field label="Nome asta" class="wide">
-			<Input bind:value={name} placeholder="Ad esempio: Lega amici" required data-autofocus />
+		<Field label={t.auctions.auctionName} class="wide">
+			<Input
+				bind:value={name}
+				placeholder={t.auctions.auctionNameExample}
+				required
+				data-autofocus
+			/>
 		</Field>
-		<Field label="Crediti">
+		<Field label={t.auctions.credits}>
 			<Input bind:value={initialCredits} type="number" min="1" required />
 		</Field>
-		<Field label="Portieri">
+		<Field label={t.roles.P}>
 			<Input bind:value={goalkeeperSlots} type="number" min="0" required />
 		</Field>
-		<Field label="Difensori">
+		<Field label={t.roles.D}>
 			<Input bind:value={defenderSlots} type="number" min="0" required />
 		</Field>
-		<Field label="Centrocampisti">
+		<Field label={t.roles.C}>
 			<Input bind:value={midfielderSlots} type="number" min="0" required />
 		</Field>
-		<Field label="Attaccanti">
+		<Field label={t.roles.A}>
 			<Input bind:value={forwardSlots} type="number" min="0" required />
 		</Field>
-		<Field label="Strategia predefinita" class="wide">
+		<Field label={t.auctions.defaultStrategy} class="wide">
 			<Select bind:value={strategyId}>
-				<option value="">Nessuna strategia</option>
+				<option value="">{t.auctions.noStrategy}</option>
 				{#each strategies as strategy (strategy.id)}
 					<option value={strategy.id}>{strategy.name}</option>
 				{/each}
 			</Select>
 		</Field>
-		<Field label="Partecipanti, uno per riga" class="wide">
+		<Field label={t.auctions.participantsPerLine} class="wide">
 			<textarea
 				class="control"
 				bind:value={participantNames}
@@ -151,18 +162,18 @@
 			loading={saving}
 			disabled={!name.trim() || !participantNames.trim()}
 		>
-			Crea asta
+			{t.auctions.createAuction}
 		</Button>
 	</form>
 </Dialog>
 
 <div aria-busy={loading}>
 	{#if loading}
-		<p class="count-label">Caricamento…</p>
+		<p class="count-label">{t.common.loading}</p>
 	{:else if !orderedAuctions}
-		<EmptyState>Impossibile caricare le aste.</EmptyState>
+		<EmptyState>{t.auctions.loadFailed}</EmptyState>
 	{:else if orderedAuctions.length === 0}
-		<EmptyState>Nessuna asta salvata. Per iniziare, scegli «Nuova asta».</EmptyState>
+		<EmptyState>{t.auctions.noAuctions}</EmptyState>
 	{:else}
 		<div class="auction-list">
 			{#each orderedAuctions as auction (auction.id)}
@@ -171,11 +182,11 @@
 						<Button
 							variant="danger"
 							size="sm"
-							aria-label={`Elimina ${auction.name}`}
+							aria-label={t.auctions.deleteAuctionLabel(auction.name)}
 							onclick={() => removeAuction(auction)}
 							disabled={saving}
 						>
-							Elimina
+							{t.strategies.delete}
 						</Button>
 					{/snippet}
 				</AuctionCard>

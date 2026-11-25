@@ -2,6 +2,7 @@
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import Combobox from '$lib/components/ui/Combobox.svelte';
+	import { t } from '$lib/i18n';
 	import { matchesSearch, nameMatchRank } from '$lib/search';
 	import { registerShortcuts, withShortcut } from '$lib/shortcuts.svelte';
 	import type { AuctionState } from './auctionState.svelte';
@@ -57,12 +58,22 @@
 
 	$effect(() =>
 		registerShortcuts([
-			{ keys: searchKeys, description: 'Cerca un calciatore', group: 'Asta', handler: focusSearch },
-			{ keys: '/', description: 'Cerca un calciatore', group: 'Asta', handler: focusSearch },
+			{
+				keys: searchKeys,
+				description: t.auction.searchForPlayer,
+				group: t.auction.title,
+				handler: focusSearch
+			},
+			{
+				keys: '/',
+				description: t.auction.searchForPlayer,
+				group: t.auction.title,
+				handler: focusSearch
+			},
 			{
 				keys: 'escape',
-				description: 'Annulla la chiamata',
-				group: 'Asta',
+				description: t.auction.cancelCall,
+				group: t.auction.title,
 				handler: cancelCall
 			}
 		])
@@ -85,23 +96,23 @@
 		const called = player;
 		const winner = auctionState.auction?.participants.find(({ id }) => id === participantId);
 		if (!(await auctionState.registerPurchase(participantId, price)) || !called) return;
-		announcement = `Acquisto registrato: ${called.name}, ${winner?.name ?? ''}, ${price} crediti`;
+		announcement = t.auction.purchaseAnnouncement(called.name, winner?.name ?? '', price);
 		// Not when another player has been called in the meantime: the user has moved on.
 		if (!auctionState.calledPlayer) leaveFields();
 	}
 </script>
 
 <!-- tabindex="-1": reachable by script only, see leaveFields. -->
-<section class="call-bar" aria-label="Chiamata" tabindex="-1" bind:this={callBar}>
+<section class="call-bar" aria-label={t.auction.call} tabindex="-1" bind:this={callBar}>
 	<div class="panel">
 		<Combobox
 			bind:value={() => query, search}
 			bind:element={searchInput}
 			items={results}
-			emptyMessage={query.trim() ? 'Nessun calciatore trovato' : undefined}
-			placeholder="Cerca calciatore o squadra"
-			aria-label="Cerca calciatore"
-			title={withShortcut('Cerca calciatore', searchKeys)}
+			emptyMessage={query.trim() ? t.auction.noPlayersFound : undefined}
+			placeholder={t.strategies.searchPlayerOrClub}
+			aria-label={t.auction.searchPlayer}
+			title={withShortcut(t.auction.searchPlayer, searchKeys)}
 			onchoose={(result) => auctionState.callPlayer(result.id)}
 			--combobox-width="36rem"
 		>
@@ -115,7 +126,7 @@
 					>
 					<MantraRoleBadges roles={result.mantra_roles} compact />
 					{#if resultTier}<TierBadge name={resultTier.name} color={resultTier.color} compact />{/if}
-					<small>Q. {result.quotation ?? '—'}</small>
+					<small>{t.strategies.quotationValue(result.quotation ?? '—')}</small>
 					{#if auctionState.viewedStrategy}
 						<span class="result-percentage">{percentage != null ? `${percentage}%` : '—'}</span>
 					{/if}
@@ -132,11 +143,11 @@
 					{#if tier}
 						<TierBadge name={tier.name} color={tier.color} compact />
 					{:else if auctionState.viewedStrategy}
-						<span class="no-tier">Senza fascia</span>
+						<span class="no-tier">{t.strategies.noTier}</span>
 					{/if}
 				</div>
 				<div class="details">
-					<span>{player.team} · Q. {player.quotation ?? '—'}</span>
+					<span>{player.team} · {t.strategies.quotationValue(player.quotation ?? '—')}</span>
 					{#if maximumCredits !== null}
 						<strong>max {maximumCredits} cr · {entry?.maximum_price_percentage}%</strong>
 					{/if}

@@ -4,6 +4,7 @@
 	import Field from '$lib/components/ui/Field.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import type { Participant } from '$lib/auctions';
+	import { t } from '$lib/i18n';
 	import type { Player } from '$lib/players';
 	import { matchesSearch, nameMatchRank } from '$lib/search';
 	import { registerShortcuts, withShortcut } from '$lib/shortcuts.svelte';
@@ -33,8 +34,8 @@
 		registerShortcuts([
 			{
 				keys: winnerKeys,
-				description: 'Vai al vincitore',
-				group: 'Asta',
+				description: t.auction.goToWinner,
+				group: t.auction.title,
 				handler: () => winnerInput?.focus()
 			}
 		])
@@ -74,14 +75,17 @@
 </script>
 
 <form onsubmit={submit}>
-	<Field label={winner ? `Vincitore · max ${winner.maximum_bid}` : 'Vincitore'} for={winnerInputId}>
+	<Field
+		label={winner ? t.auction.winnerWithMaximum(winner.maximum_bid) : t.auction.winner}
+		for={winnerInputId}
+	>
 		<Combobox
 			id={winnerInputId}
 			bind:value={() => winnerSearch, searchWinner}
 			bind:element={winnerInput}
-			title={withShortcut('Vincitore', winnerKeys)}
+			title={withShortcut(t.auction.winner, winnerKeys)}
 			items={matchingParticipants}
-			emptyMessage="Nessun partecipante"
+			emptyMessage={t.auction.noParticipants}
 			openOnFocus
 			disabled={!player}
 			onchoose={chooseWinner}
@@ -94,7 +98,7 @@
 			{/snippet}
 		</Combobox>
 	</Field>
-	<Field label="Prezzo">
+	<Field label={t.auction.price}>
 		<Input
 			bind:value={price}
 			bind:element={priceInput}
@@ -104,7 +108,7 @@
 			disabled={!player}
 		/>
 	</Field>
-	<Button type="submit" disabled={!winner || saving}>Registra</Button>
+	<Button type="submit" disabled={!winner || saving}>{t.auction.record}</Button>
 </form>
 
 <style>

@@ -1,30 +1,24 @@
 <script lang="ts">
 	import type { Auction } from '$lib/auctions';
+	import { t } from '$lib/i18n';
 	import { roleLabels, roles } from '$lib/players';
-	import { plural } from '$lib/plural';
 
 	let { auction, purchaseCount }: { auction: Auction; purchaseCount: number } = $props();
 </script>
 
 <section class="panel summary" aria-labelledby="auction-summary-title">
 	{#if auction.status === 'draft'}
-		<h2 id="auction-summary-title">Configurazione</h2>
-		<span
-			>{auction.participants.length}
-			{plural(auction.participants.length, 'partecipante', 'partecipanti')} · {auction.initial_credits}
-			crediti a testa</span
-		>
+		<h2 id="auction-summary-title">{t.auction.setup}</h2>
+		<span>{t.auction.setupSummary(auction.participants.length, auction.initial_credits)}</span>
 		<div class="slots">
-			<span>Slot</span>
+			<span>{t.auction.slots}</span>
 			{#each roles as role (role)}
 				<span><strong title={roleLabels[role]}>{role}</strong> {auction.slot_totals[role]}</span>
 			{/each}
 		</div>
 	{:else}
-		<h2 id="auction-summary-title">Asta terminata</h2>
-		<span
-			>{purchaseCount} {plural(purchaseCount, 'acquisto registrato', 'acquisti registrati')}</span
-		>
+		<h2 id="auction-summary-title">{t.auction.auctionEnded}</h2>
+		<span>{t.auction.purchasesRecorded(purchaseCount)}</span>
 	{/if}
 </section>
 
