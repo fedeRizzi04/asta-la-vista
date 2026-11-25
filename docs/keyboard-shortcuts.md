@@ -80,6 +80,7 @@ Some keys have no line in the panel because they belong to a field, and only wor
 | The **Winner** field | `return` or `tab` | Chooses the highlighted participant and moves the cursor to the price. |
 | The **Price** field | `return` | Records the purchase. It needs a participant and a price. |
 | A search field, a winner field | `esc` | If the list of results is open, it closes the list and nothing else. The next `esc` is the one that removes the call. |
+| The search field of **Free players** | `esc` | If the field has text, it empties the field and nothing else. From the empty field, `esc` removes the call. |
 | The tabs (roles, **Tiers** and **Free players**) | `←` `→`, `Home` `End` | Move to another tab and show it. |
 | A **⋯** menu | `↑` `↓`, `esc` | Move through the items, close the menu. |
 
