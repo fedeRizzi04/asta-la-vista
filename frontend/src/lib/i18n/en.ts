@@ -286,7 +286,7 @@ export const en = {
 		duplicate_player_ids: 'Some players in the file share the same Id.',
 		invalid_quotation: 'Quotations must be whole numbers, zero or higher.',
 		unsupported_role: ({ role }: ErrorParams) =>
-			`The role “${role}” is not valid: use P, D, C or A.`,
+			`The Classic role “${role}” is not valid: use P, D, C or A.`,
 
 		unsupported_tier_file: 'Choose a .csv file.',
 		missing_tier_columns: 'The file must have the columns Nome, Fascia, MaxPrezzo% and Note.',

@@ -283,7 +283,7 @@ export const it: Messages = {
 		empty_player_list: 'Il file non contiene calciatori.',
 		duplicate_player_ids: 'Alcuni calciatori del file hanno lo stesso Id.',
 		invalid_quotation: 'Le quotazioni devono essere numeri interi, da zero in su.',
-		unsupported_role: ({ role }) => `Il ruolo “${role}” non è valido: usa P, D, C o A.`,
+		unsupported_role: ({ role }) => `Il ruolo Classic “${role}” non è valido: usa P, D, C o A.`,
 
 		unsupported_tier_file: 'Scegli un file .csv.',
 		missing_tier_columns: 'Il file deve avere le colonne Nome, Fascia, MaxPrezzo% e Note.',
