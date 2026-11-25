@@ -58,6 +58,14 @@
 				return first.player.name.localeCompare(second.player.name, 'it');
 			})
 	);
+
+	/** Esc empties a filter with text and stops there; from an empty one it is left to the page. */
+	function clearOnEscape(event: KeyboardEvent): void {
+		if (event.key !== 'Escape' || event.isComposing || !search) return;
+		// Keeps the page from cancelling the call, and the browser from clearing on its own.
+		event.preventDefault();
+		search = '';
+	}
 </script>
 
 <div class="filters">
@@ -71,6 +79,7 @@
 			type="search"
 			placeholder={t.common.searchPlayerOrClub}
 			aria-label={t.common.searchPlayerOrClub}
+			onkeydown={clearOnEscape}
 		/>
 		<Select
 			bind:value={() => effectiveSort, (value: Sort) => (sort = value)}
