@@ -253,6 +253,24 @@ def test_live_auction_purchase_amendment_and_cancellation_flow(client):
     assert "Asta amici" in report.get_data(as_text=True)
     assert 'class="mantra">(Por)</span>' in report.get_data(as_text=True)
 
+    # Alice has no purchases left, so the report shows the empty text too.
+    english = ('<html lang="en">', "Final report", "credits left", "No purchases recorded.")
+    italian = (
+        '<html lang="it">',
+        "Resoconto finale",
+        "crediti rimasti",
+        "Nessun acquisto registrato.",
+    )
+    for query, expected in [
+        ("?lang=en", english),
+        ("?lang=it", italian),
+        ("", english),
+        ("?lang=fr", english),
+    ]:
+        html = client.get(f"/api/auctions/{auction_id}/report{query}").get_data(as_text=True)
+        assert all(text in html for text in expected), query
+        assert "Asta amici" in html
+
 
 def test_strategy_import_flow(client):
     client.post(

@@ -1,4 +1,4 @@
-from flask import make_response, render_template
+from flask import make_response, render_template, request
 from flask.views import MethodView
 from werkzeug.utils import secure_filename
 
@@ -62,13 +62,46 @@ class AuctionStrategy(MethodView):
         bus().handle(commands.SetAuctionStrategy(auction_id, body["strategy_id"]))
 
 
+REPORT_TEXTS = {
+    "en": {
+        "title": "Auction report",
+        "final_report": "Final report",
+        "initial_credits": "initial credits",
+        "credits_left": "credits left",
+        "role": "Role",
+        "player": "Player",
+        "club": "Club",
+        "price": "Price",
+        "no_purchases": "No purchases recorded.",
+    },
+    "it": {
+        "title": "Resoconto asta",
+        "final_report": "Resoconto finale",
+        "initial_credits": "crediti iniziali",
+        "credits_left": "crediti rimasti",
+        "role": "Ruolo",
+        "player": "Calciatore",
+        "club": "Squadra",
+        "price": "Prezzo",
+        "no_purchases": "Nessun acquisto registrato.",
+    },
+}
+
+
 @blueprint.route("/auctions/<string:auction_id>/report")
 class AuctionReport(MethodView):
     def get(self, auction_id: str):
         auction = auctions.auction_detail(uow(), auction_id)
         if auction["status"] != "completed":
             raise ValidationError("auction_not_completed")
-        response = make_response(render_template("auction_report.html", auction=auction))
+        lang = request.args.get("lang")
+        if lang not in REPORT_TEXTS:
+            lang = "en"
+        response = make_response(
+            render_template(
+                "auction_report.html", auction=auction, lang=lang, text=REPORT_TEXTS[lang]
+            )
+        )
         filename = secure_filename(auction["name"]) or "auction"
         response.headers["Content-Disposition"] = f'attachment; filename="{filename}.html"'
         response.mimetype = "text/html"
