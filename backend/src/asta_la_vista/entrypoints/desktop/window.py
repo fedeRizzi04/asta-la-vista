@@ -10,13 +10,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+from asta_la_vista.entrypoints.desktop import texts
 from asta_la_vista.entrypoints.desktop.paths import APP_NAME
 
 WIDTH, HEIGHT = 1280, 820
 MIN_WIDTH, MIN_HEIGHT = 900, 600
 SW_RESTORE = 9  # Windows ShowWindow command
 
-# pywebview's own texts: the closing confirmation, file dialogs and the macOS menus.
+# pywebview's own texts in Italian (it comes with the English ones): the closing confirmation, file
+# dialogs and the macOS menus.
 LOCALIZATION = {
     "global.quitConfirmation": f"Vuoi chiudere {APP_NAME}?",
     "global.quit": "Chiudi",
@@ -44,10 +46,7 @@ class MissingWebEngine(RuntimeError):
     """Windows without the WebView2 runtime: pywebview would fall back to Internet Explorer."""
 
     def __init__(self) -> None:
-        super().__init__(
-            f"{APP_NAME} ha bisogno di Microsoft Edge WebView2, che su questo PC manca.\n\n"
-            "Scaricalo da developer.microsoft.com/microsoft-edge/webview2 e riapri l'app."
-        )
+        super().__init__(texts.text("missing_web_engine"))
 
 
 def run(url: str, data_dir: Path) -> None:
@@ -56,6 +55,7 @@ def run(url: str, data_dir: Path) -> None:
     from webview.menu import Menu, MenuAction
 
     _require_modern_engine()
+    open_data_folder = MenuAction(texts.text("open_data_folder"), lambda: open_folder(data_dir))
     # Off by default in pywebview; the report and strategy exports are downloads.
     webview.settings["ALLOW_DOWNLOADS"] = True
     webview.create_window(
@@ -65,7 +65,7 @@ def run(url: str, data_dir: Path) -> None:
         height=HEIGHT,
         min_size=(MIN_WIDTH, MIN_HEIGHT),
         confirm_close=True,  # closing quits the app: ask first, an auction may be in progress
-        menu=[Menu("File", [MenuAction("Apri cartella dati", lambda: open_folder(data_dir))])],
+        menu=[Menu("File", [open_data_folder])],
     )
     webview.start(
         # pywebview's default private mode forgets localStorage (theme, dismissed banner) at
@@ -73,7 +73,7 @@ def run(url: str, data_dir: Path) -> None:
         private_mode=False,
         # Used on Windows only; macOS keeps it in ~/Library/WebKit and ~/Library/Caches.
         storage_path=str(data_dir / "webview"),
-        localization=LOCALIZATION,
+        localization=LOCALIZATION if texts.system_language() == "it" else {},
     )
 
 

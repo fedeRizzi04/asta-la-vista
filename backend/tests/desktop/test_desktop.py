@@ -18,7 +18,14 @@ from asta_la_vista import __version__
 pytest.importorskip("waitress", reason="needs the desktop dependency group")
 
 from asta_la_vista.entrypoints.desktop import app as desktop_app  # noqa: E402
-from asta_la_vista.entrypoints.desktop import icon, instance, paths, server, window  # noqa: E402
+from asta_la_vista.entrypoints.desktop import (  # noqa: E402
+    icon,
+    instance,
+    paths,
+    server,
+    texts,
+    window,
+)
 
 
 def test_data_dir_can_be_overridden(tmp_path, monkeypatch):
@@ -162,6 +169,40 @@ def test_restart_gets_the_same_port_while_old_connections_are_in_time_wait():
         sock.close()
 
 
+@pytest.mark.parametrize(
+    ("preferred", "expected"),
+    [
+        (["it-CH", "en-GB"], "it"),
+        (["en-IT", "it-IT"], "en"),
+        (["fr-FR", "it-IT"], "en"),
+    ],
+)
+def test_system_language_is_the_first_preferred_language_on_macos(monkeypatch, preferred, expected):
+    foundation = types.ModuleType("Foundation")
+    foundation.NSLocale = types.SimpleNamespace(preferredLanguages=lambda: preferred)
+    monkeypatch.setitem(sys.modules, "Foundation", foundation)
+    monkeypatch.setattr(texts.sys, "platform", "darwin")
+
+    assert texts.system_language() == expected
+
+
+@pytest.mark.parametrize(
+    ("language_id", "expected"), [(0x0410, "it"), (0x0810, "it"), (0x0409, "en"), (0xFFFF, "en")]
+)
+def test_system_language_is_the_ui_language_on_windows(monkeypatch, language_id, expected):
+    kernel32 = types.SimpleNamespace(GetUserDefaultUILanguage=lambda: language_id)
+    monkeypatch.setattr("ctypes.windll", types.SimpleNamespace(kernel32=kernel32), raising=False)
+    monkeypatch.setattr(texts.sys, "platform", "win32")
+
+    assert texts.system_language() == expected
+
+
+def test_system_language_is_english_elsewhere(monkeypatch):
+    monkeypatch.setattr(texts.sys, "platform", "linux")
+
+    assert texts.system_language() == "en"
+
+
 @pytest.fixture
 def fake_webview(monkeypatch):
     """Stands in for pywebview, which needs a desktop session: records what the app asks of it."""
@@ -177,36 +218,90 @@ def fake_webview(monkeypatch):
     return fake
 
 
-def test_window_keeps_storage_allows_downloads_and_asks_before_closing(tmp_path, fake_webview):
+@pytest.mark.parametrize(
+    ("language", "menu_label", "quit_confirmation"),
+    [
+        ("en", "Open Data Folder", None),
+        ("it", "Apri cartella dati", "Vuoi chiudere Asta la Vista?"),
+    ],
+)
+def test_window_keeps_storage_allows_downloads_and_asks_before_closing(
+    tmp_path, monkeypatch, fake_webview, language, menu_label, quit_confirmation
+):
+    monkeypatch.setattr(texts, "system_language", lambda: language)
+
     window.run("http://127.0.0.1:47615", tmp_path)
 
     ((args, options),) = fake_webview.created
     assert args == (paths.APP_NAME, "http://127.0.0.1:47615")
     assert options["confirm_close"] is True
     ((menu_title, [(item_title, _open)]),) = options["menu"]
-    assert (menu_title, item_title) == ("File", "Apri cartella dati")
+    assert (menu_title, item_title) == ("File", menu_label)
     assert fake_webview.settings["ALLOW_DOWNLOADS"] is True
     ((_args, start_options),) = fake_webview.started
     assert start_options["private_mode"] is False
     assert start_options["storage_path"] == str(tmp_path / "webview")
-    assert (
-        start_options["localization"]["global.quitConfirmation"] == "Vuoi chiudere Asta la Vista?"
-    )
+    localization = start_options["localization"]
+    assert localization == (window.LOCALIZATION if language == "it" else {})
+    assert localization.get("global.quitConfirmation") == quit_confirmation
 
 
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [
+        (
+            "en",
+            "Asta la Vista needs Microsoft Edge WebView2, which is not installed on this PC.\n\n"
+            "Download it from developer.microsoft.com/microsoft-edge/webview2 "
+            "and reopen the app.",
+        ),
+        (
+            "it",
+            "Asta la Vista ha bisogno di Microsoft Edge WebView2, che su questo PC manca.\n\n"
+            "Scaricalo da developer.microsoft.com/microsoft-edge/webview2 e riapri l'app.",
+        ),
+    ],
+)
 def test_window_refuses_the_internet_explorer_fallback_on_windows(
-    tmp_path, monkeypatch, fake_webview
+    tmp_path, monkeypatch, fake_webview, language, expected
 ):
     monkeypatch.setattr(window.sys, "platform", "win32")
+    monkeypatch.setattr(texts, "system_language", lambda: language)
     platforms = types.ModuleType("webview.platforms")
     platforms.winforms = types.SimpleNamespace(renderer="mshtml")
     monkeypatch.setitem(sys.modules, "webview.platforms", platforms)
     monkeypatch.setitem(sys.modules, "webview.platforms.winforms", platforms.winforms)
 
-    with pytest.raises(window.MissingWebEngine):
+    with pytest.raises(window.MissingWebEngine) as error:
         window.run("http://127.0.0.1:47615", tmp_path)
 
+    assert str(error.value) == expected
     assert fake_webview.created == []
+
+
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [
+        ("en", "Asta la Vista could not start.\n\nSee the log file for details:\n{log_file}"),
+        (
+            "it",
+            "Non è stato possibile avviare Asta la Vista.\n\n"
+            "I dettagli sono nel file di log:\n{log_file}",
+        ),
+    ],
+)
+def test_frozen_app_shows_a_startup_error(tmp_path, monkeypatch, language, expected):
+    monkeypatch.setattr(texts, "system_language", lambda: language)
+    monkeypatch.setattr(paths, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(paths, "is_frozen", lambda: True)
+    monkeypatch.setattr(desktop_app, "_configure_logging", Mock())
+    monkeypatch.setattr(desktop_app, "_run", Mock(side_effect=RuntimeError("startup failed")))
+    errors = []
+    monkeypatch.setattr(desktop_app, "_show_error", errors.append)
+
+    assert desktop_app.main([]) == 1
+
+    assert errors == [expected.format(log_file=tmp_path / desktop_app.LOG_FILE)]
 
 
 @pytest.mark.parametrize(("minimised", "expected_calls"), [(True, 3), (False, 2)])
@@ -228,10 +323,26 @@ def test_second_launch_brings_the_window_forward_on_windows(monkeypatch, minimis
     assert len(calls) == expected_calls  # a maximised window is not restored to its old size
 
 
-@pytest.mark.parametrize(("running_version", "warned"), [("0.0.1", True), (__version__, False)])
+@pytest.mark.parametrize("running_version", ["0.0.1", __version__])
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [
+        (
+            "en",
+            "Version {running_version} of Asta la Vista is still open.\n\n"
+            "Close it and reopen the app to use version {version}.",
+        ),
+        (
+            "it",
+            "È ancora aperta la versione {running_version} di Asta la Vista.\n\n"
+            "Chiudila e riapri l'app per usare la versione {version}.",
+        ),
+    ],
+)
 def test_second_launch_warns_when_an_older_version_is_still_open(
-    tmp_path, monkeypatch, running_version, warned
+    tmp_path, monkeypatch, running_version, language, expected
 ):
+    monkeypatch.setattr(texts, "system_language", lambda: language)
     first = instance.acquire_lock(tmp_path)
     (tmp_path / instance.INSTANCE_FILE).write_text(
         json.dumps({"port": 47615, "version": running_version})
@@ -245,7 +356,11 @@ def test_second_launch_warns_when_an_older_version_is_still_open(
     finally:
         first.release()
 
-    assert [running_version in message for message in errors] == ([True] if warned else [])
+    assert errors == (
+        [expected.format(running_version=running_version, version=__version__)]
+        if running_version != __version__
+        else []
+    )
     assert fronts == [True]
 
 

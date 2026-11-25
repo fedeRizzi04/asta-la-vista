@@ -11,7 +11,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from asta_la_vista import __version__
-from asta_la_vista.entrypoints.desktop import instance, paths, window
+from asta_la_vista.entrypoints.desktop import instance, paths, texts, window
 from asta_la_vista.entrypoints.desktop.paths import APP_NAME
 from asta_la_vista.entrypoints.desktop.server import PREFERRED_PORT
 
@@ -38,8 +38,7 @@ def main(argv: list[str] | None = None) -> int:
             _show_error(
                 str(error)
                 if isinstance(error, window.MissingWebEngine)
-                else f"Non è stato possibile avviare {APP_NAME}.\n\n"
-                f"I dettagli sono nel file di log:\n{data_dir / LOG_FILE}"
+                else texts.text("startup_failed", log_file=data_dir / LOG_FILE)
             )
         return 1
 
@@ -56,8 +55,11 @@ def _run(args: argparse.Namespace, data_dir: Path) -> int:
             running_version = instance.running_version(data_dir)
             if running_version not in (None, __version__):
                 _show_error(
-                    f"È ancora aperta la versione {running_version} di {APP_NAME}.\n\n"
-                    f"Chiudila e riapri l'app per usare la versione {__version__}."
+                    texts.text(
+                        "older_version_open",
+                        running_version=running_version,
+                        version=__version__,
+                    )
                 )
             window.bring_to_front()
         return 0
@@ -115,12 +117,12 @@ def configure_environment(data_dir: Path) -> None:
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="asta-la-vista", description=f"Avvia {APP_NAME}.")
-    parser.add_argument("--port", type=int, default=PREFERRED_PORT, help="porta preferita")
+    parser = argparse.ArgumentParser(prog="asta-la-vista", description=f"Start {APP_NAME}.")
+    parser.add_argument("--port", type=int, default=PREFERRED_PORT, help="preferred port")
     parser.add_argument(
         "--headless",
         action="store_true",
-        help="nessuna finestra: resta in esecuzione fino a Ctrl+C (per test e CI)",
+        help="no window: keep running until Ctrl+C (for tests and CI)",
     )
     # macOS may append a "-psn_..." argument when launching an app bundle; ignore unknown ones.
     args, _unknown = parser.parse_known_args(argv)

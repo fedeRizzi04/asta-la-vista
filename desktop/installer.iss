@@ -34,8 +34,12 @@ UninstallDisplayIcon={app}\{#AppExe}
 WizardStyle=modern
 OutputDir=..\dist\installer
 OutputBaseFilename=AstaLaVista-{#Version}-windows-setup
+; Setup follows the language of Windows and asks only if it has no match below. An update reuses
+; the language of the previous installation.
+ShowLanguageDialog=auto
 
 [Languages]
+Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "it"; MessagesFile: "compiler:Languages\Italian.isl"
 
 [Tasks]
