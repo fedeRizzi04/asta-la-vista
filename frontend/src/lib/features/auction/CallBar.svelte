@@ -18,6 +18,9 @@
 	const searchKeys = 'mod+k';
 
 	let searchInput = $state<HTMLInputElement>();
+	let callBar = $state<HTMLElement>();
+	/** Read out by screen readers, which would otherwise hear nothing of a registered purchase. */
+	let announcement = $state('');
 	let player = $derived(auctionState.calledPlayer);
 	let entry = $derived(player && auctionState.entryForPlayer(player.id));
 	let tier = $derived(player && auctionState.tierForPlayer(player.id));
@@ -43,6 +46,15 @@
 		searchInput?.select();
 	}
 
+	/**
+	 * Takes the cursor out of the text fields, so the keys that act on the page (P D C A, ?, /)
+	 * work at once. Focus goes to the call bar itself rather than being lost: Tab continues from
+	 * here, into the search, and screen readers hear where they are.
+	 */
+	function leaveFields(): void {
+		callBar?.focus({ preventScroll: true });
+	}
+
 	$effect(() =>
 		registerShortcuts([
 			{ keys: searchKeys, description: 'Cerca un calciatore', group: 'Asta', handler: focusSearch },
@@ -51,7 +63,7 @@
 				keys: 'escape',
 				description: 'Annulla la chiamata',
 				group: 'Asta',
-				handler: () => search('')
+				handler: cancelCall
 			}
 		])
 	);
@@ -62,13 +74,25 @@
 		query = text;
 	}
 
+	function cancelCall(): void {
+		// Before the call is cancelled: the winner and price fields go away with it.
+		const inCallBar = callBar?.contains(document.activeElement);
+		search('');
+		if (inCallBar) leaveFields();
+	}
+
 	async function registerPurchase(participantId: string, price: number): Promise<void> {
-		await auctionState.registerPurchase(participantId, price);
-		if (!auctionState.calledPlayer) searchInput?.focus();
+		const called = player;
+		const winner = auctionState.auction?.participants.find(({ id }) => id === participantId);
+		if (!(await auctionState.registerPurchase(participantId, price)) || !called) return;
+		announcement = `Acquisto registrato: ${called.name}, ${winner?.name ?? ''}, ${price} crediti`;
+		// Not when another player has been called in the meantime: the user has moved on.
+		if (!auctionState.calledPlayer) leaveFields();
 	}
 </script>
 
-<section class="call-bar" aria-label="Chiamata">
+<!-- tabindex="-1": reachable by script only, see leaveFields. -->
+<section class="call-bar" aria-label="Chiamata" tabindex="-1" bind:this={callBar}>
 	<div class="panel">
 		<Combobox
 			bind:value={() => query, search}
@@ -131,6 +155,7 @@
 			/>
 		{/key}
 	</div>
+	<p class="announcement" role="status">{player ? '' : announcement}</p>
 </section>
 
 <style>
@@ -142,6 +167,21 @@
 		/* Room for the panel's hard shadow above the content scrolling underneath. */
 		padding: 0.5rem 0 0.6rem;
 		background: var(--page-bg);
+	}
+
+	/* Focused by script after a purchase; a ring around the whole bar would only be noise. */
+	.call-bar:focus {
+		outline: none;
+	}
+
+	.announcement {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	.panel {

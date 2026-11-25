@@ -42,8 +42,11 @@ This is the whole sequence for one player, with the macOS keys. On Windows and L
 4. When the bidding ends, press `⌘ invio`. The cursor goes to the **Vincitore** field.
 5. Type the first letters of the participant's name and press `invio` to choose the highlighted
    one. The cursor goes to the **Prezzo** field.
-6. Type the price and press `invio`. The purchase is recorded, the call bar is emptied and the
-   cursor goes back to the search field, ready for the next player.
+6. Type the price and press `invio`. The purchase is recorded and the call bar is emptied. The
+   cursor is no longer in a text field (it rests on the call bar), so `P` `D` `C` `A`, `?` and
+   `⌥1` `⌥2` work at once: you may be the one calling the next player and need the strategy
+   first. For the next player press `⌘K` or `/` again, or `tab`, which goes to the search field.
+   Screen readers announce the purchase.
 
 If you make a mistake before step 6, see [the three ways to undo](#the-three-ways-to-undo).
 
@@ -58,7 +61,7 @@ Linux.
 | «Mostra le scorciatoie» | `?` | `?` | Opens the panel with the shortcuts of the current page. It works on every page. |
 | «Cerca un calciatore» | `⌘K` or `/` | `Ctrl+K` or `/` | Moves the cursor to the search field and selects what is already there, so you can type over it. Only in a live auction. |
 | «Vai al vincitore» | `⌘ invio` | `Ctrl+Invio` | Moves the cursor to the **Vincitore** field. It needs a called player (without one, the field is disabled and nothing happens). It only moves the cursor: it does not choose anyone and does not record anything. |
-| «Annulla la chiamata» | `esc` | `Esc` | Removes the called player from the call bar and empties the search field, along with the winner and the price you may have typed. Only in a live auction. It never touches a purchase that was already recorded. See [below](#the-three-ways-to-undo). |
+| «Annulla la chiamata» | `esc` | `Esc` | Removes the called player from the call bar and empties the search field, along with the winner and the price you may have typed. The cursor leaves the text fields, as after a purchase. Only in a live auction. It never touches a purchase that was already recorded. See [below](#the-three-ways-to-undo). |
 | «Mostra portieri», «Mostra difensori», «Mostra centrocampisti», «Mostra attaccanti» | `P` `D` `C` `A` | `P` `D` `C` `A` | Shows the tiers or the free players of one role (one role at a time). |
 | «Vista Fasce» | `⌥1` | `Alt+1` | Shows the tiers. Once the auction has started. It works from a field too, and types nothing in it. |
 | «Vista Svincolati» | `⌥2` | `Alt+2` | Shows the free players (**Svincolati**). Once the auction has started. It works from a field too, and types nothing in it. |
@@ -93,8 +96,8 @@ They look alike, so here is what each one does and does not do.
 It removes the player from the call bar and empties the search, the winner and the price. Nothing
 was recorded yet, so there is nothing to give back. It never touches a purchase that is already in
 the registry. When the list of results is open, the first `esc` only closes the list, and the
-second one removes the call. After it, the cursor is not in the search field any more if you were
-in the winner field: press `⌘K` or `/` to go back.
+second one removes the call. After it the cursor leaves the text fields, as after a purchase, so
+the keys of the page work at once: press `⌘K` or `/` to go back to the search.
 
 **«Annulla l'ultimo acquisto», `⌘Z`: you recorded a purchase you did not want.**
 It does not act at once: a window asks you to confirm, naming the player, the participant and the
