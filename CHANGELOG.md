@@ -9,6 +9,8 @@ who use the app.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-26
+
 ### Fixed
 
 - On Windows, an update could stop with "Access denied" when the app was in a folder such as
@@ -205,7 +207,8 @@ First release, with a desktop app that needs neither Docker nor Python.
   - a final HTML report that opens in any browser;
   - a dark theme.
 
-[Unreleased]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/fedeRizzi04/asta-la-vista/compare/v0.3.0...v0.4.0
