@@ -60,8 +60,8 @@ Linux.
 | «Vai al vincitore» | `⌘ invio` | `Ctrl+Invio` | Moves the cursor to the **Vincitore** field. It needs a called player (without one, the field is disabled and nothing happens). It only moves the cursor: it does not choose anyone and does not record anything. |
 | «Annulla la chiamata» | `esc` | `Esc` | Removes the called player from the call bar and empties the search field, along with the winner and the price you may have typed. Only in a live auction. It never touches a purchase that was already recorded. See [below](#the-three-ways-to-undo). |
 | «Mostra portieri», «Mostra difensori», «Mostra centrocampisti», «Mostra attaccanti» | `P` `D` `C` `A` | `P` `D` `C` `A` | Shows the tiers or the free players of one role (one role at a time). |
-| «Vista Fasce» | `⌥1` | `Alt+1` | Shows the tiers. Once the auction has started. |
-| «Vista Svincolati» | `⌥2` | `Alt+2` | Shows the free players (**Svincolati**). Once the auction has started. |
+| «Vista Fasce» | `⌥1` | `Alt+1` | Shows the tiers. Once the auction has started. It works from a field too, and types nothing in it. |
+| «Vista Svincolati» | `⌥2` | `Alt+2` | Shows the free players (**Svincolati**). Once the auction has started. It works from a field too, and types nothing in it. |
 | «Apri o chiudi il registro acquisti» | `⌘J` | `Ctrl+J` | Opens the purchase registry in the side panel, or closes it if it is open. Once the auction has started. |
 | «Annulla l'ultimo acquisto» | `⌘Z` | `Ctrl+Z` | Asks you to confirm, then cancels the most recent purchase and gives the credits back. Only in a live auction. See [below](#the-three-ways-to-undo). |
 
@@ -169,7 +169,9 @@ On a Mac the symbols are written next to each other (`⌘K`), and a word is sepa
 
 - **While you type in a field** (a search, the winner, the price, a name, a note, a drop-down), the
   keys that do not need `⌘` or `Ctrl` are ignored, so that you can write: `/`, `?`, `P` `D` `C` `A`,
-  `1` to `9`, `0`, `⌥1` and `⌥2`. The shortcuts with `⌘` or `Ctrl`, and `esc`, still work.
+  `1` to `9`, `0`. The shortcuts with `⌘` or `Ctrl`, those with `⌥` (`Alt`), and `esc`, still work:
+  you can switch between the tiers and the free players from the search, the winner or the price.
+  `⌥1` types « on an Italian Mac keyboard, and the shortcut keeps it from being typed.
 - **While a window is open** (the registry panel, a confirmation, the panel of the shortcuts) all
   the shortcuts are ignored, except `⌘J`, which closes the registry. `esc` closes the window on
   top, and only that one.
@@ -187,7 +189,8 @@ On a Mac the symbols are written next to each other (`⌘K`), and a word is sepa
   trigger `1` to `9`; the digits of the numeric keypad should.
 - `/` and `?` work whether or not your layout needs `Shift` to type them.
 - `⌥1` and `⌥2` follow the position of the key and not the character, because `⌥` changes the
-  characters on a Mac. They are the keys of the digits 1 and 2 on the top row.
+  characters on a Mac. They are the keys of the digits 1 and 2 on the top row. On Windows, `AltGr`
+  is read as `Ctrl+Alt`, so it never triggers a shortcut by accident.
 
 **The browser's own shortcuts**
 

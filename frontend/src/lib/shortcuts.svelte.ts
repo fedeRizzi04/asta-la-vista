@@ -116,7 +116,9 @@ function matches(event: KeyboardEvent, spec: string, typing: boolean): boolean {
 	// Punctuation can require Shift on some layouts, so use the resulting character.
 	const impliedShift = !alt && /^[\p{P}\p{S}]$/u.test(key);
 	return (
-		(!typing || mod || key === 'escape') &&
+		// Option or Alt types a character (⌥1 is « on an Italian keyboard), so it counts like ⌘:
+		// the shortcut works in a field, which does not receive the character.
+		(!typing || mod || alt || key === 'escape') &&
 		event.metaKey === (mod && isMac) &&
 		event.ctrlKey === (mod && !isMac) &&
 		event.altKey === alt &&
