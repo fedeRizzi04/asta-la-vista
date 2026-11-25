@@ -143,8 +143,10 @@ in between, `⌘` (`Ctrl` on Windows) and a click adds or removes one player.
 | “Remove from tier” | `0` | Takes the same players out of their tier, back to **No tier**. |
 | “Clear selection” | `esc` | Clears the selection. It appears in the panel only while something is selected. |
 
-`esc` has two more jobs here: while you drag a player it cancels the drag, and with the details of
-a player open it closes them (the selection stays, and a second `esc` clears it).
+`esc` has three more jobs here: while you drag a player it cancels the drag; with the details of a
+player open it closes them (the selection stays, and a second `esc` clears it); in the search field
+above the list on the left, if the field has text, it empties the field and nothing else (from the
+empty field, `esc` clears the selection).
 
 **Tiers and names**
 
