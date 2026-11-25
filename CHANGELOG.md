@@ -12,6 +12,9 @@ who use the app.
 ### Added
 
 - Press `?` to see the keyboard shortcuts available on the current page.
+- A guide to the keyboard shortcuts, with a step-by-step purchase from the keyboard and the
+  difference between dropping a call and undoing a purchase, in
+  [docs/keyboard-shortcuts.md](https://github.com/fedeRizzi04/asta-la-vista/blob/main/docs/keyboard-shortcuts.md).
 
 ### Changed
 
