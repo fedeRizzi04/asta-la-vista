@@ -18,8 +18,6 @@ who use the app.
 
 ### Changed
 
-- On macOS the keyboard shortcuts show **esc** and **invio** as words, in the `?` panel and in the
-  tooltips, instead of the symbols ⎋ and ⏎, which are not printed on the keys.
 - Asta la Vista has a new sticker-inspired look in both themes, with pastel role badges and
   bundled Bricolage Grotesque and Atkinson Hyperlegible fonts that work offline.
 - Page headers are compact, so more of the screen goes to your data, and buttons, fields, role
