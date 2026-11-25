@@ -115,6 +115,22 @@ jobs:
       - name: Smoke test the build
         run: ./bin/smoke-test-desktop "${{ matrix.executable }}" "$VERSION"
 
+      # Version 0.4.0 let the user choose the folder: its own installer, from its release, does it.
+      - name: Test an update from version 0.4.0 in a chosen folder (Windows)
+        if: matrix.name == 'windows'
+        shell: pwsh
+        timeout-minutes: 10 # a message box left open would otherwise block the job for hours
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v0.4.0 --pattern '*-windows-setup.exe' --dir dist\v0.4.0
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $oldDir = "$PWD\dist\chosen"
+          $install = Start-Process -Wait -PassThru "dist\v0.4.0\AstaLaVista-0.4.0-windows-setup.exe" `
+            -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/DIR=`"$oldDir`""
+          if ($install.ExitCode) { exit $install.ExitCode }
+          ./bin/test-windows-update.ps1 -Setup "$PWD\release\AstaLaVista-$env:VERSION-windows-setup.exe" -OldDir $oldDir
+
       - name: Package (macOS)
         if: matrix.name == 'macos'
         run: |
