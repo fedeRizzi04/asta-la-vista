@@ -50,6 +50,14 @@
 			)
 			.sort(comparators[sort])
 	);
+
+	/** Esc empties a filter with text and stops there; from an empty one it is left to the page. */
+	function clearOnEscape(event: KeyboardEvent): void {
+		if (event.key !== 'Escape' || event.isComposing || !search) return;
+		// Keeps the page from clearing the selection, and the browser from clearing on its own.
+		event.preventDefault();
+		search = '';
+	}
 </script>
 
 <section
@@ -74,6 +82,7 @@
 				type="search"
 				placeholder={t.strategies.search}
 				aria-label={t.common.searchPlayerOrClub}
+				onkeydown={clearOnEscape}
 			/>
 			<Select bind:value={sort} aria-label={t.common.sortBy}>
 				<option value="quotation">{t.common.quotation}</option>
