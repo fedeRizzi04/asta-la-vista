@@ -52,38 +52,20 @@ Press `?` to see the shortcuts of the page you are on. There is no button for it
   <img src="assets/screenshots/shortcuts.jpg" alt="The keyboard shortcuts panel, open on an auction" width="70%" />
 </p>
 
-The keys below are the macOS ones. On Windows, `⌘` is `Ctrl` and `⌥` is `Alt`. The keys with
-a single letter or digit only work while you are not typing in a field.
+The most useful ones, with the macOS keys (on Windows and Linux, `⌘` is `Ctrl` and `⌥` is `Alt`):
 
-**Auction**
+- `⌘K` or `/` goes to the player search, `⌘ invio` goes to the winner field and `esc` drops the
+  player being called.
+- `P` `D` `C` `A` show goalkeepers, defenders, midfielders or forwards, `⌥1` and `⌥2` switch between
+  the tiers and the free players, `⌘J` opens the purchase registry and `⌘Z` cancels the last
+  purchase, after asking you to confirm.
+- A player can be called and recorded with the keyboard alone: `⌘K`, the name, `invio`, `⌘ invio`,
+  the winner, `invio`, the price and `invio`.
+- On the strategy page, the arrows select players, `1`-`9` move them to a tier, `0` takes them out
+  of it and `esc` clears the selection.
 
-| Keys | What it does |
-|---|---|
-| `⌘K` or `/` | Go to the player search |
-| `↑` `↓` and `⏎` | Move through the results and call the highlighted player |
-| `⌘⏎` | Go to the winner field |
-| `⏎` in the winner field | Choose the highlighted participant and go to the price |
-| `⏎` in the price field | Record the purchase |
-| `Esc` | Drop the player being called |
-| `P` `D` `C` `A` | Show goalkeepers, defenders, midfielders or forwards |
-| `⌥1` `⌥2` | Show the tiers or the free players |
-| `⌘J` | Open or close the purchase registry |
-| `⌘Z` | Cancel the last purchase, after asking you to confirm |
-
-A player can be called and recorded with the keyboard alone: `⌘K`, the name, `⏎`, `⌘⏎`, the
-winner, `⏎`, the price and `⏎`.
-
-**Strategy**
-
-| Keys | What it does |
-|---|---|
-| `↑` `↓`, `Home` `End` | Move through a list of players (with `⇧`, extend the selection) |
-| `Space` | Add or remove the focused player from the selection |
-| `⏎` | Open the details of the focused player |
-| `1`-`9` | Move the selected players (or the focused one) to that tier |
-| `0` | Take them out of their tier |
-| `Esc` | Clear the selection |
-| `←` `→` on a tier's grip | Move the tier |
+The [keyboard shortcuts guide](docs/keyboard-shortcuts.md) lists every key, explains what "call"
+means and what each of the ways to undo does, and tells when the shortcuts are ignored.
 
 ## Why
 
