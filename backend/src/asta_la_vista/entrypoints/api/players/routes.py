@@ -42,6 +42,6 @@ class PlayerImport(MethodView):
     def post(self, query: dict) -> dict[str, int]:
         uploaded_file = request.files.get("file")
         if uploaded_file is None or not uploaded_file.filename:
-            raise ValidationError("A .xlsx or .csv player list is required")
+            raise ValidationError("unsupported_player_file")
         rows = parse_player_file(uploaded_file.read(), uploaded_file.filename)
         return bus().handle(commands.ImportPlayers(rows, query["confirm_live"]))

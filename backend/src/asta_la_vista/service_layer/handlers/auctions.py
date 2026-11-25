@@ -9,7 +9,7 @@ def create_auction(cmd: commands.CreateAuction, uow: AbstractUnitOfWork) -> str:
     )
     with uow:
         if cmd.strategy_id is not None and uow.strategies.get(cmd.strategy_id) is None:
-            raise NotFoundError("Strategy not found")
+            raise NotFoundError("strategy_not_found")
         auction = model.Auction(cmd.name, cmd.initial_credits, slots, strategy_id=cmd.strategy_id)
         for participant_name in cmd.participant_names:
             auction.add_participant(participant_name)
@@ -31,9 +31,9 @@ def record_purchase(cmd: commands.RecordPurchase, uow: AbstractUnitOfWork) -> st
         auction = _auction(uow, cmd.auction_id)
         player = uow.players.get(cmd.player_id)
         if player is None:
-            raise NotFoundError("Player not found")
+            raise NotFoundError("player_not_found")
         if not player.active:
-            raise ValidationError("Inactive players cannot be purchased")
+            raise ValidationError("player_inactive")
         purchase_id = auction.record_purchase(
             player.external_id,
             player.name,
@@ -84,7 +84,7 @@ def set_auction_strategy(cmd: commands.SetAuctionStrategy, uow: AbstractUnitOfWo
     with uow:
         auction = _auction(uow, cmd.auction_id)
         if cmd.strategy_id is not None and uow.strategies.get(cmd.strategy_id) is None:
-            raise NotFoundError("Strategy not found")
+            raise NotFoundError("strategy_not_found")
         auction.set_strategy(cmd.strategy_id)
         uow.commit()
 
@@ -92,5 +92,5 @@ def set_auction_strategy(cmd: commands.SetAuctionStrategy, uow: AbstractUnitOfWo
 def _auction(uow: AbstractUnitOfWork, auction_id: str) -> model.Auction:
     auction = uow.auctions.get(auction_id)
     if auction is None:
-        raise NotFoundError("Auction not found")
+        raise NotFoundError("auction_not_found")
     return auction

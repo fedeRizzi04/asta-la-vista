@@ -129,7 +129,9 @@ def test_strategy_can_be_deleted(client):
 
     assert response.status_code == 204
     assert client.get("/api/strategies").get_json() == []
-    assert client.get(f"/api/strategies/{strategy_id}").status_code == 404
+    response = client.get(f"/api/strategies/{strategy_id}")
+    assert response.status_code == 404
+    assert response.get_json() == {"code": "strategy_not_found", "params": {}}
 
 
 def test_auction_can_be_deleted(client):
@@ -151,7 +153,9 @@ def test_auction_can_be_deleted(client):
 
     assert response.status_code == 204
     assert client.get("/api/auctions").get_json() == []
-    assert client.get(f"/api/auctions/{auction_id}").status_code == 404
+    response = client.get(f"/api/auctions/{auction_id}")
+    assert response.status_code == 404
+    assert response.get_json() == {"code": "auction_not_found", "params": {}}
 
 
 def test_auction_strategy_can_be_changed(client):
@@ -183,6 +187,7 @@ def test_auction_strategy_can_be_changed(client):
     response = client.put(f"/api/auctions/{auction_id}/strategy", json={"strategy_id": "missing"})
 
     assert response.status_code == 404
+    assert response.get_json() == {"code": "strategy_not_found", "params": {}}
 
 
 def test_live_auction_purchase_amendment_and_cancellation_flow(client):
@@ -332,7 +337,7 @@ def test_a_strategy_without_players_cannot_be_exported(client):
     response = client.get(f"/api/strategies/{strategy_id}/export")
 
     assert response.status_code == 422
-    assert response.get_json()["message"] == "A strategy without players cannot be exported"
+    assert response.get_json() == {"code": "strategy_without_players", "params": {}}
 
 
 def test_strategy_import_requires_confirmation_when_a_player_is_not_found(client):
@@ -350,8 +355,10 @@ def test_strategy_import_requires_confirmation_when_a_player_is_not_found(client
     response = client.post("/api/strategies/import?name=Fasce", data=file)
 
     assert response.status_code == 409
-    assert response.get_json()["code"] == "confirmation_required"
-    assert "Giocatore Ignoto" in response.get_json()["message"]
+    assert response.get_json() == {
+        "code": "unmatched_players",
+        "params": {"names": ["Giocatore Ignoto"]},
+    }
     assert client.get("/api/strategies").get_json() == []
 
     file = {
@@ -379,7 +386,7 @@ def test_strategy_import_rejects_a_maximum_price_percentage_above_100(client):
     response = client.post("/api/strategies/import?name=Fasce", data=file)
 
     assert response.status_code == 422
-    assert response.get_json()["code"] == "validation_error"
+    assert response.get_json() == {"code": "max_price_out_of_range", "params": {}}
     assert client.get("/api/strategies").get_json() == []
 
 
@@ -404,7 +411,7 @@ def test_live_import_requires_confirmation(client):
     response = client.post("/api/players/import", data=second_file)
 
     assert response.status_code == 409
-    assert response.get_json()["code"] == "confirmation_required"
+    assert response.get_json() == {"code": "live_auction_import", "params": {}}
 
 
 def test_openapi_contract_exposes_the_main_resources(client):
@@ -418,13 +425,13 @@ def test_openapi_contract_exposes_the_main_resources(client):
     assert "/api/auctions/{auction_id}/purchases" in paths
 
 
-def test_reusing_a_strategy_name_returns_a_readable_error(client):
+def test_reusing_a_strategy_name_returns_the_existing_name(client):
     client.post("/api/strategies", json={"name": "Prova"})
 
     response = client.post("/api/strategies", json={"name": "prova"})
 
     assert response.status_code == 422
     assert response.get_json() == {
-        "code": "validation_error",
-        "message": 'A strategy named "Prova" already exists',
+        "code": "strategy_name_taken",
+        "params": {"name": "Prova"},
     }

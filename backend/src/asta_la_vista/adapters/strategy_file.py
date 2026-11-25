@@ -36,11 +36,11 @@ class StrategyExport:
 
 def parse_strategy_import_file(content: bytes, filename: str) -> tuple[TierImportRow, ...]:
     if not filename.lower().endswith(".csv"):
-        raise ValidationError("Only .csv files are supported")
+        raise ValidationError("unsupported_tier_file")
     try:
         text = content.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
-        raise ValidationError("The CSV file must use UTF-8 encoding") from exc
+        raise ValidationError("csv_not_utf8") from exc
     try:
         # Only the delimiter is sniffed: letting the Sniffer pick the whole
         # dialect made it guess quoting rules that mangle quoted notes, which
@@ -78,7 +78,7 @@ def _find_headers(rows: Iterable[Iterable[object]]) -> tuple[list[str], Iterable
             return values, iterator
         if row_number == 10:
             break
-    raise ValidationError("Required columns Nome, Fascia, MaxPrezzo% and Note were not found")
+    raise ValidationError("missing_tier_columns")
 
 
 def _rows_to_entries(
@@ -101,7 +101,7 @@ def _rows_to_entries(
             continue
         name = cell(values, "Nome")
         if not name:
-            raise ValidationError("A row is missing the player name")
+            raise ValidationError("missing_player_name")
         entries.append(
             TierImportRow(
                 name=name,
@@ -112,7 +112,7 @@ def _rows_to_entries(
             )
         )
     if not entries:
-        raise ValidationError("The tier list is empty")
+        raise ValidationError("empty_tier_list")
     return tuple(entries)
 
 
@@ -122,7 +122,7 @@ def _parse_percentage(value: str) -> float | None:
     try:
         percentage = round(float(value), 1)
     except ValueError as exc:
-        raise ValidationError("MaxPrezzo% must be a number") from exc
+        raise ValidationError("max_price_not_number") from exc
     # A price cap of 0% isn't meaningful; treat it the same as "not set".
     return percentage if percentage > 0 else None
 
@@ -131,5 +131,5 @@ def _parse_color(value: str) -> str:
     if not value:
         return ""
     if not HEX_COLOR.match(value):
-        raise ValidationError("Colore must be a hex color like #ef4444")
+        raise ValidationError("invalid_tier_color")
     return value.lower()

@@ -50,7 +50,7 @@ def auction_detail(uow: AbstractUnitOfWork, auction_id: str) -> dict:
             .one_or_none()
         )
         if auction is None:
-            raise NotFoundError("Auction not found")
+            raise NotFoundError("auction_not_found")
         participants = list(
             uow.session.execute(
                 text("""

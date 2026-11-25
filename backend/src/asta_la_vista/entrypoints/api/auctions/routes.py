@@ -67,7 +67,7 @@ class AuctionReport(MethodView):
     def get(self, auction_id: str):
         auction = auctions.auction_detail(uow(), auction_id)
         if auction["status"] != "completed":
-            raise ValidationError("Auction must be completed before exporting a report")
+            raise ValidationError("auction_not_completed")
         response = make_response(render_template("auction_report.html", auction=auction))
         filename = secure_filename(auction["name"]) or "auction"
         response.headers["Content-Disposition"] = f'attachment; filename="{filename}.html"'

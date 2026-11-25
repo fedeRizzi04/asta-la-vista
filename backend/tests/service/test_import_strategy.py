@@ -83,12 +83,14 @@ def test_import_requires_confirmation_without_creating_anything_when_a_player_is
         (
             commands.TierImportRow("Lautaro", "Top"),
             commands.TierImportRow("Ignoto", "Top"),
+            commands.TierImportRow("Altro", "Top"),
         ),
     )
 
-    with pytest.raises(ConfirmationRequiredError, match="Ignoto"):
+    with pytest.raises(ConfirmationRequiredError, match="unmatched_players") as error:
         bus.handle(import_command)
 
+    assert error.value.params == {"names": ["Altro", "Ignoto"]}
     with uow:
         assert uow.session.execute(sa.text("SELECT COUNT(*) FROM strategy")).scalar() == 0
 
@@ -147,5 +149,5 @@ def test_import_rejects_a_name_already_taken_by_another_strategy(session_factory
         uow.commit()
     bus.handle(commands.CreateStrategy("Prova"))
 
-    with pytest.raises(ValidationError, match='A strategy named "Prova" already exists'):
+    with pytest.raises(ValidationError, match="strategy_name_taken"):
         bus.handle(commands.ImportStrategy("Prova", (commands.TierImportRow("Lautaro", "Top"),)))
