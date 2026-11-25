@@ -88,11 +88,12 @@ export class PlayerDrag {
 			frame = requestAnimationFrame(follow);
 		};
 
-		const finish = (drop: boolean) => {
+		const finish = (drop: boolean, stillDown = false) => {
 			gesture.abort();
 			if (frame === undefined) return;
 			area.releasePointerCapture(press.pointerId);
-			skipNextClick();
+			if (stillDown) skipClickOfRelease(press.pointerId, lifetime);
+			else skipNextClick();
 			const target = drop ? this.#targetAtPointer(area, origin) : undefined;
 			this.target = undefined;
 			if (target !== undefined) {
@@ -124,7 +125,7 @@ export class PlayerDrag {
 				if (event.key !== 'Escape' || frame === undefined) return;
 				event.preventDefault();
 				event.stopPropagation();
-				finish(false);
+				finish(false, true);
 			},
 			{ signal, capture: true }
 		);
@@ -184,4 +185,23 @@ function skipNextClick(): void {
 		signal: skip.signal
 	});
 	setTimeout(() => skip.abort());
+}
+
+/** `skipNextClick` for a pointer that is still down, once it is released. */
+function skipClickOfRelease(pointerId: number, lifetime: AbortSignal): void {
+	const wait = new AbortController();
+	const { signal } = wait;
+	lifetime.addEventListener('abort', () => wait.abort(), { signal });
+	// After a cancel, or a new press if the release got lost, there is no click to skip.
+	for (const type of ['pointerup', 'pointercancel', 'pointerdown'] as const) {
+		window.addEventListener(
+			type,
+			(event) => {
+				if (event.pointerId !== pointerId) return;
+				wait.abort();
+				if (type === 'pointerup') skipNextClick();
+			},
+			{ capture: true, signal }
+		);
+	}
 }
