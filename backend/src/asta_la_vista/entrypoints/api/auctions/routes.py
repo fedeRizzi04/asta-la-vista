@@ -66,7 +66,9 @@ REPORT_TEXTS = {
     "en": {
         "title": "Auction report",
         "final_report": "Final report",
+        "initial_credit": "initial credit",
         "initial_credits": "initial credits",
+        "credit_left": "credit left",
         "credits_left": "credits left",
         "role": "Role",
         "player": "Player",
@@ -77,7 +79,9 @@ REPORT_TEXTS = {
     "it": {
         "title": "Resoconto asta",
         "final_report": "Resoconto finale",
+        "initial_credit": "credito iniziale",
         "initial_credits": "crediti iniziali",
+        "credit_left": "credito rimasto",
         "credits_left": "crediti rimasti",
         "role": "Ruolo",
         "player": "Calciatore",

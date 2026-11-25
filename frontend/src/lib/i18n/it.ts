@@ -178,7 +178,7 @@ export const it: Messages = {
 		loadFailed: 'Impossibile caricare le aste.',
 		noAuctions: 'Nessuna asta salvata. Per iniziare, scegli «Nuova asta».',
 		cardSummary: (participants, purchases, credits) =>
-			`${participants} ${plural(participants, 'partecipante', 'partecipanti')} · ${purchases} ${plural(purchases, 'acquisto', 'acquisti')} · ${credits} crediti iniziali`,
+			`${participants} ${plural(participants, 'partecipante', 'partecipanti')} · ${purchases} ${plural(purchases, 'acquisto', 'acquisti')} · ${credits} ${plural(credits, 'credito iniziale', 'crediti iniziali')}`,
 		resume: 'Riprendi',
 		deleteAuctionLabel: (name) => `Elimina ${name}`,
 		deleteAuction: 'Elimina asta',
@@ -193,14 +193,14 @@ export const it: Messages = {
 		toggleRegistry: 'Apri o chiudi il registro acquisti',
 		undoLastPurchase: "Annulla l'ultimo acquisto",
 		headerSummary: (participants, credits, purchases, capacity) =>
-			`${participants} ${plural(participants, 'partecipante', 'partecipanti')} · ${credits} crediti · ${purchases}/${capacity} ${plural(capacity, 'acquisto', 'acquisti')}`,
+			`${participants} ${plural(participants, 'partecipante', 'partecipanti')} · ${credits} ${plural(credits, 'credito', 'crediti')} · ${purchases}/${capacity} ${plural(capacity, 'acquisto', 'acquisti')}`,
 		purchaseRegistry: 'Registro acquisti',
 		registryCount: (count) => `Registro (${count})`,
 		startAuction: 'Inizia asta',
 		undoLast: 'Annulla ultimo',
 		undoLastPurchaseTitle: "Annullare l'ultimo acquisto?",
 		undoLastPurchaseMessage: (player, winner, price) =>
-			`${player} → ${winner} a ${price} crediti. I crediti tornano disponibili.`,
+			`${player} → ${winner} a ${price} ${plural(price, 'credito', 'crediti')}. ${plural(price, 'Il credito torna disponibile', 'I crediti tornano disponibili')}.`,
 		endAuction: 'Termina asta',
 		endAuctionMessage: 'Terminare questa asta? Potrai riaprirla in seguito.',
 		downloadReport: 'Scarica report',
@@ -208,7 +208,7 @@ export const it: Messages = {
 		loadingAuction: "Caricamento dell'asta…",
 		setup: 'Configurazione',
 		setupSummary: (participants, credits) =>
-			`${participants} ${plural(participants, 'partecipante', 'partecipanti')} · ${credits} crediti a testa`,
+			`${participants} ${plural(participants, 'partecipante', 'partecipanti')} · ${credits} ${plural(credits, 'credito', 'crediti')} a testa`,
 		slots: 'Slot',
 		auctionEnded: 'Asta terminata',
 		purchasesRecorded: (count) =>
@@ -242,7 +242,7 @@ export const it: Messages = {
 		price: 'Prezzo',
 		record: 'Registra',
 		purchaseAnnouncement: (player, winner, price) =>
-			`Acquisto registrato: ${player}, ${winner}, ${price} crediti`,
+			`Acquisto registrato: ${player}, ${winner}, ${price} ${plural(price, 'credito', 'crediti')}`,
 		noPurchasesRecorded: 'Nessun acquisto registrato.',
 		noPlayersMatchSearch: 'Nessun calciatore corrisponde alla ricerca.',
 		save: 'Salva',
