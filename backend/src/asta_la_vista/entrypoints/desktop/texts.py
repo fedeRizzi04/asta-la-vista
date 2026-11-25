@@ -3,7 +3,10 @@
 They do not follow the language chosen in the page, which is stored in the web view.
 """
 
+import logging
 import sys
+
+log = logging.getLogger(__name__)
 
 TEXTS = {
     "en": {
@@ -44,16 +47,22 @@ def text(key: str, **params: object) -> str:
 
 
 def system_language() -> str:
-    """``it`` when the first language of the system is Italian, otherwise ``en``."""
+    """``it`` when the first language of the system is Italian, otherwise ``en``.
+
+    It never raises, because the startup error dialog needs it.
+    """
     name = ""
-    if sys.platform == "darwin":
-        from Foundation import NSLocale  # pyobjc, which pywebview needs on macOS
+    try:
+        if sys.platform == "darwin":
+            from Foundation import NSLocale  # pyobjc, which pywebview needs on macOS
 
-        name = NSLocale.preferredLanguages()[0]  # e.g. "it-IT"
-    elif sys.platform == "win32":
-        import ctypes
-        import locale
+            name = NSLocale.preferredLanguages()[0]  # e.g. "it-IT"
+        elif sys.platform == "win32":
+            import ctypes
+            import locale
 
-        language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()  # type: ignore[attr-defined]
-        name = locale.windows_locale.get(language_id, "")  # e.g. "it_IT"
+            language_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()  # type: ignore[attr-defined]
+            name = locale.windows_locale.get(language_id, "")  # e.g. "it_IT"
+    except Exception:
+        log.exception("Could not read the language of the system, using English")
     return "it" if name.startswith("it") else "en"

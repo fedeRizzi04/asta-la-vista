@@ -203,6 +203,25 @@ def test_system_language_is_english_elsewhere(monkeypatch):
     assert texts.system_language() == "en"
 
 
+@pytest.mark.parametrize(
+    ("platform", "foundation"),
+    [
+        ("darwin", None),  # the import fails
+        ("darwin", types.SimpleNamespace(NSLocale=types.SimpleNamespace(preferredLanguages=list))),
+        ("win32", None),
+    ],
+)
+def test_system_language_is_english_when_it_cannot_be_read(
+    monkeypatch, caplog, platform, foundation
+):
+    monkeypatch.setitem(sys.modules, "Foundation", foundation)
+    monkeypatch.setattr("ctypes.windll", types.SimpleNamespace(), raising=False)  # no kernel32
+    monkeypatch.setattr(texts.sys, "platform", platform)
+
+    assert texts.system_language() == "en"
+    assert "Could not read the language of the system" in caplog.text
+
+
 @pytest.fixture
 def fake_webview(monkeypatch):
     """Stands in for pywebview, which needs a desktop session: records what the app asks of it."""
