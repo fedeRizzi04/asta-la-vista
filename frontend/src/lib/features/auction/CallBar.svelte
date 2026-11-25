@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import MantraRoleBadges from '$lib/components/MantraRoleBadges.svelte';
 	import TierBadge from '$lib/components/TierBadge.svelte';
 	import Combobox from '$lib/components/ui/Combobox.svelte';
@@ -11,7 +12,7 @@
 	/**
 	 * The call of a live auction: find a player, see what the strategy says about them and, when
 	 * the bidding ends, record the winner and the price. Sticky, so calling a player from the
-	 * lists below never needs scrolling.
+	 * lists below never needs scrolling; in narrow windows, where it is not, a call scrolls to it.
 	 */
 	let { auctionState }: { auctionState: AuctionState } = $props();
 
@@ -78,6 +79,17 @@
 			}
 		])
 	);
+
+	/** Scrolls only if the bar is not all in view. Not smoothly: the URL update would stop it. */
+	async function reveal(): Promise<void> {
+		// The called player makes the bar taller.
+		await tick();
+		callBar?.scrollIntoView({ block: 'nearest' });
+	}
+
+	$effect(() => {
+		auctionState.onCall = reveal;
+	});
 
 	function search(text: string): void {
 		// Before setting the text: a change of call resets it.
@@ -266,6 +278,8 @@
 	@media (max-width: 950px) {
 		.call-bar {
 			position: static;
+			/* Not under the app header when scrolled into view. */
+			scroll-margin-top: var(--header-height);
 		}
 
 		.panel {

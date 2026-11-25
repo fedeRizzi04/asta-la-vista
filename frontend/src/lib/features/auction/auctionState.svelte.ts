@@ -36,6 +36,8 @@ export class AuctionState {
 	#calledPlayerId = $state('');
 	loading = $state(true);
 	saving = $state(false);
+	/** Set by the call bar, which may have to show itself: players are also called from below. */
+	onCall?: () => void;
 
 	#playersById = $derived(new Map(this.players.map((player) => [player.id, player])));
 	#strategyIndex = $derived(this.viewedStrategy && strategyIndex(this.viewedStrategy));
@@ -131,7 +133,9 @@ export class AuctionState {
 	}
 
 	callPlayer(playerId: string): void {
-		if (this.canCall(playerId)) this.#calledPlayerId = playerId;
+		if (!this.canCall(playerId)) return;
+		this.#calledPlayerId = playerId;
+		this.onCall?.();
 	}
 
 	cancelCall(): void {
