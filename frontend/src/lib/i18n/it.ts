@@ -1,3 +1,4 @@
+import { plural } from '../plural';
 import type { Messages } from './en';
 
 export const it: Messages = {
@@ -16,7 +17,12 @@ export const it: Messages = {
 		updateAvailable: 'È disponibile',
 		currentVersion: (version) => `(stai usando la ${version})`,
 		download: 'Scarica',
-		dismissUpdate: 'Nascondi avviso di aggiornamento'
+		dismissUpdate: 'Nascondi avviso di aggiornamento',
+		loading: 'Caricamento…',
+		import: 'Importa',
+		continueAnyway: 'Continua comunque',
+		club: 'Squadra',
+		quotation: 'Quotazione'
 	},
 	roles: {
 		P: 'Portieri',
@@ -46,9 +52,115 @@ export const it: Messages = {
 		enterKey: 'Invio',
 		spaceKey: 'Spazio'
 	},
-	home: {},
-	players: {},
-	strategies: {},
+	home: {
+		liveAuction: 'Asta in corso',
+		noLiveAuction: 'Nessuna asta in corso.',
+		goToAuctions: 'Vai alle aste',
+		allStrategies: 'Tutte le strategie',
+		all: 'Tutte',
+		strategySummary: (tiers, players) =>
+			`${tiers} ${plural(tiers, 'fascia', 'fasce')} · ${players} ${plural(players, 'calciatore', 'calciatori')}`,
+		noSavedStrategies: 'Nessuna strategia salvata.',
+		openPlayerList: 'Apri Listone',
+		playerTotalLabel: (players) => plural(players, 'calciatore', 'calciatori'),
+		emptyPlayerList: 'Il Listone è vuoto.',
+		loadFailed: 'Impossibile caricare i dati.'
+	},
+	players: {
+		allCount: (total) => `Tutti ${total}`,
+		allRoles: 'Tutti i ruoli',
+		liveImportWarning:
+			"C'è un'asta in corso: importare il Listone adesso può cambiare i calciatori disponibili. Vuoi continuare?",
+		importPlayerList: 'Importa Listone',
+		fileLabel: 'File CSV o XLSX',
+		importSummary: (added, updated, deactivated, roleChanges) =>
+			`Importazione completata: ${added} ${plural(added, 'nuovo', 'nuovi')}, ${updated} ${plural(updated, 'aggiornato', 'aggiornati')}, ${deactivated} ${plural(deactivated, 'disattivato', 'disattivati')} e ${roleChanges} ${plural(roleChanges, 'cambio', 'cambi')} di ruolo.`,
+		role: 'Ruolo',
+		search: 'Nome o squadra',
+		showInactive: 'Mostra inattivi',
+		resultCount: (count) => `${count} ${plural(count, 'risultato', 'risultati')}`,
+		noMatchingPlayers: 'Nessun calciatore corrisponde ai filtri selezionati.',
+		player: 'Calciatore',
+		status: 'Stato',
+		available: 'Disponibile',
+		inactive: 'Inattivo'
+	},
+	strategies: {
+		unmatchedPlayersWarning: (names) =>
+			`Questi calciatori non sono nel Listone e verranno ignorati: ${names.join(', ')}.`,
+		duplicateStrategy: 'Duplica strategia',
+		copyNameLabel: 'Nome della nuova strategia',
+		copyName: (name) => `${name} - copia`,
+		duplicate: 'Duplica',
+		deleteStrategy: 'Elimina strategia',
+		deleteStrategyMessage: (name) =>
+			`Eliminare la strategia “${name}”? Questa azione non può essere annullata.`,
+		delete: 'Elimina',
+		importCsv: 'Importa CSV',
+		newStrategy: 'Nuova strategia',
+		strategyName: 'Nome della strategia',
+		create: 'Crea',
+		csvFile: 'File CSV',
+		csvFormat: '? Formato CSV',
+		csvColumns: 'Colonne:',
+		csvNameRequired: 'Compila almeno il nome.',
+		csvOptionalColor: 'è facoltativo (es.',
+		csvUnmatched: 'I nomi assenti dal Listone vengono ignorati dopo la conferma.',
+		importSummary: (tiers, assigned, unmatched) =>
+			`Strategia creata: ${tiers} ${plural(tiers, 'fascia', 'fasce')} e ${assigned} ${plural(assigned, 'calciatore assegnato', 'calciatori assegnati')}.` +
+			(unmatched.length
+				? ` ${unmatched.length} ${plural(unmatched.length, 'non trovato e ignorato', 'non trovati e ignorati')}: ${unmatched.join(', ')}.`
+				: ''),
+		loadFailed: 'Impossibile caricare le strategie.',
+		noStrategies: 'Nessuna strategia. Per iniziare, scegli «Nuova strategia» o «Importa CSV».',
+		strategySummary: (tiers, players) =>
+			`${tiers} ${plural(tiers, 'fascia', 'fasce')} · ${players} ${plural(players, 'calciatore assegnato', 'calciatori assegnati')}`,
+		openStrategy: (name) => `Apri ${name}`,
+		open: 'Apri',
+		actionsForStrategy: (name) => `Azioni di ${name}`,
+		exportCsv: 'Esporta CSV',
+		duplicateMenu: 'Duplica…',
+		deleteMenu: 'Elimina…',
+		strategy: 'Strategia',
+		saved: 'Salvato',
+		referenceBudget: 'Budget di riferimento',
+		strategyActions: 'Azioni della strategia',
+		loadingStrategy: 'Caricamento della strategia…',
+		roles: 'Ruoli',
+		playerDetails: (name) => `Dettaglio di ${name}`,
+		inactiveClub: (club) => `${club} · inattivo`,
+		quotationValue: (quotation) => `Q. ${quotation}`,
+		tier: 'Fascia',
+		noTier: 'Senza fascia',
+		ofBudget: (budget) => `su ${budget}`,
+		note: 'Nota',
+		noPlayers: 'Nessun calciatore',
+		showAll: 'Mostra tutti',
+		search: 'Cerca',
+		searchPlayerOrClub: 'Cerca calciatore o squadra',
+		sortBy: 'Ordina per',
+		name: 'Nome',
+		playerCount: (count) => `${count} ${plural(count, 'calciatore', 'calciatori')}`,
+		moveToTier: (name) => `Sposta in “${name}”`,
+		removeFromTier: 'Togli dalla fascia',
+		clearSelection: 'Annulla la selezione',
+		selection: 'Selezione',
+		remove: 'Togli',
+		addFirstTiers: 'Aggiungi le prime fasce',
+		useDefaultTiers: 'Usa le fasce predefinite',
+		createTiersManually: 'Crea le fasce a mano',
+		strategyTiers: 'Fasce della strategia',
+		reorderTier: (name) => `Trascina per riordinare “${name}”, o usa le frecce sinistra/destra`,
+		tierColor: (name) => `Colore di “${name}”`,
+		tierName: 'Nome fascia',
+		players: 'Calciatori',
+		deleteTier: 'Elimina fascia',
+		deleteTierLabel: (name) => `Elimina “${name}”`,
+		newTier: 'Nuova fascia',
+		moveAnnouncement: (moved, tierName) => `${moved}: ${tierName ?? 'senza fascia'}`,
+		defaultTierNames: ['Top', 'Semitop', 'Terza fascia', 'Scommesse'],
+		deleteTierMessage: (name) => `Eliminare la fascia “${name}”?`
+	},
 	auctions: {},
 	auction: {},
 	errors: {

@@ -1,3 +1,5 @@
+import { plural } from '../plural';
+
 export type ErrorParams = Record<string, unknown>;
 
 export const en = {
@@ -16,7 +18,12 @@ export const en = {
 		updateAvailable: 'Update available:',
 		currentVersion: (version: string) => `(you are using ${version})`,
 		download: 'Download',
-		dismissUpdate: 'Dismiss update notification'
+		dismissUpdate: 'Dismiss update notification',
+		loading: 'Loading…',
+		import: 'Import',
+		continueAnyway: 'Continue anyway',
+		club: 'Club',
+		quotation: 'Quotation'
 	},
 	roles: {
 		P: 'Goalkeepers',
@@ -46,9 +53,116 @@ export const en = {
 		enterKey: 'Enter',
 		spaceKey: 'Space'
 	},
-	home: {},
-	players: {},
-	strategies: {},
+	home: {
+		liveAuction: 'Live auction',
+		noLiveAuction: 'No auction in progress.',
+		goToAuctions: 'Go to auctions',
+		allStrategies: 'All strategies',
+		all: 'All',
+		strategySummary: (tiers: number, players: number) =>
+			`${tiers} ${plural(tiers, 'tier', 'tiers')} · ${players} ${plural(players, 'player', 'players')}`,
+		noSavedStrategies: 'No saved strategies.',
+		openPlayerList: 'Open player list',
+		playerTotalLabel: (players: number) => plural(players, 'player', 'players'),
+		emptyPlayerList: 'The player list is empty.',
+		loadFailed: 'Could not load the data.'
+	},
+	players: {
+		allCount: (total: number) => `All ${total}`,
+		allRoles: 'All roles',
+		liveImportWarning:
+			'An auction is in progress. Importing the player list now may change which players are available. Continue?',
+		importPlayerList: 'Import player list',
+		fileLabel: 'CSV or XLSX file',
+		importSummary: (added: number, updated: number, deactivated: number, roleChanges: number) =>
+			`Import complete: ${added} added, ${updated} updated, ${deactivated} deactivated and ${roleChanges} ${plural(roleChanges, 'role change', 'role changes')}.`,
+		role: 'Role',
+		search: 'Name or club',
+		showInactive: 'Show inactive',
+		resultCount: (count: number) => `${count} ${plural(count, 'result', 'results')}`,
+		noMatchingPlayers: 'No players match the selected filters.',
+		player: 'Player',
+		status: 'Status',
+		available: 'Available',
+		inactive: 'Inactive'
+	},
+	strategies: {
+		unmatchedPlayersWarning: (names: string[]) =>
+			`These players are missing from the player list and will be ignored: ${names.join(', ')}.`,
+		duplicateStrategy: 'Duplicate strategy',
+		copyNameLabel: 'Name of the new strategy',
+		copyName: (name: string) => `${name} - copy`,
+		duplicate: 'Duplicate',
+		deleteStrategy: 'Delete strategy',
+		deleteStrategyMessage: (name: string) =>
+			`Delete the strategy “${name}”? This action cannot be undone.`,
+		delete: 'Delete',
+		importCsv: 'Import CSV',
+		newStrategy: 'New strategy',
+		strategyName: 'Strategy name',
+		create: 'Create',
+		csvFile: 'CSV file',
+		csvFormat: '? CSV format',
+		csvColumns: 'Columns:',
+		csvNameRequired: 'Fill in at least the name.',
+		csvOptionalColor: 'is optional (e.g.',
+		csvUnmatched: 'Names missing from the player list are ignored once you confirm.',
+		importSummary: (tiers: number, assigned: number, unmatched: string[]) =>
+			`Strategy created: ${tiers} ${plural(tiers, 'tier', 'tiers')} and ${assigned} ${plural(assigned, 'player', 'players')} assigned.` +
+			(unmatched.length
+				? ` ${unmatched.length} ${plural(unmatched.length, 'player', 'players')} not found and ignored: ${unmatched.join(', ')}.`
+				: ''),
+		loadFailed: 'Could not load strategies.',
+		noStrategies: 'No strategies. To get started, choose “New strategy” or “Import CSV”.',
+		strategySummary: (tiers: number, players: number) =>
+			`${tiers} ${plural(tiers, 'tier', 'tiers')} · ${players} ${plural(players, 'player', 'players')} assigned`,
+		openStrategy: (name: string) => `Open ${name}`,
+		open: 'Open',
+		actionsForStrategy: (name: string) => `Actions for ${name}`,
+		exportCsv: 'Export CSV',
+		duplicateMenu: 'Duplicate…',
+		deleteMenu: 'Delete…',
+		strategy: 'Strategy',
+		saved: 'Saved',
+		referenceBudget: 'Reference budget',
+		strategyActions: 'Strategy actions',
+		loadingStrategy: 'Loading strategy…',
+		roles: 'Roles',
+		playerDetails: (name: string) => `Details for ${name}`,
+		inactiveClub: (club: string) => `${club} · inactive`,
+		quotationValue: (quotation: number | string) => `Quot. ${quotation}`,
+		tier: 'Tier',
+		noTier: 'No tier',
+		ofBudget: (budget: number) => `of ${budget}`,
+		note: 'Note',
+		noPlayers: 'No players',
+		showAll: 'Show all',
+		search: 'Search',
+		searchPlayerOrClub: 'Search by player or club',
+		sortBy: 'Sort by',
+		name: 'Name',
+		playerCount: (count: number) => `${count} ${plural(count, 'player', 'players')}`,
+		moveToTier: (name: string) => `Move to “${name}”`,
+		removeFromTier: 'Remove from tier',
+		clearSelection: 'Clear selection',
+		selection: 'Selection',
+		remove: 'Remove',
+		addFirstTiers: 'Add your first tiers',
+		useDefaultTiers: 'Use default tiers',
+		createTiersManually: 'Create tiers manually',
+		strategyTiers: 'Strategy tiers',
+		reorderTier: (name: string) => `Drag to reorder “${name}” or use the left and right arrow keys`,
+		tierColor: (name: string) => `Colour of “${name}”`,
+		tierName: 'Tier name',
+		players: 'Players',
+		deleteTier: 'Delete tier',
+		deleteTierLabel: (name: string) => `Delete “${name}”`,
+		newTier: 'New tier',
+		moveAnnouncement: (moved: string | undefined, tierName: string | undefined) =>
+			`${moved}: ${tierName ?? 'no tier'}`,
+		defaultTierNames: ['Top', 'Semi-top', 'Third tier', 'Long shots'],
+		deleteTierMessage: (name: string) => `Delete the tier “${name}”?`
+	},
 	auctions: {},
 	auction: {},
 	errors: {

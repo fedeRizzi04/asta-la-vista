@@ -6,6 +6,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
+	import { t } from '$lib/i18n';
 	import type { Role } from '$lib/players';
 	import { percentageToCredits } from '$lib/strategies';
 	import type { PlayerDrag } from './playerDrag.svelte';
@@ -57,7 +58,7 @@
 >
 	{#if columns.length === 0}
 		<EmptyState>
-			<h2>Aggiungi le prime fasce</h2>
+			<h2>{t.strategies.addFirstTiers}</h2>
 			<div class="setup-actions">
 				<Button
 					size="sm"
@@ -65,22 +66,22 @@
 					onclick={() => editor.addDefaultTiers()}
 					{@attach focusSetup}
 				>
-					Usa le fasce predefinite
+					{t.strategies.useDefaultTiers}
 				</Button>
 				<Button variant="secondary" size="sm" onclick={addTier} disabled={editor.saving}>
-					Crea le fasce a mano
+					{t.strategies.createTiersManually}
 				</Button>
 			</div>
 		</EmptyState>
 	{:else}
-		<TierBoard {columns} label="Fasce della strategia">
+		<TierBoard {columns} label={t.strategies.strategyTiers}>
 			{#snippet header({ tier, title, players })}
 				<div class="header">
 					<button
 						type="button"
 						class="handle"
 						data-drag-handle
-						aria-label="Trascina per riordinare “{tier.name}”, o usa le frecce sinistra/destra"
+						aria-label={t.strategies.reorderTier(tier.name)}
 					>
 						⠿
 					</button>
@@ -93,7 +94,7 @@
 							editor.scheduleTierSave(tier.id);
 						}}
 						onchange={() => editor.flushTierSave(tier.id)}
-						aria-label="Colore di “{tier.name}”"
+						aria-label={t.strategies.tierColor(tier.name)}
 					/>
 					<Input
 						id={nameId(tier.id)}
@@ -110,20 +111,20 @@
 						}}
 						onkeydown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
 						autocomplete="off"
-						aria-label="Nome fascia"
+						aria-label={t.strategies.tierName}
 					/>
 					<span class="saved" role="status">
 						{#if editor.tierSaved[tier.id]}
-							<span role="img" aria-label="Salvato" title="Salvato">✓</span>
+							<span role="img" aria-label={t.strategies.saved} title={t.strategies.saved}>✓</span>
 						{/if}
 					</span>
-					<span class="count" title="Calciatori">{players.length}</span>
+					<span class="count" title={t.strategies.players}>{players.length}</span>
 					<Button
 						variant="text"
 						size="sm"
 						class="delete"
-						title="Elimina fascia"
-						aria-label="Elimina “{tier.name}”"
+						title={t.strategies.deleteTier}
+						aria-label={t.strategies.deleteTierLabel(tier.name)}
 						onclick={() => editor.deleteTier(tier)}
 						disabled={editor.saving}
 					>
@@ -138,7 +139,7 @@
 						{@const pct = draft.maximumPricePercentage}
 						<TierPlayerCard
 							name={player.name}
-							team={player.active ? player.team : `${player.team} · inattivo`}
+							team={player.active ? player.team : t.strategies.inactiveClub(player.team)}
 							mantraRoles={player.mantra_roles}
 							maximumPricePercentage={pct ?? null}
 							maximumPriceCredits={pct === undefined
@@ -158,7 +159,7 @@
 					onclick={addTier}
 					disabled={editor.saving}
 				>
-					+ Nuova fascia
+					+ {t.strategies.newTier}
 				</button>
 			{/snippet}
 		</TierBoard>

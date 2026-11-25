@@ -13,7 +13,7 @@
 	import Tabs from '$lib/components/ui/Tabs.svelte';
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
 	import { confirmDialog } from '$lib/dialog.svelte';
-	import { plural } from '$lib/plural';
+	import { t } from '$lib/i18n';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import { getUrlParams, setUrlParams } from '$lib/urlState';
 	import {
@@ -51,7 +51,7 @@
 	});
 	const total = $derived(roles.reduce((sum, role) => sum + counts[role], 0));
 	const roleTabs = $derived([
-		{ value: 'all' as const, label: `Tutti ${total}`, title: 'Tutti i ruoli' },
+		{ value: 'all' as const, label: t.players.allCount(total), title: t.players.allRoles },
 		...roles.map((value) => ({
 			value,
 			label: `${value} ${counts[value]}`,
@@ -150,11 +150,10 @@
 			importOpen = false;
 			catalogRevision += 1;
 		} catch (caught) {
-			if (caught instanceof ApiError && caught.code === 'confirmation_required') {
+			if (caught instanceof ApiError && caught.code === 'live_auction_import') {
 				const confirmed = await confirmDialog({
-					message:
-						"C'è un'asta in corso: importare il Listone adesso può cambiare i calciatori disponibili. Vuoi continuare?",
-					confirmLabel: 'Continua comunque'
+					message: t.players.liveImportWarning,
+					confirmLabel: t.common.continueAnyway
 				});
 				if (confirmed) await runImport(true);
 				return;
@@ -167,10 +166,10 @@
 </script>
 
 <svelte:head>
-	<title>Listone | Asta la Vista</title>
+	<title>{t.navigation.playerList} | Asta la Vista</title>
 </svelte:head>
 
-<PageHeader title="Listone" compact>
+<PageHeader title={t.navigation.playerList} compact>
 	{#snippet actions()}
 		<Button
 			variant="secondary"
@@ -178,25 +177,31 @@
 			aria-haspopup="dialog"
 			onclick={() => (importOpen = true)}
 		>
-			Importa
+			{t.common.import}
 		</Button>
 	{/snippet}
 </PageHeader>
 
-<Dialog bind:open={importOpen} title="Importa Listone" width="28rem" closeLabel="Chiudi">
+<Dialog
+	bind:open={importOpen}
+	title={t.players.importPlayerList}
+	width="28rem"
+	closeLabel={t.common.close}
+>
 	<form onsubmit={submitImport}>
-		<Field label="File CSV o XLSX" for="player-file">
+		<Field label={t.players.fileLabel} for="player-file">
 			<div class="file-row">
 				<FilePicker
 					id="player-file"
 					accept=".csv,.xlsx"
 					bind:selectedFile
-					ariaLabel="File CSV o XLSX"
+					ariaLabel={t.players.fileLabel}
 					onSelect={() => (importSummary = undefined)}
 					disabled={importing}
 					data-autofocus
 				/>
-				<Button type="submit" loading={importing} disabled={!selectedFile}>Importa</Button>
+				<Button type="submit" loading={importing} disabled={!selectedFile}>{t.common.import}</Button
+				>
 			</div>
 		</Field>
 	</form>
@@ -204,11 +209,12 @@
 
 {#if importSummary}
 	<Message kind="success">
-		Importazione completata: {importSummary.added}
-		{plural(importSummary.added, 'nuovo', 'nuovi')}, {importSummary.updated}
-		{plural(importSummary.updated, 'aggiornato', 'aggiornati')}, {importSummary.deactivated}
-		{plural(importSummary.deactivated, 'disattivato', 'disattivati')} e {importSummary.role_changes}
-		{plural(importSummary.role_changes, 'cambio', 'cambi')} di ruolo.
+		{t.players.importSummary(
+			importSummary.added,
+			importSummary.updated,
+			importSummary.deactivated,
+			importSummary.role_changes
+		)}
 	</Message>
 {/if}
 
@@ -216,7 +222,7 @@
 	<Tabs
 		items={roleTabs}
 		bind:value={() => role, setRole}
-		label="Ruolo"
+		label={t.players.role}
 		id="player-role"
 		panelId="player-role-panel"
 	/>
@@ -224,19 +230,15 @@
 		<Input
 			bind:value={search}
 			type="search"
-			aria-label="Nome o squadra"
-			placeholder="Nome o squadra"
+			aria-label={t.players.search}
+			placeholder={t.players.search}
 		/>
 	</div>
 	<ToggleChip pressed={includeInactive} onclick={() => (includeInactive = !includeInactive)}>
-		Mostra inattivi
+		{t.players.showInactive}
 	</ToggleChip>
 	<span class="count-label" aria-live="polite" aria-atomic="true">
-		{loading
-			? 'Caricamento…'
-			: players.length === 1
-				? '1 risultato'
-				: `${players.length} risultati`}
+		{loading ? t.common.loading : t.players.resultCount(players.length)}
 	</span>
 </div>
 
@@ -264,16 +266,16 @@
 	aria-busy={loading}
 >
 	{#if !loading && players.length === 0}
-		<EmptyState>Nessun calciatore corrisponde ai filtri selezionati.</EmptyState>
+		<EmptyState>{t.players.noMatchingPlayers}</EmptyState>
 	{:else}
 		<table>
 			<thead>
 				<tr>
-					<th scope="col">Ruolo</th>
-					{@render sortHeader('name', 'Calciatore')}
-					{@render sortHeader('team', 'Squadra')}
-					{@render sortHeader('quotation', 'Quotazione')}
-					<th scope="col">Stato</th>
+					<th scope="col">{t.players.role}</th>
+					{@render sortHeader('name', t.players.player)}
+					{@render sortHeader('team', t.common.club)}
+					{@render sortHeader('quotation', t.common.quotation)}
+					<th scope="col">{t.players.status}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -286,7 +288,7 @@
 						</td>
 						<td>{player.team}</td>
 						<td class="quotation">{player.quotation ?? '—'}</td>
-						<td>{player.active ? 'Disponibile' : 'Inattivo'}</td>
+						<td>{player.active ? t.players.available : t.players.inactive}</td>
 					</tr>
 				{/each}
 			</tbody>

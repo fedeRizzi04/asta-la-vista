@@ -6,6 +6,7 @@
 	import Input from '$lib/components/ui/Input.svelte';
 	import Select from '$lib/components/ui/Select.svelte';
 	import ToggleChip from '$lib/components/ui/ToggleChip.svelte';
+	import { t } from '$lib/i18n';
 	import { mantraRolesOf } from '$lib/mantraRoles';
 	import type { Player, Role } from '$lib/players';
 	import { matchesSearch } from '$lib/search';
@@ -37,7 +38,7 @@
 	let mantraCodes = $derived(mantraRolesOf(rolePlayers));
 	// A selection that does not apply to the role is ignored, and comes back with its role.
 	let mantraRoles = $derived(selectedMantraRoles.filter((code) => mantraCodes.includes(code)));
-	let title = $derived(showAssigned ? 'Tutti' : 'Senza fascia');
+	let title = $derived(showAssigned ? t.common.all : t.strategies.noTier);
 	let shownPlayers = $derived(
 		rolePlayers
 			.filter(
@@ -63,7 +64,7 @@
 			<span class="count" aria-live="polite">{shownPlayers.length}</span>
 			<div class="show-assigned">
 				<ToggleChip pressed={showAssigned} onclick={() => (showAssigned = !showAssigned)}>
-					Mostra tutti
+					{t.strategies.showAll}
 				</ToggleChip>
 			</div>
 		</div>
@@ -71,13 +72,13 @@
 			<Input
 				bind:value={search}
 				type="search"
-				placeholder="Cerca"
-				aria-label="Cerca calciatore o squadra"
+				placeholder={t.strategies.search}
+				aria-label={t.strategies.searchPlayerOrClub}
 			/>
-			<Select bind:value={sort} aria-label="Ordina per">
-				<option value="quotation">Quotazione</option>
-				<option value="name">Nome</option>
-				<option value="team">Squadra</option>
+			<Select bind:value={sort} aria-label={t.strategies.sortBy}>
+				<option value="quotation">{t.common.quotation}</option>
+				<option value="name">{t.strategies.name}</option>
+				<option value="team">{t.common.club}</option>
 			</Select>
 		</div>
 		{#if mantraCodes.length > 1}
@@ -97,11 +98,11 @@
 						<strong class={['name-line', nameFit(player.name)]} title={player.name}
 							>{player.name}</strong
 						>
-						<small>{player.team}{player.active ? '' : ' · inattivo'}</small>
+						<small>{player.active ? player.team : t.strategies.inactiveClub(player.team)}</small>
 						<MantraRoleBadges roles={player.mantra_roles} compact />
 						{#if tier}<TierBadge name={tier.name} color={tier.color} compact />{/if}
 					</span>
-					<span class="quotation" title="Quotazione">{player.quotation ?? '—'}</span>
+					<span class="quotation" title={t.common.quotation}>{player.quotation ?? '—'}</span>
 				</span>
 			{/snippet}
 		</PlayerList>

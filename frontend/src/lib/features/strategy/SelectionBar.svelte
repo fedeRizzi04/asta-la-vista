@@ -14,6 +14,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { t } from '$lib/i18n';
 	import { nameFit } from '$lib/names';
 	import { registerShortcuts } from '$lib/shortcuts.svelte';
 	import type { StrategyEditor } from './strategyEditor.svelte';
@@ -25,13 +26,15 @@
 	 */
 	let { editor, workspaceId }: { editor: StrategyEditor; workspaceId: string } = $props();
 
-	const group = 'Strategia';
+	const group = t.strategies.strategy;
 	const keys = { remove: '0', clear: 'escape' };
 
 	let selection = $derived(editor.selection);
 	let selectedPlayers = $derived(editor.players.filter((player) => selection.ids.has(player.id)));
 	let selectedLabel = $derived(
-		selectedPlayers.length === 1 ? selectedPlayers[0].name : `${selectedPlayers.length} calciatori`
+		selectedPlayers.length === 1
+			? selectedPlayers[0].name
+			: t.strategies.playerCount(selectedPlayers.length)
 	);
 	let anyInTier = $derived(selectedPlayers.some((player) => editor.tierOfPlayer(player.id)));
 
@@ -39,7 +42,7 @@
 		registerShortcuts(
 			editor.orderedTiers.slice(0, TIER_KEYS).map((tier, index) => ({
 				keys: `${index + 1}`,
-				description: `Sposta in “${tier.name}”`,
+				description: t.strategies.moveToTier(tier.name),
 				group,
 				handler: () => moveWithKey(tier.id)
 			}))
@@ -50,13 +53,13 @@
 		registerShortcuts([
 			{
 				keys: keys.remove,
-				description: 'Togli dalla fascia',
+				description: t.strategies.removeFromTier,
 				group,
 				handler: () => moveWithKey('')
 			},
 			{
 				keys: keys.clear,
-				description: 'Annulla la selezione',
+				description: t.strategies.clearSelection,
 				group,
 				handler: () => selection.clear(),
 				when: () => selection.ids.size > 0
@@ -90,7 +93,7 @@
 	class="selection-bar"
 	class:idle={selectedPlayers.length === 0}
 	role="group"
-	aria-label="Selezione"
+	aria-label={t.strategies.selection}
 >
 	{#if selectedPlayers.length > 0}
 		<span class={['selected', 'name-line', nameFit(selectedLabel)]}>{selectedLabel}</span>
@@ -101,7 +104,7 @@
 				class="tier"
 				style="--tier-color: {tier.color ?? 'var(--tier-default)'}"
 				title={tierTitle(tier, index)}
-				aria-label="Sposta in “{tier.name}”"
+				aria-label={t.strategies.moveToTier(tier.name)}
 				disabled={editor.saving}
 				onclick={() => moveWithButton(tier.id)}
 			>
@@ -112,18 +115,18 @@
 			<Button
 				variant="secondary"
 				size="sm"
-				title={withShortcut('Togli dalla fascia', keys.remove)}
+				title={withShortcut(t.strategies.removeFromTier, keys.remove)}
 				disabled={editor.saving}
 				onclick={() => moveWithButton('')}
 			>
-				Togli
+				{t.strategies.remove}
 			</Button>
 		{/if}
 		<Button
 			variant="text"
 			size="sm"
-			title={withShortcut('Annulla la selezione', keys.clear)}
-			aria-label="Annulla la selezione"
+			title={withShortcut(t.strategies.clearSelection, keys.clear)}
+			aria-label={t.strategies.clearSelection}
 			onclick={close}
 		>
 			✕

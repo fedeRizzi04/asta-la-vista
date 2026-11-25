@@ -13,7 +13,7 @@
 	import Menu from '$lib/components/ui/Menu.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import { confirmDialog, promptDialog } from '$lib/dialog.svelte';
-	import { plural } from '$lib/plural';
+	import { t } from '$lib/i18n';
 	import { pushErrorToast } from '$lib/toast.svelte';
 	import {
 		createStrategy,
@@ -79,14 +79,13 @@
 		importing = true;
 		try {
 			const summary = await importStrategy(name, file).catch(async (caught: unknown) => {
-				if (!(caught instanceof ApiError) || caught.code !== 'confirmation_required') throw caught;
-				// The backend lists the names after the colon, in English: the sentence is ours.
-				const unmatched = caught.message.slice(caught.message.indexOf(':') + 1).trim();
+				if (!(caught instanceof ApiError) || caught.code !== 'unmatched_players') throw caught;
+				const names = caught.params?.names as string[] | undefined;
 				if (
 					importOpen &&
 					(await confirmDialog({
-						message: `Questi calciatori non sono nel Listone e verranno ignorati: ${unmatched}.`,
-						confirmLabel: 'Continua comunque'
+						message: t.strategies.unmatchedPlayersWarning(names ?? []),
+						confirmLabel: t.common.continueAnyway
 					}))
 				) {
 					return importStrategy(name, file, true);
@@ -107,10 +106,10 @@
 
 	async function duplicate(strategy: StrategySummary): Promise<void> {
 		const name = await promptDialog({
-			title: 'Duplica strategia',
-			message: 'Nome della nuova strategia',
-			defaultValue: `${strategy.name} - copia`,
-			confirmLabel: 'Duplica'
+			title: t.strategies.duplicateStrategy,
+			message: t.strategies.copyNameLabel,
+			defaultValue: t.strategies.copyName(strategy.name),
+			confirmLabel: t.strategies.duplicate
 		});
 		if (!name) return;
 		saving = true;
@@ -134,9 +133,9 @@
 
 	async function removeStrategy(strategy: StrategySummary): Promise<void> {
 		const confirmed = await confirmDialog({
-			title: 'Elimina strategia',
-			message: `Eliminare la strategia “${strategy.name}”? Questa azione non può essere annullata.`,
-			confirmLabel: 'Elimina',
+			title: t.strategies.deleteStrategy,
+			message: t.strategies.deleteStrategyMessage(strategy.name),
+			confirmLabel: t.strategies.delete,
 			danger: true
 		});
 		if (!confirmed) return;
@@ -153,10 +152,10 @@
 </script>
 
 <svelte:head>
-	<title>Strategie | Asta la Vista</title>
+	<title>{t.navigation.strategies} | Asta la Vista</title>
 </svelte:head>
 
-<PageHeader title="Strategie" compact>
+<PageHeader title={t.navigation.strategies} compact>
 	{#snippet actions()}
 		<Button
 			variant="secondary"
@@ -168,7 +167,7 @@
 			}}
 			disabled={saving}
 		>
-			Importa CSV
+			{t.strategies.importCsv}
 		</Button>
 		<Button
 			size="sm"
@@ -176,47 +175,48 @@
 			onclick={() => (createOpen = true)}
 			disabled={saving || importing}
 		>
-			Nuova strategia
+			{t.strategies.newStrategy}
 		</Button>
 	{/snippet}
 </PageHeader>
 
-<Dialog bind:open={createOpen} title="Nuova strategia" closeLabel="Chiudi">
+<Dialog bind:open={createOpen} title={t.strategies.newStrategy} closeLabel={t.common.close}>
 	<form onsubmit={submitStrategy}>
-		<Field label="Nome della strategia">
+		<Field label={t.strategies.strategyName}>
 			<Input bind:value={newStrategyName} required data-autofocus />
 		</Field>
 		<Button class="submit" type="submit" loading={saving} disabled={!newStrategyName.trim()}>
-			Crea
+			{t.strategies.create}
 		</Button>
 	</form>
 </Dialog>
 
 <Dialog
 	bind:open={importOpen}
-	title="Importa CSV"
-	closeLabel="Chiudi"
+	title={t.strategies.importCsv}
+	closeLabel={t.common.close}
 	onclose={() => (importFile = undefined)}
 >
 	<form onsubmit={submitImport}>
-		<Field label="Nome della strategia">
+		<Field label={t.strategies.strategyName}>
 			<Input bind:value={importName} required data-autofocus />
 		</Field>
-		<Field label="File CSV" for="strategy-import-file">
+		<Field label={t.strategies.csvFile} for="strategy-import-file">
 			<FilePicker
 				id="strategy-import-file"
 				accept=".csv"
 				bind:selectedFile={importFile}
-				ariaLabel="File CSV"
+				ariaLabel={t.strategies.csvFile}
 				onSelect={() => (importSummary = undefined)}
 			/>
 		</Field>
 		<details>
-			<summary>? Formato CSV</summary>
+			<summary>{t.strategies.csvFormat}</summary>
 			<p>
-				Colonne: <code>Nome,Fascia,MaxPrezzo%,Note</code>. Compila almeno il nome.
-				<code>Colore</code> è facoltativo (es. <code>#ef4444</code>). I nomi assenti dal Listone
-				vengono ignorati dopo la conferma.
+				{t.strategies.csvColumns} <code>Nome,Fascia,MaxPrezzo%,Note</code>. {t.strategies
+					.csvNameRequired}
+				<code>Colore</code>
+				{t.strategies.csvOptionalColor} <code>#ef4444</code>). {t.strategies.csvUnmatched}
 			</p>
 		</details>
 		<Button
@@ -225,7 +225,7 @@
 			loading={importing}
 			disabled={!importName.trim() || !importFile}
 		>
-			Importa
+			{t.common.import}
 		</Button>
 	</form>
 </Dialog>
@@ -233,30 +233,22 @@
 {#if importSummary}
 	<div class="import-summary">
 		<Message kind="success">
-			Strategia creata: {importSummary.tiers_created}
-			{plural(importSummary.tiers_created, 'fascia', 'fasce')} e {importSummary.players_assigned}
-			{plural(importSummary.players_assigned, 'calciatore assegnato', 'calciatori assegnati')}.
-			{#if importSummary.unmatched.length}
-				{importSummary.unmatched.length}
-				{plural(
-					importSummary.unmatched.length,
-					'non trovato e ignorato',
-					'non trovati e ignorati'
-				)}: {importSummary.unmatched.join(', ')}.
-			{/if}
+			{t.strategies.importSummary(
+				importSummary.tiers_created,
+				importSummary.players_assigned,
+				importSummary.unmatched
+			)}
 		</Message>
 	</div>
 {/if}
 
 <div aria-busy={loading}>
 	{#if loading && !strategies?.length}
-		<p class="count-label">Caricamento…</p>
+		<p class="count-label">{t.common.loading}</p>
 	{:else if !strategies}
-		<EmptyState>Impossibile caricare le strategie.</EmptyState>
+		<EmptyState>{t.strategies.loadFailed}</EmptyState>
 	{:else if strategies.length === 0}
-		<EmptyState
-			>Nessuna strategia. Per iniziare, scegli «Nuova strategia» o «Importa CSV».</EmptyState
-		>
+		<EmptyState>{t.strategies.noStrategies}</EmptyState>
 	{:else}
 		<div class="strategy-list">
 			{#each strategies as strategy (strategy.id)}
@@ -264,13 +256,7 @@
 					<div class="details">
 						<h2>{strategy.name}</h2>
 						<p>
-							{strategy.tier_count}
-							{plural(strategy.tier_count, 'fascia', 'fasce')} · {strategy.assigned_player_count}
-							{plural(
-								strategy.assigned_player_count,
-								'calciatore assegnato',
-								'calciatori assegnati'
-							)}
+							{t.strategies.strategySummary(strategy.tier_count, strategy.assigned_player_count)}
 						</p>
 					</div>
 					<div class="actions">
@@ -278,18 +264,18 @@
 							href={resolve('/strategies/[strategyId]', { strategyId: strategy.id })}
 							variant="secondary"
 							size="sm"
-							aria-label={`Apri ${strategy.name}`}
+							aria-label={t.strategies.openStrategy(strategy.name)}
 						>
-							Apri
+							{t.strategies.open}
 						</Button>
 						<Menu
-							label={`Azioni di ${strategy.name}`}
+							label={t.strategies.actionsForStrategy(strategy.name)}
 							size="sm"
 							disabled={saving || importing}
 							items={[
-								{ label: 'Esporta CSV', onselect: () => downloadStrategy(strategy) },
-								{ label: 'Duplica…', onselect: () => duplicate(strategy) },
-								{ label: 'Elimina…', onselect: () => removeStrategy(strategy) }
+								{ label: t.strategies.exportCsv, onselect: () => downloadStrategy(strategy) },
+								{ label: t.strategies.duplicateMenu, onselect: () => duplicate(strategy) },
+								{ label: t.strategies.deleteMenu, onselect: () => removeStrategy(strategy) }
 							]}
 						/>
 					</div>

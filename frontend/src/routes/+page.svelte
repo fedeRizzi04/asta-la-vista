@@ -6,8 +6,8 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import PageHeader from '$lib/components/ui/PageHeader.svelte';
 	import AuctionCard from '$lib/features/auction/AuctionCard.svelte';
+	import { t } from '$lib/i18n';
 	import { getPlayerCounts, roleLabels, roles, type PlayerCounts } from '$lib/players';
-	import { plural } from '$lib/plural';
 	import { getStrategies, type StrategySummary } from '$lib/strategies';
 	import { pushErrorToast } from '$lib/toast.svelte';
 
@@ -41,18 +41,18 @@
 </script>
 
 <svelte:head>
-	<title>Home | Asta la Vista</title>
+	<title>{t.navigation.home} | Asta la Vista</title>
 </svelte:head>
 
-<PageHeader title="Home" compact />
+<PageHeader title={t.navigation.home} compact />
 
 <div aria-busy={loading}>
 	{#if loading}
-		<p class="count-label">Caricamento…</p>
+		<p class="count-label">{t.common.loading}</p>
 	{:else if overview}
 		<div class="dashboard">
 			<section class="panel">
-				<header><h2>Asta in corso</h2></header>
+				<header><h2>{t.home.liveAuction}</h2></header>
 				{#if overview.liveAuctions.length}
 					<div class="live-auctions">
 						{#each overview.liveAuctions as auction (auction.id)}
@@ -61,21 +61,21 @@
 					</div>
 				{:else}
 					<EmptyState compact>
-						Nessuna asta in corso. <a href={resolve('/auctions')}>Vai alle aste</a>
+						{t.home.noLiveAuction} <a href={resolve('/auctions')}>{t.home.goToAuctions}</a>
 					</EmptyState>
 				{/if}
 			</section>
 
 			<section class="panel">
 				<header>
-					<h2>Strategie</h2>
+					<h2>{t.navigation.strategies}</h2>
 					<Button
 						href={resolve('/strategies')}
 						variant="secondary"
 						size="sm"
-						aria-label="Tutte le strategie"
+						aria-label={t.home.allStrategies}
 					>
-						Tutte
+						{t.home.all}
 					</Button>
 				</header>
 				{#if overview.strategies.length}
@@ -85,28 +85,31 @@
 								<a href={resolve('/strategies/[strategyId]', { strategyId: strategy.id })}>
 									<strong>{strategy.name}</strong>
 									<span
-										>{strategy.tier_count}
-										{plural(strategy.tier_count, 'fascia', 'fasce')} · {strategy.assigned_player_count}
-										{plural(strategy.assigned_player_count, 'calciatore', 'calciatori')}</span
+										>{t.home.strategySummary(
+											strategy.tier_count,
+											strategy.assigned_player_count
+										)}</span
 									>
 								</a>
 							</li>
 						{/each}
 					</ul>
 				{:else}
-					<EmptyState compact>Nessuna strategia salvata.</EmptyState>
+					<EmptyState compact>{t.home.noSavedStrategies}</EmptyState>
 				{/if}
 			</section>
 
 			<section class="panel">
 				<header>
-					<h2>Listone</h2>
-					<Button href={resolve('/players')} variant="secondary" size="sm">Apri Listone</Button>
+					<h2>{t.navigation.playerList}</h2>
+					<Button href={resolve('/players')} variant="secondary" size="sm"
+						>{t.home.openPlayerList}</Button
+					>
 				</header>
 				{#if overview.total > 0}
 					<p class="player-total">
 						<strong>{overview.total}</strong>
-						{plural(overview.total, 'calciatore', 'calciatori')}
+						{t.home.playerTotalLabel(overview.total)}
 					</p>
 					<dl class="role-counts">
 						{#each roles as role (role)}
@@ -120,12 +123,12 @@
 						{/each}
 					</dl>
 				{:else}
-					<EmptyState compact>Il Listone è vuoto.</EmptyState>
+					<EmptyState compact>{t.home.emptyPlayerList}</EmptyState>
 				{/if}
 			</section>
 		</div>
 	{:else}
-		<EmptyState>Impossibile caricare i dati.</EmptyState>
+		<EmptyState>{t.home.loadFailed}</EmptyState>
 	{/if}
 </div>
 
